@@ -314,9 +314,19 @@ try:
             <div class='mission-panel'>
                 <div class='mission-header'>⚙️ Trạm 2: Động Cơ</div>
                 <p><strong>Mục tiêu:</strong> Dịch ngôn ngữ thực tế sang đồ thị v-t.</p>
-                <p><strong>Nhiệm vụ:</strong> Hãy sắp xếp các thẻ Hiện tượng (1, 2, 3, 4) khớp với các thẻ Đồ thị (A, B, C, D).</p>
+                <p><strong>Nhiệm vụ:</strong> Hãy quan sát các đồ thị dưới đây và sắp xếp các thẻ Hiện tượng (1, 2, 3, 4) khớp với các thẻ Đồ thị (A, B, C, D).</p>
             </div>
             """, unsafe_allow_html=True)
+            
+            # --- ĐOẠN CODE MỚI ĐỂ HIỂN THỊ ẢNH ĐỒ THỊ ---
+            # Cô nhớ đặt tên file ảnh tải lên GitHub trùng với tên ở dưới đây nhé
+            anh_do_thi = os.path.join("images", "do_thi_tram2.jpg") 
+            if os.path.exists(anh_do_thi):
+                st.image(anh_do_thi, use_container_width=True)
+            else:
+                st.warning("⚠️ Đang chờ tải ảnh đồ thị... (Cần có file 'do_thi_tram2.jpg' trong thư mục images)")
+            st.markdown("<br>", unsafe_allow_html=True)
+            # --------------------------------------------
             
             col1, col2 = st.columns(2)
             with col1:
