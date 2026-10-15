@@ -211,3 +211,4 @@ with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
 except Exception as e:
     st.error(f"Có lỗi khi đọc dữ liệu Excel: {e}")
     st.write("Vui lòng kiểm tra lại file 'du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx' trên GitHub.")
+
