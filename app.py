@@ -174,22 +174,58 @@ try:
                 
             st.markdown(f"**❓ Câu hỏi gợi mở:** *{ho_so['Câu hỏi gợi mở']}*")
             
-            # --- TÍNH NĂNG MỚI: AI HƯỚNG DẪN TƯ DUY ---
-            st.markdown("""
-            <div style="background-color: #F0FDF4; padding: 15px; border-radius: 10px; border-left: 5px solid #22C55E; margin-top: 20px;">
-                <h4 style="color: #15803D; margin-top: 0;">🤖 AI phân tích nhanh</h4>
-                <p style="font-size: 0.9em; margin-bottom: 10px;">Dựa vào quan sát trên, em nghĩ đại lượng vật lí nào đang thay đổi? Hãy nhập suy nghĩ của em, AI sẽ định hướng ngắn gọn.</p>
+            # --- CẬP NHẬT: AI ĐỊNH HƯỚNG THEO CÂU HỎI GỢI MỞ ---
+            st.markdown(f"""
+            <div style="background-color: #F0FDF4; padding: 15px; border-radius: 10px; border-left: 5px solid #22C55E; margin-top: 20px; margin-bottom: 10px;">
+                <h4 style="color: #15803D; margin-top: 0; display: flex; align-items: center; gap: 8px;">
+                    🤖 AI phân tích nhanh
+                </h4>
+                <p style="font-size: 0.95em; color: #1E293B; margin-bottom: 5px;">
+                    <strong>Dựa vào câu hỏi trên:</strong> <em>"{ho_so['Câu hỏi gợi mở']}"</em>
+                </p>
+                <p style="font-size: 0.85em; color: #64748b;">Em hãy nhập hoặc đọc câu trả lời, AI sẽ định hướng ngắn gọn nhé!</p>
             </div>
             """, unsafe_allow_html=True)
             
-            cau_tra_loi_hs = st.text_input("Em nghĩ là...", placeholder="Nhập câu trả lời ngắn của em (VD: Vận tốc thay đổi, có gia tốc...)")
-            if st.button("Gửi cho AI phân tích 🚀"):
+            # Form nhập liệu cho phép gõ văn bản
+            cau_tra_loi_hs = st.text_area("Câu trả lời của em:", height=80, placeholder="Gõ câu trả lời của em vào đây...")
+            
+            # Cột chức năng
+            col_btn1, col_btn2 = st.columns([1, 1])
+            with col_btn1:
+                gui_ai = st.button("🚀 Gửi AI phân tích", use_container_width=True)
+            with col_btn2:
+                # Tính năng thu âm giọng nói (Speech-to-text)
+                st.markdown("""
+                <script>
+                function startDictation() {
+                  if (window.hasOwnProperty('webkitSpeechRecognition')) {
+                    var recognition = new webkitSpeechRecognition();
+                    recognition.continuous = false;
+                    recognition.interimResults = false;
+                    recognition.lang = "vi-VN";
+                    recognition.start();
+                    recognition.onresult = function(e) {
+                      document.querySelector('textarea').value = e.results[0][0].transcript;
+                      recognition.stop();
+                    };
+                    recognition.onerror = function(e) {
+                      recognition.stop();
+                    }
+                  }
+                }
+                </script>
+                <button onclick="startDictation()" style="width: 100%; padding: 0.5rem; background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; color: #334155; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    🎤 Nhập bằng Giọng nói
+                </button>
+                """, unsafe_allow_html=True)
+
+            if gui_ai:
                 if cau_tra_loi_hs:
-                    # Ở phiên bản MVP này, ta giả lập phản hồi nhanh của AI để tránh độ trễ API
-                    # Sau này khi lắp khóa API thực sự, ta sẽ thay bằng code gọi mô hình Gemini
-                    st.success(f"**AI nhận xét:** Ý tưởng '{cau_tra_loi_hs}' của em rất thú vị! Em đã chú ý đúng trọng tâm. Sự thay đổi em vừa nhắc đến chính là cốt lõi của hiện tượng này. Hãy xem phần 'Giải thích khoa học' bên cạnh để đối chiếu nhé!")
+                    # Giả lập phản hồi nhanh, trực diện
+                    st.success(f"**🤖 Nhận xét nhanh:** Câu trả lời '{cau_tra_loi_hs}' của em rất có ý! Em đã nắm được một phần bản chất. Để biết câu trả lời chính xác và đầy đủ nhất cho câu hỏi trên, em hãy xem ngay phần **'Giải thích khoa học'** bên phải nhé!")
                 else:
-                    st.warning("Em hãy nhập suy nghĩ của mình trước khi gửi nhé!")
+                    st.warning("⚠️ Em hãy nhập câu trả lời trước khi gửi nhé!")
 
         with col_phai:
             with st.container():
