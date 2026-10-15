@@ -9,7 +9,7 @@ st.set_page_config(page_title="PHY-LIFE 10", page_icon="🚀", layout="wide", in
 # CAU HINH GEMINI API TU STREAMLIT SECRETS
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('gemini-pro')
+    model = genai.GenerativeModel('gemini-3.5-flash-lite')
     api_ready = True
 except Exception as e:
     api_ready = False
