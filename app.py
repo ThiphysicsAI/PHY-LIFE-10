@@ -195,10 +195,11 @@ try:
                 st.write(ho_so['Ví dụ định lượng'])
                 
                 st.markdown("<h3 style='color: #0D9488;'>Thử thách tương tác</h3>", unsafe_allow_html=True)
-                st.write(ho_so['Câu hỏi tương tác'])
-                
-                with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
-                    st.success(ho_so['Đáp án/phản hồi'])
+# Thay thế chuỗi \n từ Excel bằng ký tự ngắt dòng của Markdown (\n\n)
+st.markdown(str(ho_so['Câu hỏi tương tác']).replace('\\n', '\n\n'))
+
+with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
+    st.success(str(ho_so['Đáp án/phản hồi']).replace('\\n', '\n\n'))
 
     # ==========================================
     # GIAO DIỆN 3: AI CHAT (Sẽ phát triển sau)
