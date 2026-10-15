@@ -200,7 +200,6 @@ st.markdown(str(ho_so['Câu hỏi tương tác']).replace('\\n', '\n\n'))
 
 with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
     st.success(str(ho_so['Đáp án/phản hồi']).replace('\\n', '\n\n'))
-
     # ==========================================
     # GIAO DIỆN 3: AI CHAT (Sẽ phát triển sau)
     # ==========================================
