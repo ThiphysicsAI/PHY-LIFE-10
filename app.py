@@ -11,7 +11,7 @@ st.markdown("*Ứng dụng hỗ trợ học sinh lớp 10 khám phá hiện tư�
 @st.cache_data # Lưu cache để web chạy nhanh hơn
 def load_data():
     # Đọc sheet chứa dữ liệu (thay tên sheet nếu cần, mặc định pandas đọc sheet đầu tiên hoặc chỉ định sheet_name)
-    df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Du_lieu_45')
+    df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx')
     return df
 
 try:
