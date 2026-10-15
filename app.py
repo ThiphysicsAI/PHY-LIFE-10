@@ -97,6 +97,17 @@ try:
             tinh_huong_chon = st.selectbox("🔍 Chọn tình huống thực tiễn:", df_loc['Tên tình huống'])
         st.markdown("---")
         
+        # --- QUẢN LÝ TRẠNG THÁI MỞ KHÓA ---
+        if "current_scenario" not in st.session_state:
+            st.session_state.current_scenario = tinh_huong_chon
+            st.session_state.da_tra_loi = False
+            st.session_state.ai_response = ""
+        elif st.session_state.current_scenario != tinh_huong_chon:
+            # Nếu học sinh chọn sang tình huống khác, reset lại ổ khóa và câu trả lời AI
+            st.session_state.current_scenario = tinh_huong_chon
+            st.session_state.da_tra_loi = False
+            st.session_state.ai_response = ""
+        
         ho_so = df_loc[df_loc['Tên tình huống'] == tinh_huong_chon].iloc[0]
         st.markdown(f"<h1 style='font-size: 2.2rem; margin-bottom: 1rem;'>{ho_so['Tên tình huống']}</h1>", unsafe_allow_html=True)
         
@@ -118,7 +129,7 @@ try:
             <div style="background-color: #F0FDF4; padding: 15px; border-radius: 10px; border-left: 5px solid #22C55E; margin-top: 20px; margin-bottom: 10px;">
                 <h4 style="color: #15803D; margin-top: 0; display: flex; align-items: center; gap: 8px;">🤖 AI phân tích nhanh</h4>
                 <p style="font-size: 0.95em; color: #1E293B; margin-bottom: 5px;"><strong>Dựa vào câu hỏi:</strong> <em>"{ho_so['Câu hỏi gợi mở']}"</em></p>
-                <p style="font-size: 0.85em; color: #64748b;">Hãy nhập hoặc đọc câu trả lời, AI sẽ định hướng nhé!</p>
+                <p style="font-size: 0.85em; color: #64748b;">Hãy nhập hoặc đọc câu trả lời để mở khóa bài học nhé!</p>
             </div>
             ''', unsafe_allow_html=True)
             
@@ -184,8 +195,10 @@ try:
                 </html>
                 ''', height=45)
 
+            # Xử lý khi bấm nút Gửi
             if gui_ai:
                 if cau_tra_loi_hs:
+                    st.session_state.da_tra_loi = True # Mở khóa cột bên phải
                     if api_ready:
                         with st.spinner("AI đang suy nghĩ..."):
                             prompt_ai = f'''
@@ -205,41 +218,19 @@ try:
                             '''
                             try:
                                 response = model.generate_content(prompt_ai)
-                                st.success(f"**🤖 AI phân tích:** {response.text}")
+                                st.session_state.ai_response = f"**🤖 AI phân tích:** {response.text}"
                             except Exception as e:
-                                st.error(f"AI đang bận, thử lại sau nhé! (Lỗi: {e})")
+                                st.session_state.ai_response = f"❌ AI đang bận, thử lại sau nhé! (Lỗi: {e})"
                     else:
-                        st.warning("Tính năng AI chưa được kích hoạt (Thiếu API Key).")
+                        st.session_state.ai_response = "⚠️ Tính năng AI chưa được kích hoạt (Thiếu API Key)."
                 else:
                     st.warning("⚠️ Hãy nhập câu trả lời trước khi gửi!")
 
+            # Hiển thị nhận xét của AI (Giữ cố định trên màn hình sau khi trả lời)
+            if st.session_state.da_tra_loi and st.session_state.ai_response:
+                if "❌" in st.session_state.ai_response or "⚠️" in st.session_state.ai_response:
+                    st.error(st.session_state.ai_response)
+                else:
+                    st.success(st.session_state.ai_response)
+
         with col_phai:
-            with st.container():
-                st.markdown("<h3 style='color: #0D9488;'>Giải thích khoa học</h3>", unsafe_allow_html=True)
-                st.write(ho_so['Giải thích khoa học'])
-                st.markdown("<h3 style='color: #0D9488;'>Công thức vận dụng</h3>", unsafe_allow_html=True)
-                st.markdown(ho_so['Công thức'])
-                st.markdown("<h3 style='color: #0D9488;'>Ví dụ định lượng</h3>", unsafe_allow_html=True)
-                st.write(ho_so['Ví dụ định lượng'])
-                st.markdown("<h3 style='color: #0D9488;'>Thử thách tương tác</h3>", unsafe_allow_html=True)
-                st.markdown(str(ho_so['Câu hỏi tương tác']).replace('\\n', '\n\n'))
-                with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
-                    st.success(str(ho_so['Đáp án/phản hồi']).replace('\\n', '\n\n'))
-                
-                st.markdown("---")
-                st.markdown("<h4 style='color: #0D9488;'>🛠️ Hoạt động thực hành</h4>", unsafe_allow_html=True)
-                st.info(ho_so['Hoạt động thực hành'])
-                st.markdown("<h4 style='color: #0D9488;'>🏷️ Từ khóa</h4>", unsafe_allow_html=True)
-                
-                tu_khoa_list = str(ho_so['Từ khóa']).split(',')
-                html_tu_khoa = "".join([f"<span style='background-color: #E2E8F0; padding: 4px 8px; border-radius: 4px; margin-right: 5px; font-size: 0.85em;'>{tag.strip()}</span>" for tag in tu_khoa_list])
-                st.markdown(html_tu_khoa, unsafe_allow_html=True)
-                st.markdown("<br><p style='font-size: 0.8em; color: #94A3B8;'><strong>Nguồn tham khảo:</strong> " + str(ho_so['Nguồn tham khảo']) + "</p>", unsafe_allow_html=True)
-
-    # === GIAO DIỆN 3: AI CHAT ===
-    elif menu == "🤖 Hỏi Nhà khám phá AI":
-        st.markdown("<h2 style='color: #0D9488;'>Nhà khám phá AI</h2>", unsafe_allow_html=True)
-        st.info("Tính năng AI Chat đang được hoàn thiện.")
-
-except Exception as e:
-    st.error(f"Có lỗi khi đọc dữ liệu Excel: {e}")
