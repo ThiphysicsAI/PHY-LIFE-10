@@ -23,11 +23,9 @@ st.markdown('''
     h1, h2, h3, h4, h5, h6, p, span, div { color: #1E293B; }
     [data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
     .stAlert { border-radius: 1rem !important; border: none !important; }
-    .phy-card { background-color: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s; height: 100%; }
+    .phy-card { background-color: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s; margin-bottom: 10px;}
     .phy-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #0D9488; }
     .icon-box { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 15px; }
-    /* Định dạng tin nhắn Chat */
-    .stChatMessage { border-radius: 10px; padding: 10px; margin-bottom: 10px; }
 </style>
 ''', unsafe_allow_html=True)
 
@@ -37,9 +35,14 @@ def load_data():
     df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx')
     return df
 
-# 3. ĐIỀU HƯỚNG TRANG
+# 3. ĐIỀU HƯỚNG TRANG (CÓ LIÊN KẾT)
+# Khởi tạo trạng thái menu nếu chưa có
+if "menu_option" not in st.session_state:
+    st.session_state.menu_option = "🏠 Trang chủ"
+
 st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE 10</h2>", unsafe_allow_html=True)
-menu = st.sidebar.radio("CHUYÊN MỤC", ["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🤖 Hỏi Nhà khám phá AI"])
+# Liên kết radio button với biến trạng thái st.session_state.menu_option
+menu = st.sidebar.radio("CHUYÊN MỤC", ["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🤖 Hỏi Nhà khám phá AI"], key="menu_option")
 st.sidebar.markdown("---")
 st.sidebar.markdown("*Ứng dụng hỗ trợ học sinh lớp 10 học bộ sách Kết nối tri thức.*")
 
@@ -80,10 +83,24 @@ try:
         c1, c2, c3 = st.columns(3)
         with c1:
             st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #EFF6FF; color: #3B82F6;">📖</div><h3 style="font-size: 1.25rem;">Theo bài học</h3><p style="color: #64748b; font-size: 0.95rem;">Ôn tập vận tốc, gia tốc và đồ thị chuyển động.</p></div>''', unsafe_allow_html=True)
+            # Nút bấm chuyển hướng
+            if st.button("Đi tới bài học ➡️", use_container_width=True, key="btn_baihoc"):
+                st.session_state.menu_option = "📚 Khám phá Hiện tượng"
+                st.rerun()
+                
         with c2:
             st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #FEF08A; color: #A16207;">💡</div><h3 style="font-size: 1.25rem;">Theo hiện tượng</h3><p style="color: #64748b; font-size: 0.95rem;">Khám phá các tình huống giao thông, thể thao.</p></div>''', unsafe_allow_html=True)
+            # Nút bấm chuyển hướng
+            if st.button("Xem hiện tượng ➡️", use_container_width=True, key="btn_hientuong"):
+                st.session_state.menu_option = "📚 Khám phá Hiện tượng"
+                st.rerun()
+                
         with c3:
             st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #CCFBF1; color: #0D9488;">🤖</div><h3 style="font-size: 1.25rem;">Hỏi AI Khám phá</h3><p style="color: #64748b; font-size: 0.95rem;">Mổ xẻ hiện tượng Vật lí cùng trợ lý ảo.</p></div>''', unsafe_allow_html=True)
+            # Nút bấm chuyển hướng
+            if st.button("Hỏi AI ngay ➡️", use_container_width=True, key="btn_ai"):
+                st.session_state.menu_option = "🤖 Hỏi Nhà khám phá AI"
+                st.rerun()
 
     # === GIAO DIỆN 2: THƯ VIỆN HIỆN TƯỢNG ===
     elif menu == "📚 Khám phá Hiện tượng":
@@ -271,34 +288,25 @@ try:
         if not api_ready:
             st.warning("⚠️ Tính năng AI chưa được kích hoạt. Vui lòng kiểm tra lại GEMINI_API_KEY trong Secrets.")
         else:
-            # Khởi tạo lịch sử chat trong session_state
             if "chat_messages" not in st.session_state:
                 st.session_state.chat_messages = []
 
-            # Khung hiển thị lịch sử trò chuyện
             for msg in st.session_state.chat_messages:
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
 
-            # Ô nhập liệu chat của học sinh
             if prompt := st.chat_input("Nhập câu hỏi, hiện tượng hoặc khái niệm em muốn khám phá..."):
-                
-                # Lưu và hiển thị tin nhắn của học sinh
                 st.session_state.chat_messages.append({"role": "user", "content": prompt})
                 with st.chat_message("user"):
                     st.markdown(prompt)
 
-                # AI xử lý và phản hồi
                 with st.chat_message("assistant"):
                     with st.spinner("Cô đang phân tích..."):
-                        
-                        # Trích xuất 4 tin nhắn gần nhất để AI hiểu ngữ cảnh cuộc trò chuyện
                         history_context = ""
                         for msg in st.session_state.chat_messages[-5:-1]:
                             role_name = "Học sinh" if msg["role"] == "user" else "Cô giáo"
                             history_context += f"{role_name}: {msg['content']}\n"
                             
-                        # Đóng gói System Prompt với 5 CHỨC NĂNG SƯ PHẠM yêu cầu
                         sys_prompt = f'''
                         [HƯỚNG DẪN CHO AI]
                         Bạn là "Nhà khám phá Vật lí", một chuyên gia sư phạm Vật lí hỗ trợ học sinh lớp 10 (chương Động học).
@@ -322,10 +330,8 @@ try:
                         Cô giáo phản hồi:
                         '''
                         try:
-                            # Gửi toàn bộ cấu trúc Prompt cho Gemini xử lý
                             response = model.generate_content(sys_prompt)
                             st.markdown(response.text)
-                            # Lưu vào lịch sử chat
                             st.session_state.chat_messages.append({"role": "assistant", "content": response.text})
                         except Exception as e:
                             st.error(f"Hệ thống đang bận, em thử lại sau nhé! (Lỗi chi tiết: {e})")
