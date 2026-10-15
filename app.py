@@ -164,7 +164,6 @@ try:
             st.info(f"📍 **Bối cảnh:** {ho_so['Bối cảnh']}")
             st.markdown(f"**Quan sát:** {ho_so['Mô tả quan sát']}")
             
-            # SỬ DỤNG ĐÚNG TÊN CỘT TỪ EXCEL: 'Tên file ảnh'
             ten_file_anh = str(ho_so['Tên file ảnh'])
             duong_dan_anh = os.path.join("images", ten_file_anh)
             
@@ -174,6 +173,23 @@ try:
                 st.warning(f"✍️ Đang chờ nét vẽ Sketchnote cho hiện tượng này... (Tên file cần có: {ten_file_anh})")
                 
             st.markdown(f"**❓ Câu hỏi gợi mở:** *{ho_so['Câu hỏi gợi mở']}*")
+            
+            # --- TÍNH NĂNG MỚI: AI HƯỚNG DẪN TƯ DUY ---
+            st.markdown("""
+            <div style="background-color: #F0FDF4; padding: 15px; border-radius: 10px; border-left: 5px solid #22C55E; margin-top: 20px;">
+                <h4 style="color: #15803D; margin-top: 0;">🤖 AI phân tích nhanh</h4>
+                <p style="font-size: 0.9em; margin-bottom: 10px;">Dựa vào quan sát trên, em nghĩ đại lượng vật lí nào đang thay đổi? Hãy nhập suy nghĩ của em, AI sẽ định hướng ngắn gọn.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            cau_tra_loi_hs = st.text_input("Em nghĩ là...", placeholder="Nhập câu trả lời ngắn của em (VD: Vận tốc thay đổi, có gia tốc...)")
+            if st.button("Gửi cho AI phân tích 🚀"):
+                if cau_tra_loi_hs:
+                    # Ở phiên bản MVP này, ta giả lập phản hồi nhanh của AI để tránh độ trễ API
+                    # Sau này khi lắp khóa API thực sự, ta sẽ thay bằng code gọi mô hình Gemini
+                    st.success(f"**AI nhận xét:** Ý tưởng '{cau_tra_loi_hs}' của em rất thú vị! Em đã chú ý đúng trọng tâm. Sự thay đổi em vừa nhắc đến chính là cốt lõi của hiện tượng này. Hãy xem phần 'Giải thích khoa học' bên cạnh để đối chiếu nhé!")
+                else:
+                    st.warning("Em hãy nhập suy nghĩ của mình trước khi gửi nhé!")
 
         with col_phai:
             with st.container():
@@ -187,14 +203,28 @@ try:
                 st.write(ho_so['Ví dụ định lượng'])
                 
                 st.markdown("<h3 style='color: #0D9488;'>Thử thách tương tác</h3>", unsafe_allow_html=True)
-                # Thay thế ký tự xuống dòng
                 st.markdown(str(ho_so['Câu hỏi tương tác']).replace('\\n', '\n\n'))
                 
                 with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
                     st.success(str(ho_so['Đáp án/phản hồi']).replace('\\n', '\n\n'))
+                
+                # --- BỔ SUNG CÁC TRƯỜNG CÒN THIẾU TỪ EXCEL ---
+                st.markdown("---") # Đường kẻ ngang
+                st.markdown("<h4 style='color: #0D9488;'>🛠️ Hoạt động thực hành</h4>", unsafe_allow_html=True)
+                st.info(ho_so['Hoạt động thực hành'])
+                
+                st.markdown("<h4 style='color: #0D9488;'>🏷️ Từ khóa</h4>", unsafe_allow_html=True)
+                # Hiển thị từ khóa dưới dạng các thẻ nhỏ (tag)
+                tu_khoa_list = str(ho_so['Từ khóa']).split(',')
+                html_tu_khoa = ""
+                for tag in tu_khoa_list:
+                    html_tu_khoa += f"<span style='background-color: #E2E8F0; padding: 4px 8px; border-radius: 4px; margin-right: 5px; font-size: 0.85em;'>{tag.strip()}</span>"
+                st.markdown(html_tu_khoa, unsafe_allow_html=True)
+                
+                st.markdown("<br><p style='font-size: 0.8em; color: #94A3B8;'><strong>Nguồn tham khảo:</strong> " + str(ho_so['Nguồn tham khảo']) + "</p>", unsafe_allow_html=True)
 
     # ==========================================
-    # GIAO DIỆN 3: AI CHAT
+    # GIAO DIỆN 3: AI CHAT (Sẽ phát triển sau)
     # ==========================================
     elif menu == "🤖 Hỏi Nhà khám phá AI":
         st.markdown("<h2 style='color: #0D9488;'>Nhà khám phá AI</h2>", unsafe_allow_html=True)
