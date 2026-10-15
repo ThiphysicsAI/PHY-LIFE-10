@@ -234,3 +234,12 @@ try:
                 tu_khoa_list = str(ho_so['Từ khóa']).split(',')
                 html_tu_khoa = "".join([f"<span style='background-color: #E2E8F0; padding: 4px 8px; border-radius: 4px; margin-right: 5px; font-size: 0.85em;'>{tag.strip()}</span>" for tag in tu_khoa_list])
                 st.markdown(html_tu_khoa, unsafe_allow_html=True)
+                st.markdown("<br><p style='font-size: 0.8em; color: #94A3B8;'><strong>Nguồn tham khảo:</strong> " + str(ho_so['Nguồn tham khảo']) + "</p>", unsafe_allow_html=True)
+
+    # === GIAO DIỆN 3: AI CHAT ===
+    elif menu == "🤖 Hỏi Nhà khám phá AI":
+        st.markdown("<h2 style='color: #0D9488;'>Nhà khám phá AI</h2>", unsafe_allow_html=True)
+        st.info("Tính năng AI Chat đang được hoàn thiện.")
+
+except Exception as e:
+    st.error(f"Có lỗi khi đọc dữ liệu Excel: {e}")
