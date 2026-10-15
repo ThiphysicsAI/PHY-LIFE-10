@@ -3,10 +3,10 @@ import pandas as pd
 import os
 import google.generativeai as genai
 
-# 1. CAU HINH TRANG WEB & MAU SAC TUY CHINH
+# 1. CẤU HÌNH TRANG WEB & MÀU SẮC TÙY CHỈNH
 st.set_page_config(page_title="PHY-LIFE 10", page_icon="🚀", layout="wide", initial_sidebar_state="expanded")
 
-# CAU HINH GEMINI API TU STREAMLIT SECRETS
+# CẤU HÌNH GEMINI API TỪ STREAMLIT SECRETS
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     model = genai.GenerativeModel('gemini-3.5-flash-lite')
@@ -14,7 +14,7 @@ try:
 except Exception as e:
     api_ready = False
 
-# Nhung CSS tuy chinh
+# Nhúng CSS tùy chỉnh
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
@@ -29,72 +29,72 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 2. DOC DU LIEU TU EXCEL
+# 2. ĐỌC DỮ LIỆU TỪ EXCEL
 @st.cache_data
 def load_data():
     df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx')
     return df
 
-# 3. DIEU HUONG TRANG
+# 3. ĐIỀU HƯỚNG TRANG
 st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE 10</h2>", unsafe_allow_html=True)
-menu = st.sidebar.radio("CHUYEN MUC", ["🏠 Trang chu", "📚 Kham pha Hien tuong", "🤖 Hoi Nha kham pha AI"])
+menu = st.sidebar.radio("CHUYÊN MỤC", ["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🤖 Hỏi Nhà khám phá AI"])
 st.sidebar.markdown("---")
-st.sidebar.markdown("*Ung dung ho tro hoc sinh lop 10 hoc bo sach Ket noi tri thuc.*")
+st.sidebar.markdown("*Ứng dụng hỗ trợ học sinh lớp 10 học bộ sách Kết nối tri thức.*")
 
 if not api_ready:
-    st.sidebar.warning("Vui long cau hinh GEMINI_API_KEY trong Settings > Secrets tren Streamlit Cloud de su dung tinh nang AI.")
+    st.sidebar.warning("Vui lòng cấu hình GEMINI_API_KEY trong Settings > Secrets trên Streamlit Cloud để sử dụng tính năng AI.")
 
 try:
     df = load_data()
     
-    # === GIAO DIEN 1: TRANG CHU ===
-    if menu == "🏠 Trang chu":
+    # === GIAO DIỆN 1: TRANG CHỦ ===
+    if menu == "🏠 Trang chủ":
         col_text, col_img = st.columns([1.2, 1])
         with col_text:
             st.markdown("<br>", unsafe_allow_html=True) 
             st.markdown("""
             <div style="display: inline-block; padding: 4px 16px; background-color: #FEF08A; border-radius: 999px; font-weight: 700; font-size: 0.9rem; margin-bottom: 1rem;">
-                ✨ Chuong trinh Lop 10 Moi
+                ✨ Chương trình Lớp 10 Mới
             </div>
-            <h1 style="font-size: 3.5rem; font-weight: 800; line-height: 1.2; margin-bottom: 1rem;">Vat li quanh ta!</h1>
+            <h1 style="font-size: 3.5rem; font-weight: 800; line-height: 1.2; margin-bottom: 1rem;">Vật lí quanh ta!</h1>
             <p style="font-size: 1.2rem; color: #475569; margin-bottom: 2rem;">
-                Kham pha chuyen dong trong doi song. Quan sat hien tuong, ket noi kien thuc va tu minh tim ra loi giai.
+                Khám phá chuyển động trong đời sống. Quan sát hiện tượng, kết nối kiến thức và tự mình tìm ra lời giải.
             </p>
             """, unsafe_allow_html=True)
-            st.info("👈 **Hay chon '📚 Kham pha Hien tuong' o Menu ben trai de bat dau!**")
+            st.info("👈 **Hãy chọn '📚 Khám phá Hiện tượng' ở Menu bên trái để bắt đầu!**")
 
         with col_img:
             st.markdown("""
             <div style="border: 2px dashed #1E293B; border-radius: 1rem; padding: 2rem; background-color: white; position: relative; margin-top: 2rem; text-align: center; box-shadow: 8px 8px 0px #FEF08A;">
                 <h3 style="font-family: 'Caveat', cursive; color: #0D9488;">v = s / t</h3>
-                <p style="color: #64748b;"><i>(Khu vuc hien thi anh minh hoa)</i></p>
+                <p style="color: #64748b;"><i>(Khu vực hiển thị ảnh minh họa)</i></p>
                 <div style="font-size: 4rem;">🚴‍♂️ 💨</div>
             </div>
             """, unsafe_allow_html=True)
 
         st.markdown("<br><br><br>", unsafe_allow_html=True)
-        st.markdown("<h2 style='text-align: center; margin-bottom: 2rem;'>Em muon kham pha gi?</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; margin-bottom: 2rem;'>Em muốn khám phá gì?</h2>", unsafe_allow_html=True)
         
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.markdown("""<div class="phy-card"><div class="icon-box" style="background-color: #EFF6FF; color: #3B82F6;">📖</div><h3 style="font-size: 1.25rem;">Theo bai hoc</h3><p style="color: #64748b; font-size: 0.95rem;">On tap van toc, gia toc va do thi chuyen dong.</p></div>""", unsafe_allow_html=True)
+            st.markdown("""<div class="phy-card"><div class="icon-box" style="background-color: #EFF6FF; color: #3B82F6;">📖</div><h3 style="font-size: 1.25rem;">Theo bài học</h3><p style="color: #64748b; font-size: 0.95rem;">Ôn tập vận tốc, gia tốc và đồ thị chuyển động.</p></div>""", unsafe_allow_html=True)
         with c2:
-            st.markdown("""<div class="phy-card"><div class="icon-box" style="background-color: #FEF08A; color: #A16207;">💡</div><h3 style="font-size: 1.25rem;">Theo hien tuong</h3><p style="color: #64748b; font-size: 0.95rem;">Kham pha cac tinh huong giao thong, the thao.</p></div>""", unsafe_allow_html=True)
+            st.markdown("""<div class="phy-card"><div class="icon-box" style="background-color: #FEF08A; color: #A16207;">💡</div><h3 style="font-size: 1.25rem;">Theo hiện tượng</h3><p style="color: #64748b; font-size: 0.95rem;">Khám phá các tình huống giao thông, thể thao.</p></div>""", unsafe_allow_html=True)
         with c3:
-            st.markdown("""<div class="phy-card"><div class="icon-box" style="background-color: #CCFBF1; color: #0D9488;">🤖</div><h3 style="font-size: 1.25rem;">Hoi AI Kham pha</h3><p style="color: #64748b; font-size: 0.95rem;">Mo xe hien tuong Vat li cung tro ly ao.</p></div>""", unsafe_allow_html=True)
+            st.markdown("""<div class="phy-card"><div class="icon-box" style="background-color: #CCFBF1; color: #0D9488;">🤖</div><h3 style="font-size: 1.25rem;">Hỏi AI Khám phá</h3><p style="color: #64748b; font-size: 0.95rem;">Mổ xẻ hiện tượng Vật lí cùng trợ lý ảo.</p></div>""", unsafe_allow_html=True)
 
-    # === GIAO DIEN 2: THU VIEN HIEN TUONG ===
-    elif menu == "📚 Kham pha Hien tuong":
-        st.markdown("<h2 style='color: #0D9488;'>Thu vien Hien tuong</h2>", unsafe_allow_html=True)
+    # === GIAO DIỆN 2: THƯ VIỆN HIỆN TƯỢNG ===
+    elif menu == "📚 Khám phá Hiện tượng":
+        st.markdown("<h2 style='color: #0D9488;'>Thư viện Hiện tượng</h2>", unsafe_allow_html=True)
         
         col_loc1, col_loc2 = st.columns(2)
         with col_loc1:
             danh_sach_bai = df['Bài học liên quan'].unique()
-            bai_hoc_chon = st.selectbox("📌 Chon bai hoc:", danh_sach_bai)
+            bai_hoc_chon = st.selectbox("📌 Chọn bài học:", danh_sach_bai)
         
         df_loc = df[df['Bài học liên quan'] == bai_hoc_chon]
         with col_loc2:
-            tinh_huong_chon = st.selectbox("🔍 Chon tinh huong thuc tien:", df_loc['Tên tình huống'])
+            tinh_huong_chon = st.selectbox("🔍 Chọn tình huống thực tiễn:", df_loc['Tên tình huống'])
         st.markdown("---")
         
         ho_so = df_loc[df_loc['Tên tình huống'] == tinh_huong_chon].iloc[0]
@@ -102,31 +102,31 @@ try:
         
         col_trai, col_phai = st.columns([1.1, 1])
         with col_trai:
-            st.info(f"📍 **Boi canh:** {ho_so['Bối cảnh']}")
-            st.markdown(f"**Quan sat:** {ho_so['Mô tả quan sát']}")
+            st.info(f"📍 **Bối cảnh:** {ho_so['Bối cảnh']}")
+            st.markdown(f"**Quan sát:** {ho_so['Mô tả quan sát']}")
             
             ten_file_anh = str(ho_so['Tên file ảnh'])
             duong_dan_anh = os.path.join("images", ten_file_anh)
             if os.path.exists(duong_dan_anh):
                 st.image(duong_dan_anh, use_container_width=True)
             else:
-                st.warning(f"✍️ Dang cho net ve Sketchnote... (Ten file: {ten_file_anh})")
+                st.warning(f"✍️ Đang chờ nét vẽ Sketchnote... (Tên file: {ten_file_anh})")
                 
-            st.markdown(f"**❓ Cau hoi goi mo:** *{ho_so['Câu hỏi gợi mở']}*")
+            st.markdown(f"**❓ Câu hỏi gợi mở:** *{ho_so['Câu hỏi gợi mở']}*")
             
-            # --- AI PHAN TICH NHANH ---
+            # --- AI PHÂN TÍCH NHANH ---
             st.markdown(f"""
             <div style="background-color: #F0FDF4; padding: 15px; border-radius: 10px; border-left: 5px solid #22C55E; margin-top: 20px; margin-bottom: 10px;">
-                <h4 style="color: #15803D; margin-top: 0; display: flex; align-items: center; gap: 8px;">🤖 AI phan tich nhanh</h4>
-                <p style="font-size: 0.95em; color: #1E293B; margin-bottom: 5px;"><strong>Dua vao cau hoi:</strong> <em>"{ho_so['Câu hỏi gợi mở']}"</em></p>
-                <p style="font-size: 0.85em; color: #64748b;">Hay nhap hoac doc cau tra loi, AI se dinh huong nhe!</p>
+                <h4 style="color: #15803D; margin-top: 0; display: flex; align-items: center; gap: 8px;">🤖 AI phân tích nhanh</h4>
+                <p style="font-size: 0.95em; color: #1E293B; margin-bottom: 5px;"><strong>Dựa vào câu hỏi:</strong> <em>"{ho_so['Câu hỏi gợi mở']}"</em></p>
+                <p style="font-size: 0.85em; color: #64748b;">Hãy nhập hoặc đọc câu trả lời, AI sẽ định hướng nhé!</p>
             </div>
             """, unsafe_allow_html=True)
             
-            cau_tra_loi_hs = st.text_area("Cau tra loi cua em:", height=80, placeholder="Go cau tra loi vao day...")
+            cau_tra_loi_hs = st.text_area("Câu trả lời của em:", height=80, placeholder="Gõ câu trả lời vào đây...")
             col_btn1, col_btn2 = st.columns([1, 1])
             with col_btn1:
-                gui_ai = st.button("🚀 Gui AI phan tich", use_container_width=True)
+                gui_ai = st.button("🚀 Gửi AI phân tích", use_container_width=True)
             with col_btn2:
                 st.markdown("""
                 <script>
@@ -138,63 +138,57 @@ try:
                   }
                 }
                 </script>
-                <button onclick="startDictation()" style="width: 100%; padding: 0.5rem; background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; cursor: pointer; font-weight: bold;">🎤 Nhap bang Giong noi</button>
+                <button onclick="startDictation()" style="width: 100%; padding: 0.5rem; background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; cursor: pointer; font-weight: bold;">🎤 Nhập bằng Giọng nói</button>
                 """, unsafe_allow_html=True)
 
             if gui_ai:
                 if cau_tra_loi_hs:
-                    if api_ready:
-                        with st.spinner("AI dang suy nghi..."):
-                            prompt_ai = f"""
-                            Ban la giao vien Vat li lop 10, rat tam ly va khich le hoc sinh.
-                            Tinh huong: {ho_so['Tên tình huống']}.
-                            Cau hoi: {ho_so['Câu hỏi gợi mở']}.
-                            Loi giai dung: {ho_so['Giải thích khoa học']}.
-                            Hoc sinh tra loi: '{cau_tra_loi_hs}'.
-                            
-                            Hay nhan xet ngan gon 2-3 cau:
-                            - Neu hoc sinh noi khong biet hoac tu bo: Dong vien nhe nhang va goi y cac em xem phan 'Giai thich khoa hoc'.
-                            - Neu tra loi sai: Chinh sua nhe nhang.
-                            - Neu tra loi dung: Khen ngoi.
-                            Giong dieu than thien, goi hoc sinh la 'em'.
-                            """
-                            try:
-                                response = model.generate_content(prompt_ai)
-                                st.success(f"**🤖 AI phan tich:** {response.text}")
-                            except Exception as e:
-                                st.error(f"AI dang ban, thu lai sau nhe! (Loi: {e})")
+                    cau_tra_loi_lower = cau_tra_loi_hs.lower().strip()
+                    if any(tu_khoa in cau_tra_loi_lower for tu_khoa in ["không biết", "chưa biết", "chịu", "khó quá", "không hiểu"]):
+                         st.info("**🤖 Nhận xét nhanh:** Đừng lo lắng nhé! Em hãy đọc chậm lại phần **'Quan sát'** và đối chiếu với **'Giải thích khoa học'** để tìm ra câu trả lời nhé!")
+                    elif len(cau_tra_loi_lower) < 5:
+                         st.warning("**🤖 Nhận xét nhanh:** Câu trả lời hơi ngắn. Em hãy giải thích rõ hơn nhé.")
                     else:
-                        st.warning("Tinh nang AI chua duoc kich hoat (Thieu API Key trong mục Secrets).")
+                         if api_ready:
+                             with st.spinner("AI đang suy nghĩ..."):
+                                 prompt_ai = f"Bạn là giáo viên Vật lí lớp 10. Tình huống: {ho_so['Tên tình huống']}. Câu hỏi: {ho_so['Câu hỏi gợi mở']}. Lời giải đúng: {ho_so['Giải thích khoa học']}. Học sinh trả lời: '{cau_tra_loi_hs}'. Hãy nhận xét ngắn gọn 2-3 câu (khen ý đúng, sửa ý sai)."
+                                 try:
+                                     response = model.generate_content(prompt_ai)
+                                     st.success(f"**🤖 AI phân tích:** {response.text}")
+                                 except Exception as e:
+                                      st.error("AI đang bận, thử lại sau nhé!")
+                         else:
+                             st.success(f"**🤖 Nhận xét nhanh:** Câu trả lời '{cau_tra_loi_hs}' rất đáng ghi nhận! Hãy xem phần **'Giải thích khoa học'** để hiểu rõ hơn nhé.")
                 else:
-                    st.warning("⚠️ Hay nhap cau tra loi truoc khi gui!")
+                    st.warning("⚠️ Hãy nhập câu trả lời trước khi gửi!")
 
         with col_phai:
             with st.container():
-                st.markdown("<h3 style='color: #0D9488;'>Giai thich khoa hoc</h3>", unsafe_allow_html=True)
+                st.markdown("<h3 style='color: #0D9488;'>Giải thích khoa học</h3>", unsafe_allow_html=True)
                 st.write(ho_so['Giải thích khoa học'])
-                st.markdown("<h3 style='color: #0D9488;'>Cong thuc van dung</h3>", unsafe_allow_html=True)
+                st.markdown("<h3 style='color: #0D9488;'>Công thức vận dụng</h3>", unsafe_allow_html=True)
                 st.markdown(ho_so['Công thức'])
-                st.markdown("<h3 style='color: #0D9488;'>Vi du dinh luong</h3>", unsafe_allow_html=True)
+                st.markdown("<h3 style='color: #0D9488;'>Ví dụ định lượng</h3>", unsafe_allow_html=True)
                 st.write(ho_so['Ví dụ định lượng'])
-                st.markdown("<h3 style='color: #0D9488;'>Thu thach tuong tac</h3>", unsafe_allow_html=True)
+                st.markdown("<h3 style='color: #0D9488;'>Thử thách tương tác</h3>", unsafe_allow_html=True)
                 st.markdown(str(ho_so['Câu hỏi tương tác']).replace('\\n', '\n\n'))
-                with st.expander("💡 Bam vao day de xem Goi y / Phan hoi"):
+                with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
                     st.success(str(ho_so['Đáp án/phản hồi']).replace('\\n', '\n\n'))
                 
                 st.markdown("---")
-                st.markdown("<h4 style='color: #0D9488;'>🛠️ Hoat dong thuc hanh</h4>", unsafe_allow_html=True)
+                st.markdown("<h4 style='color: #0D9488;'>🛠️ Hoạt động thực hành</h4>", unsafe_allow_html=True)
                 st.info(ho_so['Hoạt động thực hành'])
-                st.markdown("<h4 style='color: #0D9488;'>🏷️ Tu khoa</h4>", unsafe_allow_html=True)
+                st.markdown("<h4 style='color: #0D9488;'>🏷️ Từ khóa</h4>", unsafe_allow_html=True)
                 
                 tu_khoa_list = str(ho_so['Từ khóa']).split(',')
                 html_tu_khoa = "".join([f"<span style='background-color: #E2E8F0; padding: 4px 8px; border-radius: 4px; margin-right: 5px; font-size: 0.85em;'>{tag.strip()}</span>" for tag in tu_khoa_list])
                 st.markdown(html_tu_khoa, unsafe_allow_html=True)
-                st.markdown("<br><p style='font-size: 0.8em; color: #94A3B8;'><strong>Nguon tham khao:</strong> " + str(ho_so['Nguồn tham khảo']) + "</p>", unsafe_allow_html=True)
+                st.markdown("<br><p style='font-size: 0.8em; color: #94A3B8;'><strong>Nguồn tham khảo:</strong> " + str(ho_so['Nguồn tham khảo']) + "</p>", unsafe_allow_html=True)
 
-    # === GIAO DIEN 3: AI CHAT ===
-    elif menu == "🤖 Hoi Nha kham pha AI":
-        st.markdown("<h2 style='color: #0D9488;'>Nha kham pha AI</h2>", unsafe_allow_html=True)
-        st.info("Tinh nang AI Chat dang duoc hoan thien.")
+    # === GIAO DIỆN 3: AI CHAT ===
+    elif menu == "🤖 Hỏi Nhà khám phá AI":
+        st.markdown("<h2 style='color: #0D9488;'>Nhà khám phá AI</h2>", unsafe_allow_html=True)
+        st.info("Tính năng AI Chat đang được hoàn thiện.")
 
 except Exception as e:
-    st.error(f"Co loi khi doc du lieu Excel: {e}")
+    st.error(f"Có lỗi khi đọc dữ liệu Excel: {e}")
