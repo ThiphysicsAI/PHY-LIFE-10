@@ -14,7 +14,7 @@ try:
 except Exception as e:
     api_ready = False
 
-# Nhúng CSS tùy chỉnh (Biến toàn bộ thẻ card thành một nút bấm trực quan)
+# Nhúng CSS tùy chỉnh
 st.markdown('''
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
@@ -24,7 +24,6 @@ st.markdown('''
     [data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
     .stAlert { border-radius: 1rem !important; border: none !important; }
     
-    /* Thiết kế thẻ Card có hiệu ứng chuyển động */
     .phy-card {
         background-color: white;
         padding: 2rem 1.5rem;
@@ -51,6 +50,25 @@ st.markdown('''
         display: flex; align-items: center; justify-content: center;
         font-size: 28px; margin-bottom: 15px;
     }
+    
+    /* Style cho Sơ đồ chuỗi tư duy */
+    .node-box {
+        background-color: #ffffff;
+        border: 2px solid #0D9488;
+        padding: 12px 20px;
+        border-radius: 12px;
+        text-align: center;
+        font-weight: 600;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        color: #1E293B;
+    }
+    .arrow-box {
+        text-align: center;
+        font-size: 24px;
+        color: #0D9488;
+        font-weight: bold;
+        padding: 5px 0;
+    }
 </style>
 ''', unsafe_allow_html=True)
 
@@ -61,14 +79,13 @@ def load_data():
     return df
 
 # 3. ĐIỀU HƯỚNG TRANG THÔNG MINH
-# Khởi tạo trạng thái điều hướng nếu chưa có
 if "nav_page" not in st.session_state:
     st.session_state.nav_page = "🏠 Trang chủ"
 
 st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE 10</h2>", unsafe_allow_html=True)
 
-# Đồng bộ menu sidebar với trạng thái hệ thống
-selected_menu = st.sidebar.radio("CHUYÊN MỤC", ["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🤖 Hỏi Nhà khám phá AI"], index=["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🤖 Hỏi Nhà khám phá AI"].index(st.session_state.nav_page))
+menu_list = ["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🕸️ Bản đồ Kết nối", "🤖 Hỏi Nhà khám phá AI"]
+selected_menu = st.sidebar.radio("CHUYÊN MỤC", menu_list, index=menu_list.index(st.session_state.nav_page) if st.session_state.nav_page in menu_list else 0)
 
 if selected_menu != st.session_state.nav_page:
     st.session_state.nav_page = selected_menu
@@ -97,7 +114,7 @@ try:
                 Khám phá chuyển động trong đời sống. Quan sát hiện tượng, kết nối kiến thức và tự mình tìm ra lời giải.
             </p>
             ''', unsafe_allow_html=True)
-            st.info("👈 **Hãy chọn các mục ở Menu bên trái hoặc bấm trực tiếp vào các thẻ bên dưới để bắt đầu!**")
+            st.info("👈 **Hãy chọn các chuyên mục ở Menu bên trái hoặc bấm trực tiếp vào các thẻ bên dưới!**")
 
         with col_img:
             st.markdown('''
@@ -111,55 +128,43 @@ try:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         st.markdown("<h2 style='text-align: center; margin-bottom: 2rem;'>Em muốn khám phá gì?</h2>", unsafe_allow_html=True)
         
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3, c4 = st.columns(4)
         with c1:
-            st.markdown('''
-            <div class="phy-card">
-                <div class="icon-box" style="background-color: #EFF6FF; color: #3B82F6;">📖</div>
-                <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Theo bài học</h3>
-                <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 0;">Ôn tập vận tốc, gia tốc và đồ thị chuyển động.</p>
-            </div>
-            ''', unsafe_allow_html=True)
-            if st.button("👉 Khám phá ngay", use_container_width=True, key="card_btn_1"):
+            st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #EFF6FF; color: #3B82F6;">📖</div><h3 style="font-size: 1.1rem; margin-bottom: 8px;">Theo bài học</h3><p style="color: #64748b; font-size: 0.85rem; margin-bottom: 0;">Ôn tập vận tốc, gia tốc.</p></div>''', unsafe_allow_html=True)
+            if st.button("👉 Khám phá", use_container_width=True, key="card_btn_1"):
                 st.session_state.nav_page = "📚 Khám phá Hiện tượng"
                 st.rerun()
                 
         with c2:
-            st.markdown('''
-            <div class="phy-card">
-                <div class="icon-box" style="background-color: #FEF08A; color: #A16207;">💡</div>
-                <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Theo hiện tượng</h3>
-                <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 0;">Khám phá các tình huống giao thông, thể thao.</p>
-            </div>
-            ''', unsafe_allow_html=True)
-            if st.button("👉 Khám phá ngay", use_container_width=True, key="card_btn_2"):
+            st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #FEF08A; color: #A16207;">💡</div><h3 style="font-size: 1.1rem; margin-bottom: 8px;">Theo hiện tượng</h3><p style="color: #64748b; font-size: 0.85rem; margin-bottom: 0;">Tình huống thực tiễn.</p></div>''', unsafe_allow_html=True)
+            if st.button("👉 Khám phá", use_container_width=True, key="card_btn_2"):
                 st.session_state.nav_page = "📚 Khám phá Hiện tượng"
                 st.rerun()
                 
         with c3:
-            st.markdown('''
-            <div class="phy-card">
-                <div class="icon-box" style="background-color: #CCFBF1; color: #0D9488;">🤖</div>
-                <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Hỏi AI Khám phá</h3>
-                <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 0;">Mổ xẻ hiện tượng Vật lí cùng trợ lý ảo.</p>
-            </div>
-            ''', unsafe_allow_html=True)
-            if st.button("👉 Khám phá ngay", use_container_width=True, key="card_btn_3"):
+            st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #E0F2FE; color: #0284C7;">🕸️</div><h3 style="font-size: 1.1rem; margin-bottom: 8px;">Bản đồ Kết nối</h3><p style="color: #64748b; font-size: 0.85rem; margin-bottom: 0;">Mạng lưới tư duy trực quan.</p></div>''', unsafe_allow_html=True)
+            if st.button("👉 Xem sơ đồ", use_container_width=True, key="card_btn_net"):
+                st.session_state.nav_page = "🕸️ Bản đồ Kết nối"
+                st.rerun()
+
+        with c4:
+            st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #CCFBF1; color: #0D9488;">🤖</div><h3 style="font-size: 1.1rem; margin-bottom: 8px;">Hỏi AI Khám phá</h3><p style="color: #64748b; font-size: 0.85rem; margin-bottom: 0;">Trợ lý ảo thông minh.</p></div>''', unsafe_allow_html=True)
+            if st.button("👉 Hỏi AI", use_container_width=True, key="card_btn_3"):
                 st.session_state.nav_page = "🤖 Hỏi Nhà khám phá AI"
                 st.rerun()
 
     # === GIAO DIỆN 2: THƯ VIỆN HIỆN TƯỢNG ===
     elif st.session_state.nav_page == "📚 Khám phá Hiện tượng":
-        st.markdown("<h2 style='color: #0D9488;'>Thư viện Hiện tượng</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #0D9488;'>Thư viện Hiện tượng thực tiễn</h2>", unsafe_allow_html=True)
         
         col_loc1, col_loc2 = st.columns(2)
         with col_loc1:
             danh_sach_bai = df['Bài học liên quan'].unique()
-            bai_hoc_chon = st.selectbox("📌 Chọn bài học:", danh_sach_bai)
+            bai_hoc_chon = st.selectbox("📌 Chiều 1: Từ Sách giáo khoa (Bài học) đến Hiện tượng:", danh_sach_bai)
         
         df_loc = df[df['Bài học liên quan'] == bai_hoc_chon]
         with col_loc2:
-            tinh_huong_chon = st.selectbox("🔍 Chọn tình huống thực tiễn:", df_loc['Tên tình huống'])
+            tinh_huong_chon = st.selectbox("🔍 Chiều 2: Chọn tình huống thực tiễn để xem kiến thức:", df_loc['Tên tình huống'])
         st.markdown("---")
         
         if "current_scenario" not in st.session_state:
@@ -326,7 +331,88 @@ try:
                 </div>
                 ''', unsafe_allow_html=True)
 
-    # === GIAO DIỆN 3: AI CHAT (CHỨC NĂNG NHÀ KHÁM PHÁ VẬT LÍ) ===
+    # === GIAO DIỆN MỚI: BẢN ĐỒ KẾT NỐI KHÁI NIỆM & HIỆN TƯỢNG ===
+    elif st.session_state.nav_page == "🕸️ Bản đồ Kết nối":
+        st.markdown("<h2 style='color: #0D9488;'>🕸️ Bản đồ Kết nối Tư duy Động học</h2>", unsafe_allow_html=True)
+        st.markdown("Hệ thống sơ đồ chuỗi trực quan giúp em liên kết từ **Khái niệm Vật lí** sang **Hiện tượng thực tiễn** và ngược lại. Nhấp vào các nút bên dưới để khám phá chi tiết.")
+        st.markdown("---")
+
+        # Chọn chủ đề chuỗi tư duy
+        chuoi_tu_duy = st.selectbox("Chọn chuỗi hiện tượng cần phân tích:", [
+            "1. Gia tốc → Xe tăng tốc tại ngã tư → Vận tốc theo thời gian → Đồ thị → Bài toán định lượng",
+            "2. Quãng đường & Độ dịch chuyển → Chạy bộ 5km vòng quanh hồ → So sánh s và Δx",
+            "3. Rơi tự do → Thả rơi chùm chìa khóa → Đo thời gian → Tính độ cao",
+            "4. Chuyển động ném ngang → Trực thăng thả hàng cứu trợ → Quỹ đạo Parabol → Tầm xa"
+        ])
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Hiển thị sơ đồ dạng chuỗi tư duy trực quan (Chain Graph)
+        col1, col2, col3, col4, col5 = st.columns(5)
+        
+        if "1. Gia tốc" in chuoi_tu_duy:
+            nodes = [
+                ("Khái niệm: Gia tốc (a)", "Đại lượng đặc trưng cho sự thay đổi nhanh chậm của vận tốc theo thời gian."),
+                ("Hiện tượng: Xe tăng tốc", "Xe máy hoặc ô tô vọt đi ngay khi đèn giao thông chuyển sang màu xanh."),
+                ("Đại lượng đo đạc", "Đo độ biến thiên vận tốc Δv trong khoảng thời gian Δt."),
+                ("Mô hình & Đồ thị", "Sử dụng đồ thị vận tốc - thời gian (v-t) hoặc phương trình chuyển động thẳng biến đổi đều."),
+                ("Bài toán vận dụng", "Tính quãng đường phanh, thời gian đạt vận tốc tối đa và ứng dụng an toàn giao thông.")
+            ]
+        elif "2. Quãng đường" in chuoi_tu_duy:
+            nodes = [
+                ("Khái niệm: s và Δx", "Phân biệt tổng chiều dài quỹ đạo (s) và vectơ nối đầu-cuối (Δx)."),
+                ("Hiện tượng: Chạy bộ 5km", "Học sinh chạy trọn vẹn một vòng quanh hồ hoặc sân vận động về vạch xuất phát."),
+                ("Đại lượng đo đạc", "Sử dụng thiết bị định vị GPS (Garmin, Strava) ghi nhận lộ trình."),
+                ("Mô hình & Đồ thị", "Hệ tọa độ không gian, xác định vị trí ban đầu x1 và vị trí cuối x2."),
+                ("Bài toán vận dụng", "Giải thích vì sao tốn sức chạy 5km nhưng độ dịch chuyển tổng cộng lại bằng 0.")
+            ]
+        elif "3. Rơi tự do" in chuoi_tu_duy:
+            nodes = [
+                ("Khái niệm: Rơi tự do", "Chuyển động chỉ dưới tác dụng của trọng lực, v0 = 0, gia tốc g."),
+                ("Hiện tượng: Rơi chìa khóa", "Sự cố lỡ tay làm rơi chùm chìa khóa từ hành lang tầng cao xuống mặt đất."),
+                ("Đại lượng đo đạc", "Sử dụng đồng hồ bấm giờ (stopwatch) đo thời gian rơi t từ lúc buông."),
+                ("Mô hình & Đồ thị", "Phương trình rơi tự do: h = 1/2 * g * t^2, bỏ qua lực cản không khí."),
+                ("Bài toán vận dụng", "Tính ngược lại độ cao của tầng nhà hoặc độ sâu của giếng nước.")
+            ]
+        else:
+            nodes = [
+                ("Khái niệm: Ném ngang", "Tổng hợp độc lập chuyển động thẳng đều ngang và rơi tự do đứng."),
+                ("Hiện tượng: Thả hàng cứu trợ", "Trực thăng bay ngang thả thùng hàng xuống vùng ngập lụt miền Trung."),
+                ("Đại lượng đo đạc", "Độ cao bay h, vận tốc ngang của máy bay v0 và tầm xa L."),
+                ("Mô hình & Đồ thị", "Quỹ đạo hình parabol y = (g / 2v0^2) * x^2."),
+                ("Bài toán vận dụng", "Xác định thời điểm cắt dây thả hàng chính xác để trúng mục tiêu.")
+            ]
+
+        # Vẽ sơ đồ chuỗi các nút
+        with col1:
+            st.markdown(f"<div class='node-box'><b>Bước 1</b><br>{nodes[0][0]}</div>", unsafe_allow_html=True)
+            with st.expander("Xem chi tiết"):
+                st.write(nodes[0][1])
+        with col2:
+            st.markdown("<div class='arrow-box'>➔</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='node-box'><b>Bước 2</b><br>{nodes[1][0]}</div>", unsafe_allow_html=True)
+            with st.expander("Xem chi tiết"):
+                st.write(nodes[1][1])
+        with col3:
+            st.markdown("<div class='arrow-box'>➔</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='node-box'><b>Bước 3</b><br>{nodes[2][0]}</div>", unsafe_allow_html=True)
+            with st.expander("Xem chi tiết"):
+                st.write(nodes[2][1])
+        with col4:
+            st.markdown("<div class='arrow-box'>➔</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='node-box'><b>Bước 4</b><br>{nodes[3][0]}</div>", unsafe_allow_html=True)
+            with st.expander("Xem chi tiết"):
+                st.write(nodes[3][1])
+        with col5:
+            st.markdown("<div class='arrow-box'>➔</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='node-box'><b>Bước 5</b><br>{nodes[4][0]}</div>", unsafe_allow_html=True)
+            with st.expander("Xem chi tiết"):
+                st.write(nodes[4][1])
+
+        st.markdown("<br><hr>", unsafe_allow_html=True)
+        st.info("💡 **Gợi ý sư phạm:** Sơ đồ mạng lưới này giúp học sinh có cái nhìn toàn diện (System Thinking). Các em có thể đi từ lý thuyết trong SGK ra đời sống, hoặc từ một hiện tượng thực tế truy ngược lại công thức toán học cần dùng.")
+
+    # === GIAO DIỆN 4: AI CHAT (NHÀ KHÁM PHÁ VẬT LÍ) ===
     elif st.session_state.nav_page == "🤖 Hỏi Nhà khám phá AI":
         st.markdown("<h2 style='color: #0D9488;'>🤖 Nhà khám phá AI</h2>", unsafe_allow_html=True)
         st.markdown("Chào em! Cô là Nhà khám phá Vật lí. Em có hiện tượng gì thú vị muốn kể cho cô nghe, nhập một khái niệm muốn tìm hiểu, hay muốn thử sức với bài tập vận dụng nào?")
@@ -358,7 +444,7 @@ try:
                         Bạn là "Nhà khám phá Vật lí", một chuyên gia sư phạm Vật lí hỗ trợ học sinh lớp 10 (chương Động học).
                         Dựa vào câu hỏi của học sinh, bạn PHẢI thực hiện linh hoạt 1 trong 5 chức năng sau:
                         
-                        1. Giải thích hiện tượng: Nếu học sinh mô tả hiện tượng, hãy nhận diện, gắn với kiến thức Động học lớp 10. Chỉ ra dữ kiện đã biết/còn thiếu, nêu công thức, phân biệt sự thật khoa học/ giả thiết, đề xuất câu hỏi khám phá tiếp theo.
+                        1. Giải thích hiện tượng: Nếu học sinh mô tả hiện tượng, hãy nhận diện, gắn với kiến thức Động học lớp 10. Chỉ ra dữ kiện đã biết/còn thiếu, nêu công thức, phân biệt sự thật khoa học/giả thiết, đề xuất câu hỏi khám phá tiếp theo.
                         2. Tìm hiện tượng theo kiến thức: Nếu học sinh nhập khái niệm (VD: gia tốc, rơi tự do), hãy đề xuất danh sách các hiện tượng đa dạng kèm bối cảnh thực tiễn, đánh giá mức độ liên quan và giải thích ngắn.
                         3. Phân tích tình huống mới: Nếu là tình huống lạ, hãy làm rõ tình huống -> xác định đại lượng đo được -> chọn mô hình vật lí -> giải thích bản chất -> cho ví dụ định lượng -> tạo câu hỏi vận dụng. LUÔN thêm câu: "Lưu ý: Nội dung AI sinh ra cần được xác thực và kiểm chứng thực tế."
                         4. Học bằng câu hỏi gợi mở: Tuyệt đối KHÔNG đưa đáp án ngay lập tức cho các bài toán hay câu hỏi suy luận. Đặt câu hỏi gợi mở từng bước để học sinh tự suy luận. Cung cấp gợi ý tăng dần khi học sinh gặp khó khăn.
