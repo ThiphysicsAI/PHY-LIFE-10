@@ -14,7 +14,7 @@ try:
 except Exception as e:
     api_ready = False
 
-# Nhúng CSS tùy chỉnh
+# Nhúng CSS tùy chỉnh (Biến toàn bộ thẻ card thành một nút bấm trực quan)
 st.markdown('''
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
@@ -23,9 +23,34 @@ st.markdown('''
     h1, h2, h3, h4, h5, h6, p, span, div { color: #1E293B; }
     [data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
     .stAlert { border-radius: 1rem !important; border: none !important; }
-    .phy-card { background-color: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s; margin-bottom: 10px;}
-    .phy-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #0D9488; }
-    .icon-box { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 15px; }
+    
+    /* Thiết kế thẻ Card có hiệu ứng chuyển động */
+    .phy-card {
+        background-color: white;
+        padding: 2rem 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+        height: 100%;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .phy-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        border-color: #0D9488;
+        background-color: #F0FDFA;
+    }
+    .icon-box {
+        width: 60px; height: 60px; 
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 28px; margin-bottom: 15px;
+    }
 </style>
 ''', unsafe_allow_html=True)
 
@@ -35,14 +60,20 @@ def load_data():
     df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx')
     return df
 
-# 3. ĐIỀU HƯỚNG TRANG (CÓ LIÊN KẾT)
-# Khởi tạo trạng thái menu nếu chưa có
-if "menu_option" not in st.session_state:
-    st.session_state.menu_option = "🏠 Trang chủ"
+# 3. ĐIỀU HƯỚNG TRANG THÔNG MINH
+# Khởi tạo trạng thái điều hướng nếu chưa có
+if "nav_page" not in st.session_state:
+    st.session_state.nav_page = "🏠 Trang chủ"
 
 st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE 10</h2>", unsafe_allow_html=True)
-# Liên kết radio button với biến trạng thái st.session_state.menu_option
-menu = st.sidebar.radio("CHUYÊN MỤC", ["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🤖 Hỏi Nhà khám phá AI"], key="menu_option")
+
+# Đồng bộ menu sidebar với trạng thái hệ thống
+selected_menu = st.sidebar.radio("CHUYÊN MỤC", ["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🤖 Hỏi Nhà khám phá AI"], index=["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🤖 Hỏi Nhà khám phá AI"].index(st.session_state.nav_page))
+
+if selected_menu != st.session_state.nav_page:
+    st.session_state.nav_page = selected_menu
+    st.rerun()
+
 st.sidebar.markdown("---")
 st.sidebar.markdown("*Ứng dụng hỗ trợ học sinh lớp 10 học bộ sách Kết nối tri thức.*")
 
@@ -53,7 +84,7 @@ try:
     df = load_data()
     
     # === GIAO DIỆN 1: TRANG CHỦ ===
-    if menu == "🏠 Trang chủ":
+    if st.session_state.nav_page == "🏠 Trang chủ":
         col_text, col_img = st.columns([1.2, 1])
         with col_text:
             st.markdown("<br>", unsafe_allow_html=True) 
@@ -66,7 +97,7 @@ try:
                 Khám phá chuyển động trong đời sống. Quan sát hiện tượng, kết nối kiến thức và tự mình tìm ra lời giải.
             </p>
             ''', unsafe_allow_html=True)
-            st.info("👈 **Hãy chọn '📚 Khám phá Hiện tượng' ở Menu bên trái để bắt đầu!**")
+            st.info("👈 **Hãy chọn các mục ở Menu bên trái hoặc bấm trực tiếp vào các thẻ bên dưới để bắt đầu!**")
 
         with col_img:
             st.markdown('''
@@ -82,28 +113,43 @@ try:
         
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #EFF6FF; color: #3B82F6;">📖</div><h3 style="font-size: 1.25rem;">Theo bài học</h3><p style="color: #64748b; font-size: 0.95rem;">Ôn tập vận tốc, gia tốc và đồ thị chuyển động.</p></div>''', unsafe_allow_html=True)
-            # Nút bấm chuyển hướng
-            if st.button("Đi tới bài học ➡️", use_container_width=True, key="btn_baihoc"):
-                st.session_state.menu_option = "📚 Khám phá Hiện tượng"
+            st.markdown('''
+            <div class="phy-card">
+                <div class="icon-box" style="background-color: #EFF6FF; color: #3B82F6;">📖</div>
+                <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Theo bài học</h3>
+                <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 0;">Ôn tập vận tốc, gia tốc và đồ thị chuyển động.</p>
+            </div>
+            ''', unsafe_allow_html=True)
+            if st.button("👉 Khám phá ngay", use_container_width=True, key="card_btn_1"):
+                st.session_state.nav_page = "📚 Khám phá Hiện tượng"
                 st.rerun()
                 
         with c2:
-            st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #FEF08A; color: #A16207;">💡</div><h3 style="font-size: 1.25rem;">Theo hiện tượng</h3><p style="color: #64748b; font-size: 0.95rem;">Khám phá các tình huống giao thông, thể thao.</p></div>''', unsafe_allow_html=True)
-            # Nút bấm chuyển hướng
-            if st.button("Xem hiện tượng ➡️", use_container_width=True, key="btn_hientuong"):
-                st.session_state.menu_option = "📚 Khám phá Hiện tượng"
+            st.markdown('''
+            <div class="phy-card">
+                <div class="icon-box" style="background-color: #FEF08A; color: #A16207;">💡</div>
+                <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Theo hiện tượng</h3>
+                <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 0;">Khám phá các tình huống giao thông, thể thao.</p>
+            </div>
+            ''', unsafe_allow_html=True)
+            if st.button("👉 Khám phá ngay", use_container_width=True, key="card_btn_2"):
+                st.session_state.nav_page = "📚 Khám phá Hiện tượng"
                 st.rerun()
                 
         with c3:
-            st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #CCFBF1; color: #0D9488;">🤖</div><h3 style="font-size: 1.25rem;">Hỏi AI Khám phá</h3><p style="color: #64748b; font-size: 0.95rem;">Mổ xẻ hiện tượng Vật lí cùng trợ lý ảo.</p></div>''', unsafe_allow_html=True)
-            # Nút bấm chuyển hướng
-            if st.button("Hỏi AI ngay ➡️", use_container_width=True, key="btn_ai"):
-                st.session_state.menu_option = "🤖 Hỏi Nhà khám phá AI"
+            st.markdown('''
+            <div class="phy-card">
+                <div class="icon-box" style="background-color: #CCFBF1; color: #0D9488;">🤖</div>
+                <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Hỏi AI Khám phá</h3>
+                <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 0;">Mổ xẻ hiện tượng Vật lí cùng trợ lý ảo.</p>
+            </div>
+            ''', unsafe_allow_html=True)
+            if st.button("👉 Khám phá ngay", use_container_width=True, key="card_btn_3"):
+                st.session_state.nav_page = "🤖 Hỏi Nhà khám phá AI"
                 st.rerun()
 
     # === GIAO DIỆN 2: THƯ VIỆN HIỆN TƯỢNG ===
-    elif menu == "📚 Khám phá Hiện tượng":
+    elif st.session_state.nav_page == "📚 Khám phá Hiện tượng":
         st.markdown("<h2 style='color: #0D9488;'>Thư viện Hiện tượng</h2>", unsafe_allow_html=True)
         
         col_loc1, col_loc2 = st.columns(2)
@@ -281,7 +327,7 @@ try:
                 ''', unsafe_allow_html=True)
 
     # === GIAO DIỆN 3: AI CHAT (CHỨC NĂNG NHÀ KHÁM PHÁ VẬT LÍ) ===
-    elif menu == "🤖 Hỏi Nhà khám phá AI":
+    elif st.session_state.nav_page == "🤖 Hỏi Nhà khám phá AI":
         st.markdown("<h2 style='color: #0D9488;'>🤖 Nhà khám phá AI</h2>", unsafe_allow_html=True)
         st.markdown("Chào em! Cô là Nhà khám phá Vật lí. Em có hiện tượng gì thú vị muốn kể cho cô nghe, nhập một khái niệm muốn tìm hiểu, hay muốn thử sức với bài tập vận dụng nào?")
 
@@ -312,7 +358,7 @@ try:
                         Bạn là "Nhà khám phá Vật lí", một chuyên gia sư phạm Vật lí hỗ trợ học sinh lớp 10 (chương Động học).
                         Dựa vào câu hỏi của học sinh, bạn PHẢI thực hiện linh hoạt 1 trong 5 chức năng sau:
                         
-                        1. Giải thích hiện tượng: Nếu học sinh mô tả hiện tượng, hãy nhận diện, gắn với kiến thức Động học lớp 10. Chỉ ra dữ kiện đã biết/còn thiếu, nêu công thức, phân biệt sự thật khoa học/giả thiết, đề xuất câu hỏi khám phá tiếp theo.
+                        1. Giải thích hiện tượng: Nếu học sinh mô tả hiện tượng, hãy nhận diện, gắn với kiến thức Động học lớp 10. Chỉ ra dữ kiện đã biết/còn thiếu, nêu công thức, phân biệt sự thật khoa học/ giả thiết, đề xuất câu hỏi khám phá tiếp theo.
                         2. Tìm hiện tượng theo kiến thức: Nếu học sinh nhập khái niệm (VD: gia tốc, rơi tự do), hãy đề xuất danh sách các hiện tượng đa dạng kèm bối cảnh thực tiễn, đánh giá mức độ liên quan và giải thích ngắn.
                         3. Phân tích tình huống mới: Nếu là tình huống lạ, hãy làm rõ tình huống -> xác định đại lượng đo được -> chọn mô hình vật lí -> giải thích bản chất -> cho ví dụ định lượng -> tạo câu hỏi vận dụng. LUÔN thêm câu: "Lưu ý: Nội dung AI sinh ra cần được xác thực và kiểm chứng thực tế."
                         4. Học bằng câu hỏi gợi mở: Tuyệt đối KHÔNG đưa đáp án ngay lập tức cho các bài toán hay câu hỏi suy luận. Đặt câu hỏi gợi mở từng bước để học sinh tự suy luận. Cung cấp gợi ý tăng dần khi học sinh gặp khó khăn.
