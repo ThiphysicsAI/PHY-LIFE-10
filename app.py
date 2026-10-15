@@ -14,7 +14,7 @@ try:
 except Exception as e:
     api_ready = False
 
-# Nhúng CSS tùy chỉnh
+# Nhúng CSS tùy chỉnh cho Game hóa (Gamification)
 st.markdown('''
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
@@ -51,23 +51,15 @@ st.markdown('''
         font-size: 28px; margin-bottom: 15px;
     }
     
-    /* Style cho Sơ đồ chuỗi tư duy */
-    .node-box {
-        background-color: #ffffff;
-        border: 2px solid #0D9488;
-        padding: 12px 20px;
-        border-radius: 12px;
+    /* Giao diện Thẻ trạm game */
+    .game-station {
+        background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 16px;
         text-align: center;
-        font-weight: 600;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-        color: #1E293B;
-    }
-    .arrow-box {
-        text-align: center;
-        font-size: 24px;
-        color: #0D9488;
-        font-weight: bold;
-        padding: 5px 0;
+        box-shadow: 0 10px 15px -3px rgba(13, 148, 136, 0.3);
+        margin-bottom: 20px;
     }
 </style>
 ''', unsafe_allow_html=True)
@@ -84,7 +76,7 @@ if "nav_page" not in st.session_state:
 
 st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE 10</h2>", unsafe_allow_html=True)
 
-menu_list = ["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🕸️ Bản đồ Kết nối", "🤖 Hỏi Nhà khám phá AI"]
+menu_list = ["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🎮 Bản đồ Thử thách (Game)", "🤖 Hỏi Nhà khám phá AI"]
 selected_menu = st.sidebar.radio("CHUYÊN MỤC", menu_list, index=menu_list.index(st.session_state.nav_page) if st.session_state.nav_page in menu_list else 0)
 
 if selected_menu != st.session_state.nav_page:
@@ -142,9 +134,9 @@ try:
                 st.rerun()
                 
         with c3:
-            st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #E0F2FE; color: #0284C7;">🕸️</div><h3 style="font-size: 1.1rem; margin-bottom: 8px;">Bản đồ Kết nối</h3><p style="color: #64748b; font-size: 0.85rem; margin-bottom: 0;">Mạng lưới tư duy trực quan.</p></div>''', unsafe_allow_html=True)
-            if st.button("👉 Xem sơ đồ", use_container_width=True, key="card_btn_net"):
-                st.session_state.nav_page = "🕸️ Bản đồ Kết nối"
+            st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #E0F2FE; color: #0284C7;">🎮</div><h3 style="font-size: 1.1rem; margin-bottom: 8px;">Bản đồ Thử thách</h3><p style="color: #64748b; font-size: 0.85rem; margin-bottom: 0;">Vượt ải nhận điểm thưởng.</p></div>''', unsafe_allow_html=True)
+            if st.button("👉 Vào chơi Game", use_container_width=True, key="card_btn_game"):
+                st.session_state.nav_page = "🎮 Bản đồ Thử thách (Game)"
                 st.rerun()
 
         with c4:
@@ -331,86 +323,84 @@ try:
                 </div>
                 ''', unsafe_allow_html=True)
 
-    # === GIAO DIỆN MỚI: BẢN ĐỒ KẾT NỐI KHÁI NIỆM & HIỆN TƯỢNG ===
-    elif st.session_state.nav_page == "🕸️ Bản đồ Kết nối":
-        st.markdown("<h2 style='color: #0D9488;'>🕸️ Bản đồ Kết nối Tư duy Động học</h2>", unsafe_allow_html=True)
-        st.markdown("Hệ thống sơ đồ chuỗi trực quan giúp em liên kết từ **Khái niệm Vật lí** sang **Hiện tượng thực tiễn** và ngược lại. Nhấp vào các nút bên dưới để khám phá chi tiết.")
+    # === GIAO DIỆN MỚI: BẢN ĐỒ THỬ THÁCH (MINI-GAME VƯỢT ẢI) ===
+    elif st.session_state.nav_page == "🎮 Bản đồ Thử thách (Game)":
+        st.markdown("<h2 style='color: #0D9488;'>🎮 Trạm Thử Thách Động Học - Vượt Ải Nhận Điểm Thưởng</h2>", unsafe_allow_html=True)
+        st.markdown("Hành trình chinh phục Vật lí lớp 10 qua 4 thử thách tương tác: Trắc nghiệm, Ghép nối khái niệm, Điền khuyết công thức và Xử lý tình huống thực tế.")
         st.markdown("---")
 
-        # Chọn chủ đề chuỗi tư duy
-        chuoi_tu_duy = st.selectbox("Chọn chuỗi hiện tượng cần phân tích:", [
-            "1. Gia tốc → Xe tăng tốc tại ngã tư → Vận tốc theo thời gian → Đồ thị → Bài toán định lượng",
-            "2. Quãng đường & Độ dịch chuyển → Chạy bộ 5km vòng quanh hồ → So sánh s và Δx",
-            "3. Rơi tự do → Thả rơi chùm chìa khóa → Đo thời gian → Tính độ cao",
-            "4. Chuyển động ném ngang → Trực thăng thả hàng cứu trợ → Quỹ đạo Parabol → Tầm xa"
-        ])
+        # Khởi tạo điểm số trong game
+        if "game_score" not in st.session_state:
+            st.session_state.game_score = 0
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        # Chia các trạm thử thách thành các tab (Tabs)
+        tab1, tab2, tab3, tab4 = st.tabs(["🎯 Thử thách 1: Trắc nghiệm nhanh", "🔗 Thử thách 2: Ghép nối hiện tượng", "✍️ Thử thách 3: Điền khuyết công thức", "🚀 Thử thách 4: Giải quyết tình huống"])
 
-        # Hiển thị sơ đồ dạng chuỗi tư duy trực quan (Chain Graph)
-        col1, col2, col3, col4, col5 = st.columns(5)
-        
-        if "1. Gia tốc" in chuoi_tu_duy:
-            nodes = [
-                ("Khái niệm: Gia tốc (a)", "Đại lượng đặc trưng cho sự thay đổi nhanh chậm của vận tốc theo thời gian."),
-                ("Hiện tượng: Xe tăng tốc", "Xe máy hoặc ô tô vọt đi ngay khi đèn giao thông chuyển sang màu xanh."),
-                ("Đại lượng đo đạc", "Đo độ biến thiên vận tốc Δv trong khoảng thời gian Δt."),
-                ("Mô hình & Đồ thị", "Sử dụng đồ thị vận tốc - thời gian (v-t) hoặc phương trình chuyển động thẳng biến đổi đều."),
-                ("Bài toán vận dụng", "Tính quãng đường phanh, thời gian đạt vận tốc tối đa và ứng dụng an toàn giao thông.")
-            ]
-        elif "2. Quãng đường" in chuoi_tu_duy:
-            nodes = [
-                ("Khái niệm: s và Δx", "Phân biệt tổng chiều dài quỹ đạo (s) và vectơ nối đầu-cuối (Δx)."),
-                ("Hiện tượng: Chạy bộ 5km", "Học sinh chạy trọn vẹn một vòng quanh hồ hoặc sân vận động về vạch xuất phát."),
-                ("Đại lượng đo đạc", "Sử dụng thiết bị định vị GPS (Garmin, Strava) ghi nhận lộ trình."),
-                ("Mô hình & Đồ thị", "Hệ tọa độ không gian, xác định vị trí ban đầu x1 và vị trí cuối x2."),
-                ("Bài toán vận dụng", "Giải thích vì sao tốn sức chạy 5km nhưng độ dịch chuyển tổng cộng lại bằng 0.")
-            ]
-        elif "3. Rơi tự do" in chuoi_tu_duy:
-            nodes = [
-                ("Khái niệm: Rơi tự do", "Chuyển động chỉ dưới tác dụng của trọng lực, v0 = 0, gia tốc g."),
-                ("Hiện tượng: Rơi chìa khóa", "Sự cố lỡ tay làm rơi chùm chìa khóa từ hành lang tầng cao xuống mặt đất."),
-                ("Đại lượng đo đạc", "Sử dụng đồng hồ bấm giờ (stopwatch) đo thời gian rơi t từ lúc buông."),
-                ("Mô hình & Đồ thị", "Phương trình rơi tự do: h = 1/2 * g * t^2, bỏ qua lực cản không khí."),
-                ("Bài toán vận dụng", "Tính ngược lại độ cao của tầng nhà hoặc độ sâu của giếng nước.")
-            ]
-        else:
-            nodes = [
-                ("Khái niệm: Ném ngang", "Tổng hợp độc lập chuyển động thẳng đều ngang và rơi tự do đứng."),
-                ("Hiện tượng: Thả hàng cứu trợ", "Trực thăng bay ngang thả thùng hàng xuống vùng ngập lụt miền Trung."),
-                ("Đại lượng đo đạc", "Độ cao bay h, vận tốc ngang của máy bay v0 và tầm xa L."),
-                ("Mô hình & Đồ thị", "Quỹ đạo hình parabol y = (g / 2v0^2) * x^2."),
-                ("Bài toán vận dụng", "Xác định thời điểm cắt dây thả hàng chính xác để trúng mục tiêu.")
-            ]
+        with tab1:
+            st.markdown("<div class='game-station'><h3>Trạm 1: Phản xạ nhanh cùng Gia tốc & Vận tốc</h3></div>", unsafe_allow_html=True)
+            
+            q1 = st.radio("Câu hỏi 1: Khi một chiếc xe máy đang đứng yên bắt đầu tăng tốc độ chuyển động trên đường, vectơ gia tốc của xe có hướng như thế nào so với vectơ vận tốc?", 
+                          ["A. Hướng ngược chiều với vận tốc.", "B. Hướng cùng chiều với vận tốc.", "C. Vuông góc với phương chuyển động.", "D. Bằng không vì xe chưa chạy ổn định."])
+            
+            if st.button("Kiểm tra đáp án Trạm 1", key="check_q1"):
+                if "B." in q1:
+                    st.success("🎉 Chính xác! Trong chuyển động nhanh dần đều (tăng tốc), gia tốc và vận tốc luôn cùng chiều.")
+                    st.session_state.game_score += 10
+                else:
+                    st.error("❌ Chưa chính xác. Em hãy nhớ lại: Tăng tốc nghĩa là gia tốc thúc đẩy vận tốc tăng lên, nên chúng phải cùng chiều nhé!")
 
-        # Vẽ sơ đồ chuỗi các nút
-        with col1:
-            st.markdown(f"<div class='node-box'><b>Bước 1</b><br>{nodes[0][0]}</div>", unsafe_allow_html=True)
-            with st.expander("Xem chi tiết"):
-                st.write(nodes[0][1])
-        with col2:
-            st.markdown("<div class='arrow-box'>➔</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='node-box'><b>Bước 2</b><br>{nodes[1][0]}</div>", unsafe_allow_html=True)
-            with st.expander("Xem chi tiết"):
-                st.write(nodes[1][1])
-        with col3:
-            st.markdown("<div class='arrow-box'>➔</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='node-box'><b>Bước 3</b><br>{nodes[2][0]}</div>", unsafe_allow_html=True)
-            with st.expander("Xem chi tiết"):
-                st.write(nodes[2][1])
-        with col4:
-            st.markdown("<div class='arrow-box'>➔</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='node-box'><b>Bước 4</b><br>{nodes[3][0]}</div>", unsafe_allow_html=True)
-            with st.expander("Xem chi tiết"):
-                st.write(nodes[3][1])
-        with col5:
-            st.markdown("<div class='arrow-box'>➔</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='node-box'><b>Bước 5</b><br>{nodes[4][0]}</div>", unsafe_allow_html=True)
-            with st.expander("Xem chi tiết"):
-                st.write(nodes[4][1])
+        with tab2:
+            st.markdown("<div class='game-station'><h3>Trạm 2: Ghép nối Hiện tượng với Loại chuyển động</h3></div>", unsafe_allow_html=True)
+            
+            col_g1, col_g2 = st.columns(2)
+            with col_g1:
+                hien_tuong = st.selectbox("Chọn hiện tượng thực tiễn:", ["Trực thăng thả hàng cứu trợ mùa lũ", "Chùm chìa khóa rơi từ hành lang tầng 3", "Xe máy bóp phanh gấp trước ngã tư"])
+            with col_g2:
+                loai_cd = st.selectbox("Ghép với loại chuyển động tương ứng:", ["Chuyển động chậm dần đều", "Chuyển động rơi tự do", "Chuyển động ném ngang"])
+
+            if st.button("Xác nhận ghép nối", key="check_q2"):
+                if (hien_tuong.startswith("Trực thăng") and loai_cd.endswith("ném ngang")) or \
+                   (hien_tuong.startswith("Chùm chìa") and loai_cd.endswith("rơi tự do")) or \
+                   (hien_tuong.startswith("Xe máy") and loai_cd.startswith("Chuyển động chậm")):
+                    st.success("🏆 Ghép đôi hoàn hảo! Em đã hiểu sâu sắc bản chất chuyển động.")
+                    st.session_state.game_score += 15
+                else:
+                    st.error("❌ Chưa đúng rồi. Em hãy đọc lại mô hình vật lí của từng hiện tượng nhé!")
+
+        with tab3:
+            st.markdown("<div class='game-station'><h3>Trạm 3: Thử thách Điền khuyết Công thức Động học</h3></div>", unsafe_allow_html=True)
+            
+            st.markdown("Điền biểu thức đúng cho công thức tính quãng đường trong chuyển động thẳng nhanh dần đều (với $v_0 = 0$):")
+            dap_an_dien = st.text_input("Nhập công thức của em (ví dụ: 0.5*a*t**2 hoặc 1/2*a*t^2):")
+            
+            if st.button("Nộp bài Trạm 3", key="check_q3"):
+                if "0.5*a*t" in dap_an_dien or "1/2" in dap_an_dien or "0.5 * a" in dap_an_dien:
+                    st.success("⭐ Tuyệt vời! Công thức $s = \frac{1}{2}at^2$ hoàn toàn chính xác.")
+                    st.session_state.game_score += 15
+                else:
+                    st.error("❌ Chưa đúng. Công thức đầy đủ là s bằng một nửa gia tốc nhân với bình phương thời gian.")
+
+        with tab4:
+            st.markdown("<div class='game-station'><h3>Trạm 4: Thách thức Pháp y Giao thông (Tình huống mới)</h3></div>", unsafe_allow_html=True)
+            st.write("Một ô tô để lại vết trượt bánh dài 20m trên mặt đường trước khi dừng hẳn. Biết gia tốc hãm phanh của xe là $a = -5 m/s^2$. Em hãy tính vận tốc ban đầu của xe trước khi phanh bằng cách nhập số vào ô dưới:")
+            
+            v_input = st.number_input("Nhập vận tốc tính được (đơn vị m/s):", min_value=0.0, step=1.0)
+            if st.button("Phá giải vụ án", key="check_q4"):
+                # Công thức: v^2 - v0^2 = 2as => 0 - v0^2 = 2*(-5)*20 => v0^2 = 200 => v0 = sqrt(200) ≈ 14.14 m/s
+                if 13.5 <= v_input <= 14.5:
+                    st.success("🕵️‍♂️ Xuất sắc! Em đã vận dụng công thức độc lập thời gian $v^2 - v_0^2 = 2as$ để phá án chính xác tuyệt đối (vận tốc xấp xỉ 14.14 m/s hay ~51 km/h).")
+                    st.session_state.game_score += 20
+                else:
+                    st.error("❌ Chưa chính xác. Gợi ý công thức: $v^2 - v_0^2 = 2as$ (với $v = 0$, $s = 20$, $a = -5$). Em hãy tính lại nhé!")
 
         st.markdown("<br><hr>", unsafe_allow_html=True)
-        st.info("💡 **Gợi ý sư phạm:** Sơ đồ mạng lưới này giúp học sinh có cái nhìn toàn diện (System Thinking). Các em có thể đi từ lý thuyết trong SGK ra đời sống, hoặc từ một hiện tượng thực tế truy ngược lại công thức toán học cần dùng.")
+        col_sc1, col_sc2 = st.columns([2, 1])
+        with col_sc1:
+            st.info(f"🏆 **Tổng điểm thành tích tích lũy của em:** **{st.session_state.game_score} Điểm**")
+        with col_sc2:
+            if st.button("🔄 Chơi lại từ đầu", use_container_width=True):
+                st.session_state.game_score = 0
+                st.rerun()
 
     # === GIAO DIỆN 4: AI CHAT (NHÀ KHÁM PHÁ VẬT LÍ) ===
     elif st.session_state.nav_page == "🤖 Hỏi Nhà khám phá AI":
