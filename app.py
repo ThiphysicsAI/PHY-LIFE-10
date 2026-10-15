@@ -269,11 +269,50 @@ try:
                 st.markdown("<br><p style='font-size: 0.8em; color: #94A3B8;'><strong>Nguồn tham khảo:</strong> " + str(ho_so['Nguồn tham khảo']) + "</p>", unsafe_allow_html=True)
 
     # ==========================================
-    # GIAO DIỆN 3: AI CHAT (Sẽ phát triển sau)
+    # GIAO DIỆN 3: AI CHAT
     # ==========================================
     elif menu == "🤖 Hỏi Nhà khám phá AI":
-        st.markdown("<h2 style='color: #0D9488;'>Nhà khám phá AI</h2>", unsafe_allow_html=True)
-        st.info("Tính năng trò chuyện tương tác trực tiếp với mô hình Gemini AI đang được lắp ráp và sẽ sớm ra mắt. Em hãy quay lại sau nhé!")
+        st.markdown("<h2 style='color: #0D9488;'>🤖 Hỏi Nhà khám phá AI</h2>", unsafe_allow_html=True)
+        st.info("Chào em! Cô là Nhà khám phá Vật lí. Em muốn hỏi điều gì về các hiện tượng chuyển động quanh ta?")
+
+        # Khởi tạo bộ nhớ tạm để lưu lịch sử cuộc trò chuyện
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+
+        # Hiển thị lại các tin nhắn cũ mỗi khi tải trang
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+
+        # Ô nhập liệu chat của học sinh
+        if prompt := st.chat_input("Nhập câu hỏi của em (VD: Tại sao xe đang chạy phanh lại thì chúi người tới trước?)..."):
+            
+            # Hiển thị câu hỏi của học sinh lên màn hình
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            # Gọi Gemini API xử lý
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty()
+                try:
+                    # Gắn System Prompt ngầm để AI luôn đóng vai giáo viên Vật lí 10
+                    system_prompt = """
+                    Bạn là chuyên gia sư phạm Vật lí, đóng vai trò hướng dẫn học sinh lớp 10 học sách Kết nối tri thức. 
+                    Nguyên tắc: Giải thích ngắn gọn, dễ hiểu, luôn liên hệ với thực tiễn đời sống. 
+                    Không giải bài tập hộ mà dùng câu hỏi gợi mở để học sinh tự suy nghĩ. 
+                    Học sinh vừa hỏi: 
+                    """
+                    full_prompt = system_prompt + prompt
+                    
+                    # Lấy luồng phản hồi từ AI
+                    response = model.generate_content(full_prompt)
+                    
+                    # Hiển thị kết quả
+                    message_placeholder.markdown(response.text)
+                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                except Exception as e:
+                    message_placeholder.error(f"Hệ thống AI đang bận hoặc chưa kết nối. Chi tiết lỗi: {e}")
 
 except Exception as e:
     st.error(f"Có lỗi khi đọc dữ liệu Excel: {e}")
