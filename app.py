@@ -3,16 +3,16 @@ import pandas as pd
 import os
 import google.generativeai as genai
 
+# 1. CẤU HÌNH TRANG WEB & MÀU SẮC TÙY CHỈNH
+st.set_page_config(page_title="PHY-LIFE 10", page_icon="🚀", layout="wide", initial_sidebar_state="expanded")
+
 # CẤU HÌNH GEMINI API TỪ STREAMLIT SECRETS
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Sử dụng mô hình flash để có tốc độ phản hồi nhanh nhất cho học sinh
     model = genai.GenerativeModel('gemini-1.5-flash')
+    api_ready = True
 except Exception as e:
-    st.warning("Vui lòng cấu hình GEMINI_API_KEY trong Streamlit Secrets để sử dụng tính năng AI.")
-
-# 1. CẤU HÌNH TRANG WEB & MÀU SẮC TÙY CHỈNH
-st.set_page_config(page_title="PHY-LIFE 10", page_icon="🚀", layout="wide", initial_sidebar_state="expanded")
+    api_ready = False
 
 # Nhúng CSS tùy chỉnh để giống bản Wireframe (Sử dụng màu Cream, Navy, Turquoise, font Quicksand)
 st.markdown("""
@@ -82,6 +82,9 @@ st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE
 menu = st.sidebar.radio("CHUYÊN MỤC", ["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🤖 Hỏi Nhà khám phá AI"])
 st.sidebar.markdown("---")
 st.sidebar.markdown("*Ứng dụng hỗ trợ học sinh lớp 10 học bộ sách Kết nối tri thức.*")
+
+if not api_ready:
+    st.sidebar.warning("Vui lòng cấu hình GEMINI_API_KEY trong Settings > Secrets trên Streamlit Cloud để sử dụng tính năng AI.")
 
 try:
     df = load_data()
@@ -173,6 +176,7 @@ try:
             st.info(f"📍 **Bối cảnh:** {ho_so['Bối cảnh']}")
             st.markdown(f"**Quan sát:** {ho_so['Mô tả quan sát']}")
             
+            # SỬ DỤNG ĐÚNG TÊN CỘT TỪ EXCEL: 'Tên file ảnh'
             ten_file_anh = str(ho_so['Tên file ảnh'])
             duong_dan_anh = os.path.join("images", ten_file_anh)
             
@@ -183,7 +187,7 @@ try:
                 
             st.markdown(f"**❓ Câu hỏi gợi mở:** *{ho_so['Câu hỏi gợi mở']}*")
             
-            # --- CẬP NHẬT: AI ĐỊNH HƯỚNG THEO CÂU HỎI GỢI MỞ ---
+            # --- CẬP NHẬT: AI ĐỊNH HƯỚNG THEO CÂU HỎI GỢI MỞ SỬ DỤNG GEMINI API ---
             st.markdown(f"""
             <div style="background-color: #F0FDF4; padding: 15px; border-radius: 10px; border-left: 5px solid #22C55E; margin-top: 20px; margin-bottom: 10px;">
                 <h4 style="color: #15803D; margin-top: 0; display: flex; align-items: center; gap: 8px;">
@@ -231,8 +235,37 @@ try:
 
             if gui_ai:
                 if cau_tra_loi_hs:
-                    # Giả lập phản hồi nhanh, trực diện
-                    st.success(f"**🤖 Nhận xét nhanh:** Câu trả lời '{cau_tra_loi_hs}' của em rất có ý! Em đã nắm được một phần bản chất. Để biết câu trả lời chính xác và đầy đủ nhất cho câu hỏi trên, em hãy xem ngay phần **'Giải thích khoa học'** bên phải nhé!")
+                    cau_tra_loi_lower = cau_tra_loi_hs.lower().strip()
+                    
+                    # 1. BỘ LỌC CỨNG (Fallback nhanh gọn)
+                    if any(tu_khoa in cau_tra_loi_lower for tu_khoa in ["không biết", "chưa biết", "chịu", "khó quá", "không hiểu"]):
+                         st.info(f"**🤖 Nhận xét nhanh:** Đừng lo lắng nhé! Vật lí đôi khi cần một chút gợi ý. Em hãy đọc chậm lại phần **'Quan sát'** và đối chiếu với **'Giải thích khoa học'** bên phải, em sẽ tìm ra câu trả lời ngay thôi!")
+                    elif len(cau_tra_loi_lower) < 5:
+                         st.warning(f"**🤖 Nhận xét nhanh:** Câu trả lời của em hơi ngắn. Em có thể giải thích rõ hơn một chút được không? Hoặc em xem thử phần **'Giải thích khoa học'** để có thêm ý tưởng nhé.")
+                    else:
+                         # 2. XỬ LÝ BẰNG GEMINI API NẾU ĐÃ CẤU HÌNH
+                         if api_ready:
+                             with st.spinner("AI đang suy nghĩ..."):
+                                 prompt_ai = f"""
+                                 Bạn là giáo viên Vật lí lớp 10, rất tâm lý và khích lệ học sinh.
+                                 Học sinh đang học về tình huống: {ho_so['Tên tình huống']}.
+                                 Câu hỏi đặt ra: {ho_so['Câu hỏi gợi mở']}
+                                 Lời giải đúng theo lý thuyết: {ho_so['Giải thích khoa học']}
+                                 Câu trả lời của học sinh: "{cau_tra_loi_hs}"
+                                 
+                                 Hãy phân tích câu trả lời của học sinh ngắn gọn trong 2-3 câu:
+                                 - Nếu sai hoặc hiểu lầm: Nhẹ nhàng chỉnh sửa và hướng học sinh xem lại kiến thức.
+                                 - Nếu có ý đúng: Khen ngợi và bổ sung cho hoàn chỉnh.
+                                 Không giải bài tập hộ, ngôn ngữ thân thiện (gọi học sinh là "em", xưng "AI" hoặc "cô").
+                                 """
+                                 try:
+                                     response = model.generate_content(prompt_ai)
+                                     st.success(f"**🤖 AI phân tích:** {response.text}")
+                                 except Exception as e:
+                                      st.error("AI đang bận, em hãy thử lại sau nhé!")
+                         else:
+                             # Dự phòng nếu API Key chưa được cài đặt
+                             st.success(f"**🤖 Nhận xét nhanh:** Câu trả lời '{cau_tra_loi_hs}' của em rất đáng ghi nhận! Để biết phân tích chi tiết, em hãy xem phần **'Giải thích khoa học'** bên phải nhé!")
                 else:
                     st.warning("⚠️ Em hãy nhập câu trả lời trước khi gửi nhé!")
 
@@ -248,6 +281,7 @@ try:
                 st.write(ho_so['Ví dụ định lượng'])
                 
                 st.markdown("<h3 style='color: #0D9488;'>Thử thách tương tác</h3>", unsafe_allow_html=True)
+                # Thay thế ký tự xuống dòng
                 st.markdown(str(ho_so['Câu hỏi tương tác']).replace('\\n', '\n\n'))
                 
                 with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
@@ -269,50 +303,11 @@ try:
                 st.markdown("<br><p style='font-size: 0.8em; color: #94A3B8;'><strong>Nguồn tham khảo:</strong> " + str(ho_so['Nguồn tham khảo']) + "</p>", unsafe_allow_html=True)
 
     # ==========================================
-    # GIAO DIỆN 3: AI CHAT
+    # GIAO DIỆN 3: AI CHAT (Sẽ phát triển sau)
     # ==========================================
     elif menu == "🤖 Hỏi Nhà khám phá AI":
-        st.markdown("<h2 style='color: #0D9488;'>🤖 Hỏi Nhà khám phá AI</h2>", unsafe_allow_html=True)
-        st.info("Chào em! Cô là Nhà khám phá Vật lí. Em muốn hỏi điều gì về các hiện tượng chuyển động quanh ta?")
-
-        # Khởi tạo bộ nhớ tạm để lưu lịch sử cuộc trò chuyện
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
-
-        # Hiển thị lại các tin nhắn cũ mỗi khi tải trang
-        for msg in st.session_state.messages:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
-
-        # Ô nhập liệu chat của học sinh
-        if prompt := st.chat_input("Nhập câu hỏi của em (VD: Tại sao xe đang chạy phanh lại thì chúi người tới trước?)..."):
-            
-            # Hiển thị câu hỏi của học sinh lên màn hình
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-
-            # Gọi Gemini API xử lý
-            with st.chat_message("assistant"):
-                message_placeholder = st.empty()
-                try:
-                    # Gắn System Prompt ngầm để AI luôn đóng vai giáo viên Vật lí 10
-                    system_prompt = """
-                    Bạn là chuyên gia sư phạm Vật lí, đóng vai trò hướng dẫn học sinh lớp 10 học sách Kết nối tri thức. 
-                    Nguyên tắc: Giải thích ngắn gọn, dễ hiểu, luôn liên hệ với thực tiễn đời sống. 
-                    Không giải bài tập hộ mà dùng câu hỏi gợi mở để học sinh tự suy nghĩ. 
-                    Học sinh vừa hỏi: 
-                    """
-                    full_prompt = system_prompt + prompt
-                    
-                    # Lấy luồng phản hồi từ AI
-                    response = model.generate_content(full_prompt)
-                    
-                    # Hiển thị kết quả
-                    message_placeholder.markdown(response.text)
-                    st.session_state.messages.append({"role": "assistant", "content": response.text})
-                except Exception as e:
-                    message_placeholder.error(f"Hệ thống AI đang bận hoặc chưa kết nối. Chi tiết lỗi: {e}")
+        st.markdown("<h2 style='color: #0D9488;'>Nhà khám phá AI</h2>", unsafe_allow_html=True)
+        st.info("Tính năng trò chuyện tương tác trực tiếp với mô hình Gemini AI đang được lắp ráp và sẽ sớm ra mắt. Em hãy quay lại sau nhé!")
 
 except Exception as e:
     st.error(f"Có lỗi khi đọc dữ liệu Excel: {e}")
