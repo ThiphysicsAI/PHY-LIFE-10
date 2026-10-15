@@ -128,18 +128,70 @@ try:
             with col_btn1:
                 gui_ai = st.button("🚀 Gửi AI phân tích", use_container_width=True)
             with col_btn2:
-                st.markdown("""
+                # Sử dụng components.html để chạy script an toàn và truyền dữ liệu ngược về Streamlit
+                import streamlit.components.v1 as components
+                components.html("""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                <style>
+                .btn {
+                    width: 100%; padding: 0.5rem; background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; cursor: pointer; font-weight: 600; font-family: 'Quicksand', sans-serif; color: #334155; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; font-size: 1rem; transition: background-color 0.3s;
+                }
+                .btn:hover { background-color: #e2e8f0; }
+                </style>
+                </head>
+                <body style="margin: 0; overflow: hidden;">
+                <button class="btn" onclick="startDictation()">🎤 Nhập bằng Giọng nói</button>
                 <script>
                 function startDictation() {
-                  if (window.hasOwnProperty('webkitSpeechRecognition')) {
-                    var recognition = new webkitSpeechRecognition();
-                    recognition.lang = "vi-VN"; recognition.start();
-                    recognition.onresult = function(e) { document.querySelector('textarea').value = e.results[0][0].transcript; recognition.stop(); };
+                  if (window.hasOwnProperty('webkitSpeechRecognition') || window.hasOwnProperty('SpeechRecognition')) {
+                    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    var recognition = new SpeechRecognition();
+                    recognition.lang = "vi-VN";
+                    recognition.start();
+                    
+                    // Hiệu ứng đổi màu nút khi đang nghe
+                    var btn = document.querySelector('.btn');
+                    btn.innerHTML = "🔴 Đang nghe... (Hãy nói đi)";
+                    btn.style.backgroundColor = "#fee2e2";
+                    btn.style.color = "#991b1b";
+                    btn.style.borderColor = "#fca5a5";
+                    
+                    recognition.onresult = function(e) {
+                        var text = e.results[0][0].transcript;
+                        // Tìm ô nhập liệu của Streamlit ở khung hình bên ngoài
+                        var textarea = window.parent.document.querySelector('textarea');
+                        if(textarea) {
+                            // "Hack" React để nó nhận diện được chữ vừa điền
+                            var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.parent.HTMLTextAreaElement.prototype, "value").set;
+                            nativeInputValueSetter.call(textarea, text);
+                            var ev2 = new Event('input', { bubbles: true});
+                            textarea.dispatchEvent(ev2);
+                        }
+                        // Trả lại nút như cũ
+                        btn.innerHTML = "🎤 Nhập bằng Giọng nói";
+                        btn.style.backgroundColor = "#f1f5f9";
+                        btn.style.color = "#334155";
+                        btn.style.borderColor = "#cbd5e1";
+                        recognition.stop();
+                    };
+                    recognition.onerror = function(e) {
+                        btn.innerHTML = "🎤 Nhập bằng Giọng nói";
+                        btn.style.backgroundColor = "#f1f5f9";
+                        btn.style.color = "#334155";
+                        btn.style.borderColor = "#cbd5e1";
+                        recognition.stop();
+                        alert("Không nghe rõ hoặc chưa cấp quyền Micro. Vui lòng thử lại!");
+                    }
+                  } else {
+                    alert("Trình duyệt của bạn không hỗ trợ tính năng này. Hãy dùng Google Chrome nhé!");
                   }
                 }
                 </script>
-                <button onclick="startDictation()" style="width: 100%; padding: 0.5rem; background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; cursor: pointer; font-weight: bold;">🎤 Nhập bằng Giọng nói</button>
-                """, unsafe_allow_html=True)
+                </body>
+                </html>
+                """, height=45)
 
             if gui_ai:
                 if cau_tra_loi_hs:
