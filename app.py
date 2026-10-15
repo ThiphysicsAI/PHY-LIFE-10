@@ -64,7 +64,7 @@ st.markdown("""
 # 2. ĐỌC DỮ LIỆU TỪ EXCEL
 @st.cache_data
 def load_data():
-    # Đọc tự động sheet đầu tiên, không lo bị lỗi "not found"
+    # Đọc tự động sheet đầu tiên
     df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx')
     return df
 
@@ -81,11 +81,10 @@ try:
     # GIAO DIỆN 1: TRANG CHỦ (Theo Wireframe)
     # ==========================================
     if menu == "🏠 Trang chủ":
-        # KHU VỰC CHÀO MỪNG (Hero Section)
         col_text, col_img = st.columns([1.2, 1])
         
         with col_text:
-            st.markdown("<br>", unsafe_allow_html=True) # Khoảng trắng
+            st.markdown("<br>", unsafe_allow_html=True) 
             st.markdown("""
             <div style="display: inline-block; padding: 4px 16px; background-color: #FEF08A; border-radius: 999px; font-weight: 700; font-size: 0.9rem; margin-bottom: 1rem;">
                 ✨ Chương trình Lớp 10 Mới
@@ -96,11 +95,9 @@ try:
             </p>
             """, unsafe_allow_html=True)
             
-            # Nút bấm chuyển hướng (Trong Streamlit để chuyển trang mượt ta hướng dẫn người dùng bấm Sidebar)
             st.info("👈 **Hãy chọn '📚 Khám phá Hiện tượng' ở Menu bên trái để bắt đầu!**")
 
         with col_img:
-            # Mô phỏng ô Sketchnote trong bản thiết kế
             st.markdown("""
             <div style="border: 2px dashed #1E293B; border-radius: 1rem; padding: 2rem; background-color: white; position: relative; margin-top: 2rem; text-align: center; box-shadow: 8px 8px 0px #FEF08A;">
                 <h3 style="font-family: 'Caveat', cursive; color: #0D9488;">v = s / t</h3>
@@ -111,7 +108,6 @@ try:
 
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         
-        # KHU VỰC THẺ TÍNH NĂNG (Feature Cards)
         st.markdown("<h2 style='text-align: center; margin-bottom: 2rem;'>Em muốn khám phá gì?</h2>", unsafe_allow_html=True)
         
         c1, c2, c3 = st.columns(3)
@@ -146,7 +142,6 @@ try:
     elif menu == "📚 Khám phá Hiện tượng":
         st.markdown("<h2 style='color: #0D9488;'>Thư viện Hiện tượng</h2>", unsafe_allow_html=True)
         
-        # Bộ lọc
         col_loc1, col_loc2 = st.columns(2)
         with col_loc1:
             danh_sach_bai = df['Bài học liên quan'].unique()
@@ -159,10 +154,8 @@ try:
         
         st.markdown("---")
         
-        # Lấy dữ liệu hồ sơ
         ho_so = df_loc[df_loc['Tên tình huống'] == tinh_huong_chon].iloc[0]
         
-        # Tiêu đề tình huống
         st.markdown(f"<h1 style='font-size: 2.2rem; margin-bottom: 1rem;'>{ho_so['Tên tình huống']}</h1>", unsafe_allow_html=True)
         
         col_trai, col_phai = st.columns([1.1, 1])
@@ -171,7 +164,7 @@ try:
             st.info(f"📍 **Bối cảnh:** {ho_so['Bối cảnh']}")
             st.markdown(f"**Quan sát:** {ho_so['Mô tả quan sát']}")
             
-            # Xử lý hiển thị ảnh
+            # SỬ DỤNG ĐÚNG TÊN CỘT TỪ EXCEL: 'Tên file ảnh'
             ten_file_anh = str(ho_so['Tên file ảnh'])
             duong_dan_anh = os.path.join("images", ten_file_anh)
             
@@ -188,27 +181,24 @@ try:
                 st.write(ho_so['Giải thích khoa học'])
                 
                 st.markdown("<h3 style='color: #0D9488;'>Công thức vận dụng</h3>", unsafe_allow_html=True)
-                # ĐÃ SỬA LỖI LA-TEX: Dùng st.markdown để nhận dạng chữ tiếng Việt và công thức xen kẽ
                 st.markdown(ho_so['Công thức'])
                 
                 st.markdown("<h3 style='color: #0D9488;'>Ví dụ định lượng</h3>", unsafe_allow_html=True)
                 st.write(ho_so['Ví dụ định lượng'])
                 
                 st.markdown("<h3 style='color: #0D9488;'>Thử thách tương tác</h3>", unsafe_allow_html=True)
-# Thay thế chuỗi \n từ Excel bằng ký tự ngắt dòng của Markdown (\n\n)
-st.markdown(str(ho_so['Câu hỏi tương tác']).replace('\\n', '\n\n'))
+                # Thay thế ký tự xuống dòng
+                st.markdown(str(ho_so['Câu hỏi tương tác']).replace('\\n', '\n\n'))
+                
+                with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
+                    st.success(str(ho_so['Đáp án/phản hồi']).replace('\\n', '\n\n'))
 
-with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
-    st.success(str(ho_so['Đáp án/phản hồi']).replace('\\n', '\n\n'))
     # ==========================================
-    # GIAO DIỆN 3: AI CHAT (Sẽ phát triển sau)
+    # GIAO DIỆN 3: AI CHAT
     # ==========================================
-   
     elif menu == "🤖 Hỏi Nhà khám phá AI":
         st.markdown("<h2 style='color: #0D9488;'>Nhà khám phá AI</h2>", unsafe_allow_html=True)
         st.info("Tính năng trò chuyện tương tác trực tiếp với mô hình Gemini AI đang được lắp ráp và sẽ sớm ra mắt. Em hãy quay lại sau nhé!")
 
 except Exception as e:
     st.error(f"Có lỗi khi đọc dữ liệu Excel: {e}")
-    st.write("Vui lòng kiểm tra lại file 'du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx' trên GitHub.")
-
