@@ -234,3 +234,43 @@ try:
                     st.success(st.session_state.ai_response)
 
         with col_phai:
+            # KIỂM TRA ĐIỀU KIỆN MỞ KHÓA
+            if st.session_state.da_tra_loi:
+                with st.container():
+                    st.markdown("<h3 style='color: #0D9488;'>Giải thích khoa học</h3>", unsafe_allow_html=True)
+                    st.write(ho_so['Giải thích khoa học'])
+                    st.markdown("<h3 style='color: #0D9488;'>Công thức vận dụng</h3>", unsafe_allow_html=True)
+                    st.markdown(ho_so['Công thức'])
+                    st.markdown("<h3 style='color: #0D9488;'>Ví dụ định lượng</h3>", unsafe_allow_html=True)
+                    st.write(ho_so['Ví dụ định lượng'])
+                    st.markdown("<h3 style='color: #0D9488;'>Thử thách tương tác</h3>", unsafe_allow_html=True)
+                    st.markdown(str(ho_so['Câu hỏi tương tác']).replace('\\n', '\n\n'))
+                    with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
+                        st.success(str(ho_so['Đáp án/phản hồi']).replace('\\n', '\n\n'))
+                    
+                    st.markdown("---")
+                    st.markdown("<h4 style='color: #0D9488;'>🛠️ Hoạt động thực hành</h4>", unsafe_allow_html=True)
+                    st.info(ho_so['Hoạt động thực hành'])
+                    st.markdown("<h4 style='color: #0D9488;'>🏷️ Từ khóa</h4>", unsafe_allow_html=True)
+                    
+                    tu_khoa_list = str(ho_so['Từ khóa']).split(',')
+                    html_tu_khoa = "".join([f"<span style='background-color: #E2E8F0; padding: 4px 8px; border-radius: 4px; margin-right: 5px; font-size: 0.85em;'>{tag.strip()}</span>" for tag in tu_khoa_list])
+                    st.markdown(html_tu_khoa, unsafe_allow_html=True)
+                    st.markdown("<br><p style='font-size: 0.8em; color: #94A3B8;'><strong>Nguồn tham khảo:</strong> " + str(ho_so['Nguồn tham khảo']) + "</p>", unsafe_allow_html=True)
+            else:
+                # GIAO DIỆN Ổ KHÓA KHI CHƯA TRẢ LỜI
+                st.markdown('''
+                <div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 40px 20px; text-align: center; margin-top: 20px;">
+                    <div style="font-size: 3.5rem; margin-bottom: 15px;">🔒</div>
+                    <h3 style="color: #64748b; margin-top: 0;">Nội dung đang khóa</h3>
+                    <p style="color: #94a3b8; font-size: 1.05em; max-width: 90%; margin: 0 auto;">Em hãy suy nghĩ và <strong>Gửi AI phân tích</strong> câu trả lời ở cột bên trái để mở khóa phần Giải thích khoa học, Công thức và Ví dụ nhé!</p>
+                </div>
+                ''', unsafe_allow_html=True)
+
+    # === GIAO DIỆN 3: AI CHAT ===
+    elif menu == "🤖 Hỏi Nhà khám phá AI":
+        st.markdown("<h2 style='color: #0D9488;'>Nhà khám phá AI</h2>", unsafe_allow_html=True)
+        st.info("Tính năng AI Chat đang được hoàn thiện.")
+
+except Exception as e:
+    st.error(f"Có lỗi khi đọc dữ liệu Excel: {e}")
