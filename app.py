@@ -26,6 +26,8 @@ st.markdown('''
     .phy-card { background-color: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s; height: 100%; }
     .phy-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #0D9488; }
     .icon-box { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 15px; }
+    /* Định dạng tin nhắn Chat */
+    .stChatMessage { border-radius: 10px; padding: 10px; margin-bottom: 10px; }
 </style>
 ''', unsafe_allow_html=True)
 
@@ -97,13 +99,11 @@ try:
             tinh_huong_chon = st.selectbox("🔍 Chọn tình huống thực tiễn:", df_loc['Tên tình huống'])
         st.markdown("---")
         
-        # --- QUẢN LÝ TRẠNG THÁI MỞ KHÓA ---
         if "current_scenario" not in st.session_state:
             st.session_state.current_scenario = tinh_huong_chon
             st.session_state.da_tra_loi = False
             st.session_state.ai_response = ""
         elif st.session_state.current_scenario != tinh_huong_chon:
-            # Nếu học sinh chọn sang tình huống khác, reset lại ổ khóa và câu trả lời AI
             st.session_state.current_scenario = tinh_huong_chon
             st.session_state.da_tra_loi = False
             st.session_state.ai_response = ""
@@ -195,10 +195,9 @@ try:
                 </html>
                 ''', height=45)
 
-            # Xử lý khi bấm nút Gửi
             if gui_ai:
                 if cau_tra_loi_hs:
-                    st.session_state.da_tra_loi = True # Mở khóa cột bên phải
+                    st.session_state.da_tra_loi = True
                     if api_ready:
                         with st.spinner("AI đang suy nghĩ..."):
                             prompt_ai = f'''
@@ -226,7 +225,6 @@ try:
                 else:
                     st.warning("⚠️ Hãy nhập câu trả lời trước khi gửi!")
 
-            # Hiển thị nhận xét của AI (Giữ cố định trên màn hình sau khi trả lời)
             if st.session_state.da_tra_loi and st.session_state.ai_response:
                 if "❌" in st.session_state.ai_response or "⚠️" in st.session_state.ai_response:
                     st.error(st.session_state.ai_response)
@@ -234,7 +232,6 @@ try:
                     st.success(st.session_state.ai_response)
 
         with col_phai:
-            # KIỂM TRA ĐIỀU KIỆN MỞ KHÓA
             if st.session_state.da_tra_loi:
                 with st.container():
                     st.markdown("<h3 style='color: #0D9488;'>Giải thích khoa học</h3>", unsafe_allow_html=True)
@@ -258,7 +255,6 @@ try:
                     st.markdown(html_tu_khoa, unsafe_allow_html=True)
                     st.markdown("<br><p style='font-size: 0.8em; color: #94A3B8;'><strong>Nguồn tham khảo:</strong> " + str(ho_so['Nguồn tham khảo']) + "</p>", unsafe_allow_html=True)
             else:
-                # GIAO DIỆN Ổ KHÓA KHI CHƯA TRẢ LỜI
                 st.markdown('''
                 <div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 40px 20px; text-align: center; margin-top: 20px;">
                     <div style="font-size: 3.5rem; margin-bottom: 15px;">🔒</div>
@@ -267,10 +263,72 @@ try:
                 </div>
                 ''', unsafe_allow_html=True)
 
-    # === GIAO DIỆN 3: AI CHAT ===
+    # === GIAO DIỆN 3: AI CHAT (CHỨC NĂNG NHÀ KHÁM PHÁ VẬT LÍ) ===
     elif menu == "🤖 Hỏi Nhà khám phá AI":
-        st.markdown("<h2 style='color: #0D9488;'>Nhà khám phá AI</h2>", unsafe_allow_html=True)
-        st.info("Tính năng AI Chat đang được hoàn thiện.")
+        st.markdown("<h2 style='color: #0D9488;'>🤖 Nhà khám phá AI</h2>", unsafe_allow_html=True)
+        st.markdown("Chào em! Cô là Nhà khám phá Vật lí. Em có hiện tượng gì thú vị muốn kể cho cô nghe, nhập một khái niệm muốn tìm hiểu, hay muốn thử sức với bài tập vận dụng nào?")
+
+        if not api_ready:
+            st.warning("⚠️ Tính năng AI chưa được kích hoạt. Vui lòng kiểm tra lại GEMINI_API_KEY trong Secrets.")
+        else:
+            # Khởi tạo lịch sử chat trong session_state
+            if "chat_messages" not in st.session_state:
+                st.session_state.chat_messages = []
+
+            # Khung hiển thị lịch sử trò chuyện
+            for msg in st.session_state.chat_messages:
+                with st.chat_message(msg["role"]):
+                    st.markdown(msg["content"])
+
+            # Ô nhập liệu chat của học sinh
+            if prompt := st.chat_input("Nhập câu hỏi, hiện tượng hoặc khái niệm em muốn khám phá..."):
+                
+                # Lưu và hiển thị tin nhắn của học sinh
+                st.session_state.chat_messages.append({"role": "user", "content": prompt})
+                with st.chat_message("user"):
+                    st.markdown(prompt)
+
+                # AI xử lý và phản hồi
+                with st.chat_message("assistant"):
+                    with st.spinner("Cô đang phân tích..."):
+                        
+                        # Trích xuất 4 tin nhắn gần nhất để AI hiểu ngữ cảnh cuộc trò chuyện
+                        history_context = ""
+                        for msg in st.session_state.chat_messages[-5:-1]:
+                            role_name = "Học sinh" if msg["role"] == "user" else "Cô giáo"
+                            history_context += f"{role_name}: {msg['content']}\n"
+                            
+                        # Đóng gói System Prompt với 5 CHỨC NĂNG SƯ PHẠM yêu cầu
+                        sys_prompt = f'''
+                        [HƯỚNG DẪN CHO AI]
+                        Bạn là "Nhà khám phá Vật lí", một chuyên gia sư phạm Vật lí hỗ trợ học sinh lớp 10 (chương Động học).
+                        Dựa vào câu hỏi của học sinh, bạn PHẢI thực hiện linh hoạt 1 trong 5 chức năng sau:
+                        
+                        1. Giải thích hiện tượng: Nếu học sinh mô tả hiện tượng, hãy nhận diện, gắn với kiến thức Động học lớp 10. Chỉ ra dữ kiện đã biết/còn thiếu, nêu công thức, phân biệt sự thật khoa học/giả thiết, đề xuất câu hỏi khám phá tiếp theo.
+                        2. Tìm hiện tượng theo kiến thức: Nếu học sinh nhập khái niệm (VD: gia tốc, rơi tự do), hãy đề xuất danh sách các hiện tượng đa dạng kèm bối cảnh thực tiễn, đánh giá mức độ liên quan và giải thích ngắn.
+                        3. Phân tích tình huống mới: Nếu là tình huống lạ, hãy làm rõ tình huống -> xác định đại lượng đo được -> chọn mô hình vật lí -> giải thích bản chất -> cho ví dụ định lượng -> tạo câu hỏi vận dụng. LUÔN thêm câu: "Lưu ý: Nội dung AI sinh ra cần được xác thực và kiểm chứng thực tế."
+                        4. Học bằng câu hỏi gợi mở: Tuyệt đối KHÔNG đưa đáp án ngay lập tức cho các bài toán hay câu hỏi suy luận. Đặt câu hỏi gợi mở từng bước để học sinh tự suy luận. Cung cấp gợi ý tăng dần khi học sinh gặp khó khăn.
+                        5. Tạo bài tập vận dụng: Nếu học sinh yêu cầu bài tập, hãy tạo câu hỏi trắc nghiệm, Đ/S, hoặc tự luận có bối cảnh cụ thể và dữ kiện hợp lý. Ghi rõ "Số liệu giả định" nếu dùng số liệu không đo đạc thực tế.
+
+                        QUY TẮC BẮT BUỘC KHÁC: 
+                        - Luôn xưng là "cô", gọi người dùng là "em". 
+                        - Ngôn ngữ thân thiện, khoa học, truyền cảm hứng.
+                        [KẾT THÚC HƯỚNG DẪN]
+
+                        Lịch sử trò chuyện gần đây:
+                        {history_context}
+
+                        Học sinh vừa nhắn: "{prompt}"
+                        Cô giáo phản hồi:
+                        '''
+                        try:
+                            # Gửi toàn bộ cấu trúc Prompt cho Gemini xử lý
+                            response = model.generate_content(sys_prompt)
+                            st.markdown(response.text)
+                            # Lưu vào lịch sử chat
+                            st.session_state.chat_messages.append({"role": "assistant", "content": response.text})
+                        except Exception as e:
+                            st.error(f"Hệ thống đang bận, em thử lại sau nhé! (Lỗi chi tiết: {e})")
 
 except Exception as e:
     st.error(f"Có lỗi khi đọc dữ liệu Excel: {e}")
