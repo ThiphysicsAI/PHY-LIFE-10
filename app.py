@@ -1,6 +1,15 @@
 import streamlit as st
 import pandas as pd
 import os
+import google.generativeai as genai
+
+# CẤU HÌNH GEMINI API TỪ STREAMLIT SECRETS
+try:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    # Sử dụng mô hình flash để có tốc độ phản hồi nhanh nhất cho học sinh
+    model = genai.GenerativeModel('gemini-1.5-flash')
+except Exception as e:
+    st.warning("Vui lòng cấu hình GEMINI_API_KEY trong Streamlit Secrets để sử dụng tính năng AI.")
 
 # 1. CẤU HÌNH TRANG WEB & MÀU SẮC TÙY CHỈNH
 st.set_page_config(page_title="PHY-LIFE 10", page_icon="🚀", layout="wide", initial_sidebar_state="expanded")
