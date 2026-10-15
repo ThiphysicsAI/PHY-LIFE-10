@@ -141,27 +141,33 @@ try:
                 <button onclick="startDictation()" style="width: 100%; padding: 0.5rem; background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; cursor: pointer; font-weight: bold;">🎤 Nhap bang Giong noi</button>
                 """, unsafe_allow_html=True)
 
-            if gui_ai:
+           if gui_ai:
                 if cau_tra_loi_hs:
-                    cau_tra_loi_lower = cau_tra_loi_hs.lower().strip()
-                    if any(tu_khoa in cau_tra_loi_lower for tu_khoa in ["không biết", "chưa biết", "chịu", "khó quá", "không hiểu"]):
-                         st.info("**🤖 Nhan xet nhanh:** Dung lo lang nhe! Em hay doc cham lai phan **'Quan sat'** va doi chieu voi **'Giai thich khoa hoc'** de tim ra cau tra loi nhe!")
-                    elif len(cau_tra_loi_lower) < 5:
-                         st.warning("**🤖 Nhan xet nhanh:** Cau tra loi hoi ngan. Em hay giai thich ro hon nhe.")
+                    if api_ready:
+                        with st.spinner("AI dang suy nghi..."):
+                            # Prompt được thiết kế lại để bao hàm cả trường hợp học sinh không biết
+                            prompt_ai = f"""
+                            Ban la giao vien Vat li lop 10, rat tam ly va khich le hoc sinh.
+                            Tinh huong: {ho_so['Tên tình huống']}.
+                            Cau hoi: {ho_so['Câu hỏi gợi mở']}.
+                            Loi giai dung: {ho_so['Giải thích khoa học']}.
+                            Hoc sinh tra loi: '{cau_tra_loi_hs}'.
+                            
+                            Hay nhan xet ngan gon 2-3 cau:
+                            - Neu hoc sinh noi khong biet hoac tu bo: Dong vien nhe nhang va goi y cac em xem phan 'Giai thich khoa hoc'.
+                            - Neu tra loi sai: Chinh sua nhe nhang.
+                            - Neu tra loi dung: Khen ngoi.
+                            Giong dieu than thien, goi hoc sinh la 'em'.
+                            """
+                            try:
+                                response = model.generate_content(prompt_ai)
+                                st.success(f"**🤖 AI phan tich:** {response.text}")
+                            except Exception as e:
+                                st.error(f"AI dang ban, thu lai sau nhe! (Loi: {e})")
                     else:
-                         if api_ready:
-                             with st.spinner("AI dang suy nghi..."):
-                                 prompt_ai = f"Ban la giao vien Vat li lop 10. Tinh huong: {ho_so['Tên tình huống']}. Cau hoi: {ho_so['Câu hỏi gợi mở']}. Loi giai dung: {ho_so['Giải thích khoa học']}. Hoc sinh tra loi: '{cau_tra_loi_hs}'. Hay nhan xet ngan gon 2-3 cau (khen y dung, sua y sai)."
-                                 try:
-                                     response = model.generate_content(prompt_ai)
-                                     st.success(f"**🤖 AI phan tich:** {response.text}")
-                                 except Exception as e:
-                                      st.error("AI dang ban, thu lai sau nhe!")
-                         else:
-                             st.success(f"**🤖 Nhan xet nhanh:** Cau tra loi '{cau_tra_loi_hs}' rat dang ghi nhan! Hay xem phan **'Giai thich khoa hoc'** de hieu ro hon nhe.")
+                        st.warning("Tinh nang AI chua duoc kich hoat (Thieu API Key).")
                 else:
                     st.warning("⚠️ Hay nhap cau tra loi truoc khi gui!")
-
         with col_phai:
             with st.container():
                 st.markdown("<h3 style='color: #0D9488;'>Giai thich khoa hoc</h3>", unsafe_allow_html=True)
