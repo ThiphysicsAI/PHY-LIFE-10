@@ -172,7 +172,7 @@ try:
             st.markdown(f"**Quan sát:** {ho_so['Mô tả quan sát']}")
             
             # Xử lý hiển thị ảnh
-            ten_file_anh = str(ho_so['Gợi ý hình ảnh/video'])
+            ten_file_anh = str(ho_so['Tên file ảnh'])
             duong_dan_anh = os.path.join("images", ten_file_anh)
             
             if os.path.exists(duong_dan_anh):
