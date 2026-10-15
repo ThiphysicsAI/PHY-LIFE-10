@@ -141,11 +141,10 @@ try:
                 <button onclick="startDictation()" style="width: 100%; padding: 0.5rem; background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; cursor: pointer; font-weight: bold;">🎤 Nhap bang Giong noi</button>
                 """, unsafe_allow_html=True)
 
-           if gui_ai:
+            if gui_ai:
                 if cau_tra_loi_hs:
                     if api_ready:
                         with st.spinner("AI dang suy nghi..."):
-                            # Prompt được thiết kế lại để bao hàm cả trường hợp học sinh không biết
                             prompt_ai = f"""
                             Ban la giao vien Vat li lop 10, rat tam ly va khich le hoc sinh.
                             Tinh huong: {ho_so['Tên tình huống']}.
@@ -165,9 +164,10 @@ try:
                             except Exception as e:
                                 st.error(f"AI dang ban, thu lai sau nhe! (Loi: {e})")
                     else:
-                        st.warning("Tinh nang AI chua duoc kich hoat (Thieu API Key).")
+                        st.warning("Tinh nang AI chua duoc kich hoat (Thieu API Key trong mục Secrets).")
                 else:
                     st.warning("⚠️ Hay nhap cau tra loi truoc khi gui!")
+
         with col_phai:
             with st.container():
                 st.markdown("<h3 style='color: #0D9488;'>Giai thich khoa hoc</h3>", unsafe_allow_html=True)
