@@ -15,13 +15,13 @@ try:
 except Exception as e:
     api_ready = False
 
-# Nhúng CSS tùy chỉnh cơ bản (Cho toàn bộ App)
+# Nhúng CSS tùy chỉnh cơ bản
 st.markdown('''
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
     html, body, [class*="css"] { font-family: 'Quicksand', sans-serif !important; }
     .stApp { background-color: #FCFBF4; }
-    h1, h2, h3, h4, h5, h6, p, span, div { color: #1E293B; }
+    .main-text { color: #1E293B; }
     [data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
     .stAlert { border-radius: 1rem !important; border: none !important; }
     .phy-card { background-color: white; padding: 2rem 1.5rem; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; height: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 10px; }
@@ -30,11 +30,17 @@ st.markdown('''
 </style>
 ''', unsafe_allow_html=True)
 
-# 2. ĐỌC DỮ LIỆU TỪ EXCEL (Chỉ dùng cho Thư viện Hiện tượng)
+# 2. ĐỌC DỮ LIỆU TỪ EXCEL
 @st.cache_data
 def load_data():
-    df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx')
-    return df
+    xls = pd.ExcelFile('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx')
+    sheet_names = xls.sheet_names
+    df_main = pd.read_excel(xls, sheet_name=sheet_names[0])
+    if 'Du_lieu_Game' in sheet_names:
+        df_game = pd.read_excel(xls, sheet_name='Du_lieu_Game')
+    else:
+        df_game = pd.DataFrame()
+    return df_main, df_game
 
 # 3. ĐIỀU HƯỚNG TRANG THÔNG MINH
 if "nav_page" not in st.session_state:
@@ -55,11 +61,9 @@ if not api_ready:
     st.sidebar.warning("Vui lòng cấu hình GEMINI_API_KEY trong Settings > Secrets trên Streamlit Cloud.")
 
 try:
-    df = load_data()
+    df_main, df_game = load_data()
     
-    # ==========================================
     # === GIAO DIỆN 1: TRANG CHỦ ===
-    # ==========================================
     if st.session_state.nav_page == "🏠 Trang chủ":
         col_text, col_img = st.columns([1.2, 1])
         with col_text:
@@ -77,10 +81,9 @@ try:
 
         with col_img:
             st.markdown('''
-            <div style="border: 2px dashed #1E293B; border-radius: 1rem; padding: 2rem; background-color: white; position: relative; margin-top: 2rem; text-align: center; box-shadow: 8px 8px 0px #FEF08A;">
-                <h3 style="font-family: 'Caveat', cursive; color: #0D9488;">v = s / t</h3>
-                <p style="color: #64748b;"><i>(Khu vực hiển thị ảnh minh họa)</i></p>
-                <div style="font-size: 4rem;">🚴‍♂️ 💨</div>
+            <div style="border: 2px dashed #1E293B; border-radius: 1rem; padding: 2.5rem; background-color: white; position: relative; margin-top: 2rem; text-align: center; box-shadow: 8px 8px 0px #FEF08A;">
+                <h3 style="font-family: 'Caveat', cursive; color: #0D9488; font-size: 3rem; margin-bottom: 15px;">v = s / t</h3>
+                <div style="font-size: 5rem;">🚴‍♂️ 💨</div>
             </div>
             ''', unsafe_allow_html=True)
 
@@ -112,17 +115,15 @@ try:
                 st.session_state.nav_page = "🤖 Hỏi Nhà khám phá AI"
                 st.rerun()
 
-    # ==========================================
     # === GIAO DIỆN 2: THƯ VIỆN HIỆN TƯỢNG ===
-    # ==========================================
     elif st.session_state.nav_page == "📚 Khám phá Hiện tượng":
         st.markdown("<h2 style='color: #0D9488;'>Thư viện Hiện tượng thực tiễn</h2>", unsafe_allow_html=True)
         col_loc1, col_loc2 = st.columns(2)
         with col_loc1:
-            danh_sach_bai = df['Bài học liên quan'].unique()
+            danh_sach_bai = df_main['Bài học liên quan'].unique()
             bai_hoc_chon = st.selectbox("📌 Chiều 1: Từ Sách giáo khoa (Bài học) đến Hiện tượng:", danh_sach_bai)
         
-        df_loc = df[df['Bài học liên quan'] == bai_hoc_chon]
+        df_loc = df_main[df_main['Bài học liên quan'] == bai_hoc_chon]
         with col_loc2:
             tinh_huong_chon = st.selectbox("🔍 Chiều 2: Chọn tình huống thực tiễn để xem kiến thức:", df_loc['Tên tình huống'])
         st.markdown("---")
@@ -178,7 +179,7 @@ try:
                     st.session_state.da_tra_loi = True
                     if api_ready:
                         with st.spinner("AI đang suy nghĩ..."):
-                            prompt_ai = f'''Bạn là cô giáo dạy Vật lí lớp 10, rất tâm lý và khích lệ học sinh. Tình huống: {ho_so['Tên tình huống']}. Câu hỏi đặt ra: {ho_so['Câu hỏi gợi mở']}. Lời giải đúng: {ho_so['Giải thích khoa học']}. Học sinh vừa trả lời: "{cau_tra_loi_hs}". Hãy viết 1 đoạn nhận xét ngắn gọn (khoảng 2-3 câu): Nếu học sinh nói không biết, từ bỏ, hoặc đùa giỡn: Nhẹ nhàng nhắc nhở, động viên. Nếu trả lời sai: Chỉnh sửa nhẹ nhàng. Nếu trả lời có ý đúng: Khen ngợi. Quy tắc BẮT BUỘC: 1. Xưng là "cô", gọi học sinh là "em". 2. Bất kể học sinh trả lời đúng hay sai, CÂU CHỐT CUỐI CÙNG LUÔN LÀ: "Em hãy xem phần 'Giải thích khoa học' bên cạnh để hiểu rõ hơn nhé!"'''
+                            prompt_ai = f'''Bạn là cô giáo Vật lí 10. Tình huống: {ho_so['Tên tình huống']}. Câu hỏi: {ho_so['Câu hỏi gợi mở']}. Giải thích đúng: {ho_so['Giải thích khoa học']}. Học sinh trả lời: "{cau_tra_loi_hs}". Nhận xét 2-3 câu. Khen nếu đúng, sửa nếu sai, động viên nếu không biết. LUÔN CHỐT CÂU CUỐI: "Em hãy xem phần 'Giải thích khoa học' bên cạnh để hiểu rõ hơn nhé!"'''
                             try:
                                 response = model.generate_content(prompt_ai)
                                 st.session_state.ai_response = f"**🤖 AI phân tích:** {response.text}"
@@ -207,28 +208,16 @@ try:
                         st.success(str(ho_so['Đáp án/phản hồi']).replace('\\n', '\n\n'))
                     
                     st.markdown("---")
-                    st.markdown("<h4 style='color: #0D9488;'>🛠️ Hoạt động thực hành</h4>", unsafe_allow_html=True)
                     st.info(ho_so['Hoạt động thực hành'])
-                    st.markdown("<h4 style='color: #0D9488;'>🏷️ Từ khóa</h4>", unsafe_allow_html=True)
-                    
                     tu_khoa_list = str(ho_so['Từ khóa']).split(',')
                     html_tu_khoa = "".join([f"<span style='background-color: #E2E8F0; padding: 4px 8px; border-radius: 4px; margin-right: 5px; font-size: 0.85em; color: #1E293B;'>{tag.strip()}</span>" for tag in tu_khoa_list])
                     st.markdown(html_tu_khoa, unsafe_allow_html=True)
             else:
-                st.markdown('''
-                <div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 40px 20px; text-align: center; margin-top: 20px;">
-                    <div style="font-size: 3.5rem; margin-bottom: 15px;">🔒</div>
-                    <h3 style="color: #64748b; margin-top: 0;">Nội dung đang khóa</h3>
-                    <p style="color: #94a3b8; font-size: 1.05em; max-width: 90%; margin: 0 auto;">Em hãy suy nghĩ và <strong>Gửi AI phân tích</strong> câu trả lời ở cột bên trái để mở khóa nhé!</p>
-                </div>
-                ''', unsafe_allow_html=True)
+                st.markdown('''<div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 40px 20px; text-align: center; margin-top: 20px;"><div style="font-size: 3.5rem; margin-bottom: 15px;">🔒</div><h3 style="color: #64748b; margin-top: 0;">Nội dung đang khóa</h3><p style="color: #94a3b8; font-size: 1.05em; max-width: 90%; margin: 0 auto;">Em hãy suy nghĩ và <strong>Gửi AI phân tích</strong> câu trả lời ở cột bên trái để mở khóa nhé!</p></div>''', unsafe_allow_html=True)
 
-    # ==========================================
-    # === GIAO DIỆN 3: BẢN ĐỒ THỬ THÁCH GAME ===
-    # ==========================================
+    # === GIAO DIỆN 3: BẢN ĐỒ THỬ THÁCH (GAME) ===
     elif st.session_state.nav_page == "🎮 Bản đồ Thử thách (Game)":
         
-        # CSS RIÊNG BIỆT CHO TRANG GAME (Nền tối, chữ sáng)
         st.markdown('''
         <style>
             .stApp {
@@ -236,34 +225,15 @@ try:
                 background-image: linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px) !important;
                 background-size: 30px 30px !important;
             }
-            /* Ép toàn bộ chữ Markdown trên trang Game thành màu sáng để dễ đọc */
             .stMarkdown p, .stMarkdown li, .stMarkdown span, .stMarkdown strong { color: #f8fafc !important; font-size: 1.15rem; }
-            
             .neon-title { text-align: center; color: #ef4444 !important; font-weight: 900; font-size: 3.5rem; text-transform: uppercase; text-shadow: 0 0 10px #dc2626, 0 0 20px #991b1b, 0 0 30px #7f1d1d; margin-bottom: 0px; letter-spacing: 3px; }
             .cyber-warning { background-color: rgba(220, 38, 38, 0.1); border: 2px solid #ef4444; color: #fca5a5 !important; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.2rem; margin-bottom: 30px; }
             .led-screen { background-color: #0f172a; border: 3px solid #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 12px; text-align: center; font-size: 1.8rem; font-family: 'Courier New', Courier, monospace; letter-spacing: 8px; margin-bottom: 30px; color: #38bdf8 !important; }
             .led-code { color: #fde047 !important; font-weight: bold; text-shadow: 0 0 10px #facc15; }
             .mission-panel { background: rgba(15, 23, 42, 0.8); border-left: 5px solid #38bdf8; border-radius: 10px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
             .mission-header { color: #38bdf8 !important; font-size: 1.8rem !important; font-weight: 800; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px;}
-            
-            /* LÀM SÁNG CÁC Ô TRẮC NGHIỆM VÀ NHẬP LIỆU ĐỂ HỌC SINH DỄ ĐỌC */
-            div[data-testid="stRadio"], div[data-testid="stSelectbox"], div[data-testid="stTextInput"] {
-                background-color: #f8fafc !important; 
-                padding: 20px !important;
-                border-radius: 12px !important;
-                border: 2px solid #38bdf8 !important;
-                box-shadow: 0 0 15px rgba(56,189,248,0.2) !important;
-                margin-top: 10px;
-                margin-bottom: 20px;
-            }
-            /* Chữ bên trong khung câu hỏi là màu đen/tối để tương phản với nền trắng của khung */
-            div[data-testid="stRadio"] p, div[data-testid="stRadio"] span, div[data-testid="stRadio"] div, div[data-testid="stRadio"] label,
-            div[data-testid="stSelectbox"] p, div[data-testid="stSelectbox"] span, div[data-testid="stSelectbox"] label,
-            div[data-testid="stTextInput"] p, div[data-testid="stTextInput"] span, div[data-testid="stTextInput"] label {
-                color: #0f172a !important; 
-                font-weight: 700 !important;
-                font-size: 1.1rem !important;
-            }
+            div[data-testid="stRadio"], div[data-testid="stSelectbox"], div[data-testid="stTextInput"] { background-color: #f8fafc !important; padding: 20px !important; border-radius: 12px !important; border: 2px solid #38bdf8 !important; box-shadow: 0 0 15px rgba(56,189,248,0.2) !important; margin-top: 10px; margin-bottom: 20px; }
+            div[data-testid="stRadio"] p, div[data-testid="stRadio"] span, div[data-testid="stRadio"] div, div[data-testid="stRadio"] label, div[data-testid="stSelectbox"] p, div[data-testid="stSelectbox"] span, div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] p, div[data-testid="stTextInput"] span, div[data-testid="stTextInput"] label { color: #0f172a !important; font-weight: 700 !important; font-size: 1.1rem !important; }
         </style>
         ''', unsafe_allow_html=True)
 
@@ -281,7 +251,7 @@ try:
         
         st.markdown(f"""
         <div class='led-screen'>
-            MÃ KÍCH HOẠT: <span class='led-code'>{st.session_state.passcodes[0]} {st.session_state.passcodes[1]} {st.session_state.passcodes[2]} {st.session_state.passcodes[3]}</span>
+            <span style='color: #38bdf8 !important;'>MÃ KÍCH HOẠT:</span> <span class='led-code'>{st.session_state.passcodes[0]} {st.session_state.passcodes[1]} {st.session_state.passcodes[2]} {st.session_state.passcodes[3]}</span>
         </div>
         """, unsafe_allow_html=True)
 
@@ -330,14 +300,13 @@ try:
             </div>
             """, unsafe_allow_html=True)
             
-            # Căn giữa và thu nhỏ ảnh đồ thị
             anh_do_thi = os.path.join("images", "do_thi_tram2.jpg") 
             if os.path.exists(anh_do_thi):
                 img_col1, img_col2, img_col3 = st.columns([1, 2, 1])
                 with img_col2:
                     st.image(anh_do_thi, use_container_width=True)
             else:
-                st.warning("⚠️ Hệ thống đang chờ tín hiệu hình ảnh đồ thị... (Thiếu file do_thi_tram2.jpg)")
+                st.warning("⚠️ Đang chờ tải ảnh đồ thị... (Cần có file 'do_thi_tram2.jpg' trong thư mục images)")
             st.markdown("<br>", unsafe_allow_html=True)
             
             col1, col2 = st.columns(2)
@@ -423,7 +392,7 @@ try:
                 else:
                     st.error("❌ Tính toán sai lệch. Cảnh báo va chạm cận kề!")
 
-        # --- CHẶNG CUỐI: NHẬP MÃ KÍCH HOẠT ---
+        # --- CHẶNG CUỐI ---
         elif st.session_state.station == 5:
             st.markdown("<div class='game-station' style='background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%); border: 3px solid #fca5a5;'><h3 style='color: white !important;'>🛑 HỆ THỐNG PHANH KHẨN CẤP</h3></div>", unsafe_allow_html=True)
             st.warning("⚠️ YÊU CẦU NHẬP MÃ KÍCH HOẠT 4 CHỮ SỐ ĐỂ DỪNG TÀU!")
@@ -445,7 +414,7 @@ try:
                 else:
                     st.error("❌ HỆ THỐNG TỪ CHỐI. TÀU VẪN ĐANG LAO DỐC!")
 
-    # === GIAO DIỆN 4: AI CHAT (NHÀ KHÁM PHÁ VẬT LÍ) ===
+    # === GIAO DIỆN 4: AI CHAT ===
     elif st.session_state.nav_page == "🤖 Hỏi Nhà khám phá AI":
         st.markdown("<h2 style='color: #0D9488;'>🤖 Nhà khám phá AI</h2>", unsafe_allow_html=True)
         st.markdown("<span class='main-text'>Chào em! Cô là Nhà khám phá Vật lí. Em có hiện tượng gì thú vị muốn kể cho cô nghe, nhập một khái niệm muốn tìm hiểu, hay muốn thử sức với bài tập vận dụng nào?</span>", unsafe_allow_html=True)
