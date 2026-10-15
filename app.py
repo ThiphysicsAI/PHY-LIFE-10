@@ -4,7 +4,7 @@ import os
 import google.generativeai as genai
 import time
 
-# --- HÀM THEO DÕI LƯỢT TRA CỨU (LƯU VÀO FILE ẢO) ---
+# --- HÀM THEO DÕI LƯỢT TRA CỨU ---
 def get_view_count():
     try:
         with open("view_count.txt", "r") as f:
@@ -41,36 +41,21 @@ st.markdown('''
     .phy-card { background-color: white; padding: 2rem 1.5rem; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; height: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 10px; }
     .phy-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #0D9488; background-color: #F0FDFA; }
     .icon-box { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 15px; }
-    .game-title { text-align: center; color: #b91c1c; font-weight: 800; font-size: 2.5rem; margin-bottom: 10px; }
-    .game-warning { background-color: #fef2f2; color: #991b1b; padding: 15px; border-radius: 10px; border-left: 5px solid #ef4444; font-weight: bold; text-align: center; margin-bottom: 20px;}
-    .game-station { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); margin-bottom: 20px; }
-    .game-station h3 { color: #38bdf8 !important; margin: 0; }
-    .mission-box { background-color: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
-    
-    /* Giao diện nút bản đồ tư duy */
-    .node-box { background-color: #ffffff; border: 2px solid #0D9488; padding: 12px 20px; border-radius: 12px; text-align: center; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); color: #1E293B; }
-    .arrow-box { text-align: center; font-size: 24px; color: #0D9488; font-weight: bold; padding: 5px 0; }
 </style>
 ''', unsafe_allow_html=True)
 
 # 2. ĐỌC DỮ LIỆU TỪ EXCEL
 @st.cache_data
 def load_data():
-    xls = pd.ExcelFile('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx')
-    sheet_names = xls.sheet_names
-    df_main = pd.read_excel(xls, sheet_name=sheet_names[0])
-    if 'Du_lieu_Game' in sheet_names:
-        df_game = pd.read_excel(xls, sheet_name='Du_lieu_Game')
-    else:
-        df_game = pd.DataFrame()
-    return df_main, df_game
+    df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx')
+    return df
 
 # 3. ĐIỀU HƯỚNG TRANG THÔNG MINH
 if "nav_page" not in st.session_state:
     st.session_state.nav_page = "🏠 Trang chủ"
 
 st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE 10</h2>", unsafe_allow_html=True)
-menu_list = ["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🕸️ Bản đồ Kết nối", "🎮 Bản đồ Thử thách (Game)", "🤖 Hỏi Nhà khám phá AI"]
+menu_list = ["🏠 Trang chủ", "📚 Khám phá Hiện tượng", "🎮 Bản đồ Thử thách (Game)", "🤖 Hỏi Nhà khám phá AI"]
 selected_menu = st.sidebar.radio("CHUYÊN MỤC", menu_list, index=menu_list.index(st.session_state.nav_page) if st.session_state.nav_page in menu_list else 0)
 
 if selected_menu != st.session_state.nav_page:
@@ -84,7 +69,7 @@ if not api_ready:
     st.sidebar.warning("Vui lòng cấu hình GEMINI_API_KEY trong Settings > Secrets trên Streamlit Cloud.")
 
 try:
-    df_main, df_game = load_data()
+    df = load_data()
     
     # === GIAO DIỆN 1: TRANG CHỦ ===
     if st.session_state.nav_page == "🏠 Trang chủ":
@@ -104,10 +89,9 @@ try:
 
         with col_img:
             st.markdown('''
-            <div style="border: 2px dashed #1E293B; border-radius: 1rem; padding: 2rem; background-color: white; position: relative; margin-top: 2rem; text-align: center; box-shadow: 8px 8px 0px #FEF08A;">
-                <h3 style="font-family: 'Caveat', cursive; color: #0D9488;">v = s / t</h3>
-                <p style="color: #64748b;"><i>(Khu vực hiển thị ảnh minh họa)</i></p>
-                <div style="font-size: 4rem;">🚴‍♂️ 💨</div>
+            <div style="border: 2px dashed #1E293B; border-radius: 1rem; padding: 2.5rem; background-color: white; position: relative; margin-top: 2rem; text-align: center; box-shadow: 8px 8px 0px #FEF08A;">
+                <h3 style="font-family: 'Caveat', cursive; color: #0D9488; font-size: 3rem; margin-bottom: 15px;">v = s / t</h3>
+                <div style="font-size: 5rem;">🚴‍♂️ 💨</div>
             </div>
             ''', unsafe_allow_html=True)
 
@@ -142,17 +126,16 @@ try:
     # === GIAO DIỆN 2: THƯ VIỆN HIỆN TƯỢNG ===
     elif st.session_state.nav_page == "📚 Khám phá Hiện tượng":
         
-        # BỐ CỤC: Tiêu đề bên trái, Bảng thống kê bên phải
         col_title, col_stat = st.columns([3, 1])
         with col_title:
             st.markdown("<h2 style='color: #0D9488;'>Thư viện Hiện tượng thực tiễn</h2>", unsafe_allow_html=True)
             
         col_loc1, col_loc2 = st.columns(2)
         with col_loc1:
-            danh_sach_bai = df_main['Bài học liên quan'].unique()
+            danh_sach_bai = df['Bài học liên quan'].unique()
             bai_hoc_chon = st.selectbox("📌 Chiều 1: Từ Sách giáo khoa (Bài học) đến Hiện tượng:", danh_sach_bai)
         
-        df_loc = df_main[df_main['Bài học liên quan'] == bai_hoc_chon]
+        df_loc = df[df['Bài học liên quan'] == bai_hoc_chon]
         with col_loc2:
             tinh_huong_chon = st.selectbox("🔍 Chiều 2: Chọn tình huống thực tiễn để xem kiến thức:", df_loc['Tên tình huống'])
             
@@ -166,12 +149,12 @@ try:
         else:
             current_views = get_view_count()
 
-        # HIỂN THỊ THỐNG KÊ LƯỢT TRA CỨU
+        # HIỂN THỊ THỐNG KÊ LƯỢT TRA CỨU (ĐÃ THU NHỎ GỌN GÀNG)
         with col_stat:
             st.markdown(f'''
-            <div style="background-color: #FEF2F2; padding: 10px; border-radius: 12px; border: 2px solid #EF4444; text-align: center; margin-top: 15px;">
-                <p style="margin: 0; color: #991B1B; font-weight: 700; font-size: 0.9rem; text-transform: uppercase;">🔥 Lượt tra cứu</p>
-                <h3 style="margin: 0; color: #DC2626; font-size: 2rem; line-height: 1;">{current_views}</h3>
+            <div style="background-color: #FEF2F2; padding: 6px 10px; border-radius: 8px; border: 1.5px solid #EF4444; text-align: center; float: right; width: 130px;">
+                <p style="margin: 0; color: #991B1B; font-weight: 700; font-size: 0.75rem; text-transform: uppercase;">🔥 Lượt tra cứu</p>
+                <h4 style="margin: 0; color: #DC2626; font-size: 1.3rem; line-height: 1.2;">{current_views}</h4>
             </div>
             ''', unsafe_allow_html=True)
             
@@ -202,6 +185,7 @@ try:
                 st.warning(f"✍️ Đang chờ nét vẽ Sketchnote... (Tên file cần có: {ten_file_anh})")
                 
             st.markdown(f"<span style='color: #1E293B;'>**❓ Câu hỏi gợi mở:** *{ho_so['Câu hỏi gợi mở']}*</span>", unsafe_allow_html=True)
+            
             st.markdown(f'''
             <div style="background-color: #F0FDF4; padding: 15px; border-radius: 10px; border-left: 5px solid #22C55E; margin-top: 20px; margin-bottom: 10px;">
                 <h4 style="color: #15803D; margin-top: 0; display: flex; align-items: center; gap: 8px;">🤖 AI phân tích nhanh</h4>
@@ -275,85 +259,12 @@ try:
                     <p style="color: #94a3b8; font-size: 1.05em; max-width: 90%; margin: 0 auto;">Em hãy suy nghĩ và <strong>Gửi AI phân tích</strong> câu trả lời ở cột bên trái để mở khóa phần Giải thích khoa học, Công thức và Ví dụ nhé!</p>
                 </div>
                 ''', unsafe_allow_html=True)
-                
-    # === GIAO DIỆN 3: BẢN ĐỒ KẾT NỐI (MẠNG LƯỚI TƯ DUY) ===
-    elif st.session_state.nav_page == "🕸️ Bản đồ Kết nối":
-        st.markdown("<h2 style='color: #0D9488;'>🕸️ Bản đồ Kết nối Tư duy Động học</h2>", unsafe_allow_html=True)
-        st.markdown("Hệ thống sơ đồ chuỗi trực quan giúp em liên kết từ **Khái niệm Vật lí** sang **Hiện tượng thực tiễn** và ngược lại. Nhấp vào các nút bên dưới để khám phá chi tiết.")
-        st.markdown("---")
 
-        chuoi_tu_duy = st.selectbox("Chọn chuỗi hiện tượng cần phân tích:", [
-            "1. Gia tốc → Xe tăng tốc tại ngã tư → Vận tốc theo thời gian → Đồ thị → Bài toán định lượng",
-            "2. Quãng đường & Độ dịch chuyển → Chạy bộ 5km vòng quanh hồ → So sánh s và Δx",
-            "3. Rơi tự do → Thả rơi chùm chìa khóa → Đo thời gian → Tính độ cao",
-            "4. Chuyển động ném ngang → Trực thăng thả hàng cứu trợ → Quỹ đạo Parabol → Tầm xa"
-        ])
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        col1, col2, col3, col4, col5 = st.columns(5)
-        
-        if "1. Gia tốc" in chuoi_tu_duy:
-            nodes = [
-                ("Khái niệm: Gia tốc (a)", "Đại lượng đặc trưng cho sự thay đổi nhanh chậm của vận tốc theo thời gian."),
-                ("Hiện tượng: Xe tăng tốc", "Xe máy hoặc ô tô vọt đi ngay khi đèn giao thông chuyển sang màu xanh."),
-                ("Đại lượng đo đạc", "Đo độ biến thiên vận tốc Δv trong khoảng thời gian Δt."),
-                ("Mô hình & Đồ thị", "Sử dụng đồ thị vận tốc - thời gian (v-t) hoặc phương trình chuyển động thẳng biến đổi đều."),
-                ("Bài toán vận dụng", "Tính quãng đường phanh, thời gian đạt vận tốc tối đa và ứng dụng an toàn giao thông.")
-            ]
-        elif "2. Quãng đường" in chuoi_tu_duy:
-            nodes = [
-                ("Khái niệm: s và Δx", "Phân biệt tổng chiều dài quỹ đạo (s) và vectơ nối đầu-cuối (Δx)."),
-                ("Hiện tượng: Chạy bộ 5km", "Học sinh chạy trọn vẹn một vòng quanh hồ hoặc sân vận động về vạch xuất phát."),
-                ("Đại lượng đo đạc", "Sử dụng thiết bị định vị GPS (Garmin, Strava) ghi nhận lộ trình."),
-                ("Mô hình & Đồ thị", "Hệ tọa độ không gian, xác định vị trí ban đầu x1 và vị trí cuối x2."),
-                ("Bài toán vận dụng", "Giải thích vì sao tốn sức chạy 5km nhưng độ dịch chuyển tổng cộng lại bằng 0.")
-            ]
-        elif "3. Rơi tự do" in chuoi_tu_duy:
-            nodes = [
-                ("Khái niệm: Rơi tự do", "Chuyển động chỉ dưới tác dụng của trọng lực, v0 = 0, gia tốc g."),
-                ("Hiện tượng: Rơi chìa khóa", "Sự cố lỡ tay làm rơi chùm chìa khóa từ hành lang tầng cao xuống mặt đất."),
-                ("Đại lượng đo đạc", "Sử dụng đồng hồ bấm giờ (stopwatch) đo thời gian rơi t từ lúc buông."),
-                ("Mô hình & Đồ thị", "Phương trình rơi tự do: h = 1/2 * g * t^2, bỏ qua lực cản không khí."),
-                ("Bài toán vận dụng", "Tính ngược lại độ cao của tầng nhà hoặc độ sâu của giếng nước.")
-            ]
-        else:
-            nodes = [
-                ("Khái niệm: Ném ngang", "Tổng hợp độc lập chuyển động thẳng đều ngang và rơi tự do đứng."),
-                ("Hiện tượng: Thả hàng cứu trợ", "Trực thăng bay ngang thả thùng hàng xuống vùng ngập lụt miền Trung."),
-                ("Đại lượng đo đạc", "Độ cao bay h, vận tốc ngang của máy bay v0 và tầm xa L."),
-                ("Mô hình & Đồ thị", "Quỹ đạo hình parabol y = (g / 2v0^2) * x^2."),
-                ("Bài toán vận dụng", "Xác định thời điểm cắt dây thả hàng chính xác để trúng mục tiêu.")
-            ]
-
-        with col1:
-            st.markdown(f"<div class='node-box'><b>Bước 1</b><br>{nodes[0][0]}</div>", unsafe_allow_html=True)
-            with st.expander("Xem chi tiết"):
-                st.write(nodes[0][1])
-        with col2:
-            st.markdown("<div class='arrow-box'>➔</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='node-box'><b>Bước 2</b><br>{nodes[1][0]}</div>", unsafe_allow_html=True)
-            with st.expander("Xem chi tiết"):
-                st.write(nodes[1][1])
-        with col3:
-            st.markdown("<div class='arrow-box'>➔</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='node-box'><b>Bước 3</b><br>{nodes[2][0]}</div>", unsafe_allow_html=True)
-            with st.expander("Xem chi tiết"):
-                st.write(nodes[2][1])
-        with col4:
-            st.markdown("<div class='arrow-box'>➔</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='node-box'><b>Bước 4</b><br>{nodes[3][0]}</div>", unsafe_allow_html=True)
-            with st.expander("Xem chi tiết"):
-                st.write(nodes[3][1])
-        with col5:
-            st.markdown("<div class='arrow-box'>➔</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='node-box'><b>Bước 5</b><br>{nodes[4][0]}</div>", unsafe_allow_html=True)
-            with st.expander("Xem chi tiết"):
-                st.write(nodes[4][1])
-
-    # === GIAO DIỆN 4: BẢN ĐỒ THỬ THÁCH (ĐIỆP VỤ PHYSIX ĐỘNG) ===
+    # === GIAO DIỆN 3: BẢN ĐỒ THỬ THÁCH (GAME) ===
     elif st.session_state.nav_page == "🎮 Bản đồ Thử thách (Game)":
         
+        st.session_state.play_sound = False
+
         st.markdown('''
         <style>
             .stApp {
@@ -377,94 +288,169 @@ try:
             st.session_state.station = 1
             st.session_state.passcodes = ["_", "_", "_", "_"]
             st.session_state.tram2_matched = False
-            st.session_state.play_sound = False
 
         st.markdown("<div class='neon-title'>🕵️‍♂️ ĐIỆP VỤ PHYSIX</div>", unsafe_allow_html=True)
         st.markdown("<div class='cyber-warning'>🚨 CẢNH BÁO: Tàu tốc hành đang mất phanh. Các đặc vụ PHY-LIFE cần giải mã 4 trạm điều khiển để kích hoạt hệ thống phanh khẩn cấp!</div>", unsafe_allow_html=True)
         
-        if df_game.empty:
-            st.error("⚠️ Hệ thống chưa tìm thấy dữ liệu Game trong file Excel. Cô hãy tạo một Sheet tên là 'Du_lieu_Game' theo đúng mẫu và tải lên nhé!")
-        else:
-            tong_so_tram = len(df_game)
-            progress_val = int(((st.session_state.station - 1) / tong_so_tram) * 100)
-            st.progress((st.session_state.station - 1) / tong_so_tram)
-            
-            passcodes_display = []
-            for i in range(tong_so_tram):
-                if i < st.session_state.station - 1:
-                    passcodes_display.append(str(df_game.iloc[i]['Đáp án']).strip())
-                else:
-                    passcodes_display.append("_")
-            
-            st.markdown(f"""
-            <div class='led-screen'>
-                <span style='color: #38bdf8 !important;'>MÃ KÍCH HOẠT:</span> <span class='led-code'>{' '.join(passcodes_display)}</span>
+        progress_val = int(((st.session_state.station - 1) / 4) * 100)
+        st.progress((st.session_state.station - 1) / 4)
+        
+        st.markdown(f"""
+        <div class='led-screen'>
+            <span style='color: #38bdf8 !important;'>MÃ KÍCH HOẠT:</span> <span class='led-code'>{st.session_state.passcodes[0]} {st.session_state.passcodes[1]} {st.session_state.passcodes[2]} {st.session_state.passcodes[3]}</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # --- TRẠM 1: KHÔNG LƯU ---
+        if st.session_state.station == 1:
+            st.markdown("""
+            <div class='mission-panel'>
+                <div class='mission-header'>📍 Trạm 1: Không Lưu</div>
+                <p><strong>Mục tiêu:</strong> Vượt qua rào cản tư duy về Rơi tự do & Lực cản.</p>
+                <p><strong>Nhiệm vụ:</strong> Một vận động viên nhảy dù nhảy khỏi máy bay. Sau khi bung dù một lúc, người đó rơi xuống mặt đất với vận tốc không đổi. Hiện tượng này được giải thích bằng khái niệm nào?</p>
             </div>
             """, unsafe_allow_html=True)
-
-            if st.session_state.play_sound:
-                sound_html = '<audio autoplay><source src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" type="audio/mpeg"></audio>'
-                st.markdown(sound_html, unsafe_allow_html=True)
-                st.session_state.play_sound = False
-
-            if st.session_state.station <= tong_so_tram:
-                tram_data = df_game.iloc[st.session_state.station - 1]
-                
-                st.markdown(f"""
-                <div class='mission-panel'>
-                    <div class='mission-header'>📍 Trạm {tram_data['Trạm']}: {tram_data['Tên trạm']}</div>
-                    <p><strong>Nhiệm vụ:</strong> {tram_data['Nhiệm vụ']}</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                if pd.notna(tram_data.get('Ảnh minh họa')) and str(tram_data['Ảnh minh họa']).strip() != "":
-                    img_path = os.path.join("images", str(tram_data['Ảnh minh họa']).strip())
-                    if os.path.exists(img_path):
-                        img_col1, img_col2, img_col3 = st.columns([1, 2, 1])
-                        with img_col2:
-                            st.image(img_path, use_container_width=True)
-                    else:
-                        st.warning(f"✍️ Đang chờ nét vẽ Sketchnote cho ảnh: {tram_data['Ảnh minh họa']}")
-
-                loai_cau_hoi = str(tram_data['Loại câu hỏi']).strip()
-                dap_an_dung = str(tram_data['Đáp án']).strip()
-                
-                if loai_cau_hoi == "Trắc nghiệm":
-                    lua_chon = [opt.strip() for opt in str(tram_data['Các lựa chọn']).split("|")]
-                    ans = st.radio("Chọn đáp án:", ["Chưa chọn"] + lua_chon, key=f"q_{st.session_state.station}")
-                    
-                    if st.button("🚀 Xác nhận mã", use_container_width=True):
-                        if ans != "Chưa chọn" and ans.startswith(dap_an_dung):
-                            st.success(f"✅ {tram_data['Phản hồi đúng']}")
-                            st.session_state.play_sound = True
-                            time.sleep(1.5)
-                            st.session_state.station += 1
-                            st.rerun()
-                        else:
-                            st.error(f"❌ {tram_data['Phản hồi sai']}")
-                            
-                else: 
-                    ans = st.text_input("Nhập mật mã thu được:", key=f"q_{st.session_state.station}")
-                    
-                    if st.button("🚀 Xác nhận mã", use_container_width=True):
-                        if ans.strip().lower() == dap_an_dung.lower():
-                            st.success(f"✅ {tram_data['Phản hồi đúng']}")
-                            st.session_state.play_sound = True
-                            time.sleep(1.5)
-                            st.session_state.station += 1
-                            st.rerun()
-                        else:
-                            st.error(f"❌ {tram_data['Phản hồi sai']}")
-
-            else:
-                st.balloons()
-                st.markdown("<div style='background-color: rgba(34, 197, 94, 0.2); padding: 40px; border-radius: 15px; text-align: center; border: 2px solid #4ade80; box-shadow: 0 0 30px rgba(74, 222, 128, 0.5);'><h1 style='color: #4ade80; font-size: 3.5rem; margin-bottom: 10px; text-shadow: 0 0 10px #4ade80;'>🎉 KÍCH HOẠT THÀNH CÔNG!</h1><h2 style='color: #86efac;'>CỨU HỘ HOÀN TẤT. KIỆN HÀNG TRI THỨC ĐÃ ĐƯỢC BẢO VỆ.</h2></div>", unsafe_allow_html=True)
-                st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("🔄 Chơi lại Điệp vụ", use_container_width=True):
-                    st.session_state.station = 1
+            
+            ans1 = st.radio("Chọn đáp án để quét mã in chìm:", [
+                "A. Gia tốc rơi tự do giảm dần.", 
+                "B. Quán tính triệt tiêu trọng lực.", 
+                "C. Lực cản không khí cân bằng với trọng lực.", 
+                "D. Động năng ban đầu đã tiêu hao hết."
+            ], index=None)
+            
+            if st.button("🚀 Xác nhận mã Trạm 1", use_container_width=True):
+                if ans1 and ans1.startswith("C"):
+                    st.success("✅ Phân tích đáp án C... Phát hiện mã in chìm! Hệ thống ghi nhận mã số: 4. Đã mở khóa Trạm 2!")
+                    st.session_state.passcodes[0] = "4"
+                    time.sleep(1.5)
+                    st.session_state.station = 2
                     st.rerun()
+                elif ans1:
+                    st.error("❌ Truy cập bị từ chối. Tàu vẫn đang lao dốc!")
+                else:
+                    st.warning("⚠️ Đặc vụ cần chọn một đáp án!")
 
-    # === GIAO DIỆN 5: AI CHAT (NHÀ KHÁM PHÁ VẬT LÍ) ===
+        # --- TRẠM 2: ĐỘNG CƠ ---
+        elif st.session_state.station == 2:
+            st.markdown("""
+            <div class='mission-panel'>
+                <div class='mission-header'>⚙️ Trạm 2: Động Cơ</div>
+                <p><strong>Mục tiêu:</strong> Dịch ngôn ngữ thực tế sang đồ thị v-t.</p>
+                <p><strong>Nhiệm vụ:</strong> Hãy quan sát các đồ thị dưới đây và sắp xếp các thẻ Hiện tượng (1, 2, 3, 4) khớp với các thẻ Đồ thị (A, B, C, D).</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            anh_do_thi = os.path.join("images", "do_thi_tram2.jpg") 
+            if os.path.exists(anh_do_thi):
+                img_col1, img_col2, img_col3 = st.columns([1, 2, 1])
+                with img_col2:
+                    st.image(anh_do_thi, use_container_width=True)
+            else:
+                st.warning("⚠️ Đang chờ tải ảnh đồ thị... (Cần có file 'do_thi_tram2.jpg' trong thư mục images)")
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                g1 = st.selectbox("1. Đạp phanh", ["Chưa ghép", "Thẻ A", "Thẻ B", "Thẻ C", "Thẻ D"])
+                g2 = st.selectbox("2. Dừng chờ đèn đỏ", ["Chưa ghép", "Thẻ A", "Thẻ B", "Thẻ C", "Thẻ D"])
+            with col2:
+                g3 = st.selectbox("3. Nhấn ga khởi hành", ["Chưa ghép", "Thẻ A", "Thẻ B", "Thẻ C", "Thẻ D"])
+                g4 = st.selectbox("4. Chạy ổn định trên cao tốc", ["Chưa ghép", "Thẻ A", "Thẻ B", "Thẻ C", "Thẻ D"])
+
+            if not st.session_state.tram2_matched:
+                if st.button("🔍 Kiểm tra ghép nối", use_container_width=True):
+                    if g1 == "Thẻ D" and g2 == "Thẻ A" and g3 == "Thẻ C" and g4 == "Thẻ B":
+                        st.session_state.tram2_matched = True
+                        st.rerun()
+                    else:
+                        st.error("❌ Ghép thẻ thất bại. Động cơ báo lỗi đồng bộ!")
+            
+            if st.session_state.tram2_matched:
+                st.success("✅ Ghép nối thành công! Mặt sau của 4 thẻ lật lên hiện ra một thông điệp ẩn...")
+                st.info("💻 **Hệ thống báo:** Giải mã phép toán `(D + A) x (C - B)`. Biết rằng D=5, A=3, C=4, B=3.")
+                
+                ans2 = st.text_input("Nhập mật mã số học (1 chữ số) thu được:")
+                if st.button("🚀 Xác nhận mã Trạm 2", use_container_width=True):
+                    if ans2.strip() == "8":
+                        st.success("✅ Hệ thống ghi nhận mã số: 8. Đã mở khóa Trạm 3!")
+                        st.session_state.passcodes[1] = "8"
+                        time.sleep(1.5)
+                        st.session_state.station = 3
+                        st.rerun()
+                    else:
+                        st.error("❌ Sai mã số. Động cơ đang quá tải!")
+
+        # --- TRẠM 3: ẢO GIÁC ---
+        elif st.session_state.station == 3:
+            st.markdown("""
+            <div class='mission-panel'>
+                <div class='mission-header'>👁️ Trạm 3: Ảo Giác</div>
+                <p><strong>Mục tiêu:</strong> Phá vỡ góc nhìn tuyệt đối về hệ quy chiếu.</p>
+                <p><strong>Nhiệm vụ:</strong> Thả thùng hàng từ máy bay đang bay ngang. Đặc vụ hãy xác định Đúng (1) hoặc Sai (0) cho các nhận định sau:</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            q1 = st.radio("1. Người đứng trên đảo thấy quỹ đạo của thùng hàng là đường thẳng đứng.", ["Chưa chọn", "Đúng (1)", "Sai (0)"], horizontal=True)
+            q2 = st.radio("2. Phi công thấy quỹ đạo của thùng hàng là đường thẳng đứng.", ["Chưa chọn", "Đúng (1)", "Sai (0)"], horizontal=True)
+            q3 = st.radio("3. Máy bay bay càng nhanh thì thùng hàng rơi chạm đất càng lâu.", ["Chưa chọn", "Đúng (1)", "Sai (0)"], horizontal=True)
+            q4 = st.radio("4. Ngay trước khi chạm đất, vận tốc ngang của thùng hàng vẫn bằng vận tốc máy bay lúc thả (bỏ qua sức cản).", ["Chưa chọn", "Đúng (1)", "Sai (0)"], horizontal=True)
+
+            if st.button("🚀 Tổng hợp mã Nhị phân", use_container_width=True):
+                if q1 == "Sai (0)" and q2 == "Đúng (1)" and q3 == "Sai (0)" and q4 == "Đúng (1)":
+                    st.success("✅ Dữ liệu nhị phân thu được: **0101**. Quy đổi sang hệ thập phân chính là số 5!")
+                    st.session_state.passcodes[2] = "5"
+                    time.sleep(2)
+                    st.session_state.station = 4
+                    st.rerun()
+                elif "Chưa chọn" in [q1, q2, q3, q4]:
+                    st.warning("⚠️ Đặc vụ cần đánh giá toàn bộ 4 nhận định!")
+                else:
+                    st.error("❌ Lỗi hệ quy chiếu! Mã nhị phân bị sai lệch. Hãy tính lại!")
+
+        # --- TRẠM 4: BỨT TỐC ---
+        elif st.session_state.station == 4:
+            st.markdown("""
+            <div class='mission-panel'>
+                <div class='mission-header'>⚡ Trạm 4: Bứt Tốc</div>
+                <p><strong>Mục tiêu:</strong> Chọn hệ quy chiếu linh hoạt để giải quyết định lượng.</p>
+                <p><strong>Nhiệm vụ:</strong> Băng chuyền sân bay di chuyển với tốc độ 1 m/s. An đi bộ trên băng chuyền với tốc độ 2 m/s so với băng chuyền. Vali của An bị bỏ quên, trôi theo băng chuyền cách An 14 mét phía trước.<br>Hỏi An mất bao nhiêu giây để bắt kịp vali?</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            ans4 = st.text_input("Nhập thời gian (giây):")
+            
+            if st.button("🚀 Xác nhận mã Trạm 4", use_container_width=True):
+                if ans4.strip() == "7":
+                    st.success("✅ Phân tích chuẩn xác! Vali đứng yên so với băng chuyền, nên thời gian = 14m / 2(m/s) = 7s. Hệ thống ghi nhận mã số: 7.")
+                    st.session_state.passcodes[3] = "7"
+                    time.sleep(2)
+                    st.session_state.station = 5
+                    st.rerun()
+                else:
+                    st.error("❌ Tính toán sai lệch. Cảnh báo va chạm cận kề!")
+
+        # --- CHẶNG CUỐI ---
+        elif st.session_state.station == 5:
+            st.markdown("<div class='game-station' style='background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%); border: 3px solid #fca5a5;'><h3 style='color: white !important;'>🛑 HỆ THỐNG PHANH KHẨN CẤP</h3></div>", unsafe_allow_html=True)
+            st.warning("⚠️ YÊU CẦU NHẬP MÃ KÍCH HOẠT 4 CHỮ SỐ ĐỂ DỪNG TÀU!")
+            
+            final_code = st.text_input("Nhập mật mã:", type="password", placeholder="Nhập 4 chữ số thu thập được...")
+            
+            if st.button("🔴 KÍCH HOẠT PHANH", use_container_width=True):
+                if final_code == "4857":
+                    st.balloons()
+                    st.markdown("<div style='background-color: rgba(34, 197, 94, 0.2); padding: 40px; border-radius: 15px; text-align: center; border: 2px solid #4ade80; box-shadow: 0 0 30px rgba(74, 222, 128, 0.5);'><h1 style='color: #4ade80 !important; font-size: 3.5rem; margin-bottom: 10px; text-shadow: 0 0 10px #4ade80;'>🎉 KÍCH HOẠT THÀNH CÔNG!</h1><h2 style='color: #86efac !important;'>CỨU HỘ HOÀN TẤT. KIỆN HÀNG TRI THỨC ĐÃ ĐƯỢC BẢO VỆ.</h2><p style='font-size: 1.2rem; color: #f8fafc !important; margin-top: 20px;'>Các đặc vụ PHY-LIFE đã xuất sắc hoàn thành nhiệm vụ!</p></div>", unsafe_allow_html=True)
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    if st.button("🔄 Chơi lại Điệp vụ", use_container_width=True):
+                        st.session_state.station = 1
+                        st.session_state.passcodes = ["_", "_", "_", "_"]
+                        st.session_state.tram2_matched = False
+                        st.rerun()
+                else:
+                    st.error("❌ HỆ THỐNG TỪ CHỐI. TÀU VẪN ĐANG LAO DỐC!")
+
+    # === GIAO DIỆN 4: AI CHAT ===
     elif st.session_state.nav_page == "🤖 Hỏi Nhà khám phá AI":
         st.markdown("<h2 style='color: #0D9488;'>🤖 Nhà khám phá AI</h2>", unsafe_allow_html=True)
         st.markdown("<span class='main-text'>Chào em! Cô là Nhà khám phá Vật lí. Em có hiện tượng gì thú vị muốn kể cho cô nghe, nhập một khái niệm muốn tìm hiểu, hay muốn thử sức với bài tập vận dụng nào?</span>", unsafe_allow_html=True)
