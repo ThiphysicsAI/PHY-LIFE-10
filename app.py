@@ -15,7 +15,7 @@ except Exception as e:
     api_ready = False
 
 # Nhúng CSS tùy chỉnh
-st.markdown("""
+st.markdown('''
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
     html, body, [class*="css"] { font-family: 'Quicksand', sans-serif !important; }
@@ -27,7 +27,7 @@ st.markdown("""
     .phy-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #0D9488; }
     .icon-box { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 15px; }
 </style>
-""", unsafe_allow_html=True)
+''', unsafe_allow_html=True)
 
 # 2. ĐỌC DỮ LIỆU TỪ EXCEL
 @st.cache_data
@@ -42,7 +42,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("*Ứng dụng hỗ trợ học sinh lớp 10 học bộ sách Kết nối tri thức.*")
 
 if not api_ready:
-    st.sidebar.warning("Vui lòng cấu hình GEMINI_API_KEY trong Settings > Secrets trên Streamlit Cloud để sử dụng tính năng AI.")
+    st.sidebar.warning("Vui lòng cấu hình GEMINI_API_KEY trong Settings > Secrets trên Streamlit Cloud.")
 
 try:
     df = load_data()
@@ -52,7 +52,7 @@ try:
         col_text, col_img = st.columns([1.2, 1])
         with col_text:
             st.markdown("<br>", unsafe_allow_html=True) 
-            st.markdown("""
+            st.markdown('''
             <div style="display: inline-block; padding: 4px 16px; background-color: #FEF08A; border-radius: 999px; font-weight: 700; font-size: 0.9rem; margin-bottom: 1rem;">
                 ✨ Chương trình Lớp 10 Mới
             </div>
@@ -60,28 +60,28 @@ try:
             <p style="font-size: 1.2rem; color: #475569; margin-bottom: 2rem;">
                 Khám phá chuyển động trong đời sống. Quan sát hiện tượng, kết nối kiến thức và tự mình tìm ra lời giải.
             </p>
-            """, unsafe_allow_html=True)
+            ''', unsafe_allow_html=True)
             st.info("👈 **Hãy chọn '📚 Khám phá Hiện tượng' ở Menu bên trái để bắt đầu!**")
 
         with col_img:
-            st.markdown("""
+            st.markdown('''
             <div style="border: 2px dashed #1E293B; border-radius: 1rem; padding: 2rem; background-color: white; position: relative; margin-top: 2rem; text-align: center; box-shadow: 8px 8px 0px #FEF08A;">
                 <h3 style="font-family: 'Caveat', cursive; color: #0D9488;">v = s / t</h3>
                 <p style="color: #64748b;"><i>(Khu vực hiển thị ảnh minh họa)</i></p>
                 <div style="font-size: 4rem;">🚴‍♂️ 💨</div>
             </div>
-            """, unsafe_allow_html=True)
+            ''', unsafe_allow_html=True)
 
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         st.markdown("<h2 style='text-align: center; margin-bottom: 2rem;'>Em muốn khám phá gì?</h2>", unsafe_allow_html=True)
         
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.markdown("""<div class="phy-card"><div class="icon-box" style="background-color: #EFF6FF; color: #3B82F6;">📖</div><h3 style="font-size: 1.25rem;">Theo bài học</h3><p style="color: #64748b; font-size: 0.95rem;">Ôn tập vận tốc, gia tốc và đồ thị chuyển động.</p></div>""", unsafe_allow_html=True)
+            st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #EFF6FF; color: #3B82F6;">📖</div><h3 style="font-size: 1.25rem;">Theo bài học</h3><p style="color: #64748b; font-size: 0.95rem;">Ôn tập vận tốc, gia tốc và đồ thị chuyển động.</p></div>''', unsafe_allow_html=True)
         with c2:
-            st.markdown("""<div class="phy-card"><div class="icon-box" style="background-color: #FEF08A; color: #A16207;">💡</div><h3 style="font-size: 1.25rem;">Theo hiện tượng</h3><p style="color: #64748b; font-size: 0.95rem;">Khám phá các tình huống giao thông, thể thao.</p></div>""", unsafe_allow_html=True)
+            st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #FEF08A; color: #A16207;">💡</div><h3 style="font-size: 1.25rem;">Theo hiện tượng</h3><p style="color: #64748b; font-size: 0.95rem;">Khám phá các tình huống giao thông, thể thao.</p></div>''', unsafe_allow_html=True)
         with c3:
-            st.markdown("""<div class="phy-card"><div class="icon-box" style="background-color: #CCFBF1; color: #0D9488;">🤖</div><h3 style="font-size: 1.25rem;">Hỏi AI Khám phá</h3><p style="color: #64748b; font-size: 0.95rem;">Mổ xẻ hiện tượng Vật lí cùng trợ lý ảo.</p></div>""", unsafe_allow_html=True)
+            st.markdown('''<div class="phy-card"><div class="icon-box" style="background-color: #CCFBF1; color: #0D9488;">🤖</div><h3 style="font-size: 1.25rem;">Hỏi AI Khám phá</h3><p style="color: #64748b; font-size: 0.95rem;">Mổ xẻ hiện tượng Vật lí cùng trợ lý ảo.</p></div>''', unsafe_allow_html=True)
 
     # === GIAO DIỆN 2: THƯ VIỆN HIỆN TƯỢNG ===
     elif menu == "📚 Khám phá Hiện tượng":
@@ -110,18 +110,17 @@ try:
             if os.path.exists(duong_dan_anh):
                 st.image(duong_dan_anh, use_container_width=True)
             else:
-                st.warning(f"✍️ Đang chờ nét vẽ Sketchnote... (Tên file cần có: {ten_file_anh})")
+                st.warning(f"✍️ Đang chờ nét vẽ Sketchnote... (Tên file: {ten_file_anh})")
                 
             st.markdown(f"**❓ Câu hỏi gợi mở:** *{ho_so['Câu hỏi gợi mở']}*")
             
-            # --- AI PHÂN TÍCH NHANH ---
-            st.markdown(f"""
+            st.markdown(f'''
             <div style="background-color: #F0FDF4; padding: 15px; border-radius: 10px; border-left: 5px solid #22C55E; margin-top: 20px; margin-bottom: 10px;">
                 <h4 style="color: #15803D; margin-top: 0; display: flex; align-items: center; gap: 8px;">🤖 AI phân tích nhanh</h4>
                 <p style="font-size: 0.95em; color: #1E293B; margin-bottom: 5px;"><strong>Dựa vào câu hỏi:</strong> <em>"{ho_so['Câu hỏi gợi mở']}"</em></p>
                 <p style="font-size: 0.85em; color: #64748b;">Hãy nhập hoặc đọc câu trả lời, AI sẽ định hướng nhé!</p>
             </div>
-            """, unsafe_allow_html=True)
+            ''', unsafe_allow_html=True)
             
             cau_tra_loi_hs = st.text_area("Câu trả lời của em:", height=80, placeholder="Gõ câu trả lời vào đây...")
             col_btn1, col_btn2 = st.columns([1, 1])
@@ -129,14 +128,12 @@ try:
                 gui_ai = st.button("🚀 Gửi AI phân tích", use_container_width=True)
             with col_btn2:
                 import streamlit.components.v1 as components
-                components.html("""
+                components.html('''
                 <!DOCTYPE html>
                 <html>
                 <head>
                 <style>
-                .btn {
-                    width: 100%; padding: 0.5rem; background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; cursor: pointer; font-weight: 600; font-family: 'Quicksand', sans-serif; color: #334155; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; font-size: 1rem; transition: background-color 0.3s;
-                }
+                .btn { width: 100%; padding: 0.5rem; background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 0.5rem; cursor: pointer; font-weight: 600; font-family: 'Quicksand', sans-serif; color: #334155; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; font-size: 1rem; transition: background-color 0.3s; }
                 .btn:hover { background-color: #e2e8f0; }
                 </style>
                 </head>
@@ -147,8 +144,7 @@ try:
                   if (window.hasOwnProperty('webkitSpeechRecognition') || window.hasOwnProperty('SpeechRecognition')) {
                     var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                     var recognition = new SpeechRecognition();
-                    recognition.lang = "vi-VN";
-                    recognition.start();
+                    recognition.lang = "vi-VN"; recognition.start();
                     
                     var btn = document.querySelector('.btn');
                     btn.innerHTML = "🔴 Đang nghe... (Hãy nói đi)";
@@ -171,3 +167,70 @@ try:
                         btn.style.borderColor = "#cbd5e1";
                         recognition.stop();
                     };
+                    recognition.onerror = function(e) {
+                        btn.innerHTML = "🎤 Nhập bằng Giọng nói";
+                        btn.style.backgroundColor = "#f1f5f9";
+                        btn.style.color = "#334155";
+                        btn.style.borderColor = "#cbd5e1";
+                        recognition.stop();
+                        alert("Không nghe rõ. Vui lòng thử lại!");
+                    }
+                  } else {
+                    alert("Trình duyệt không hỗ trợ, hãy dùng Chrome nhé!");
+                  }
+                }
+                </script>
+                </body>
+                </html>
+                ''', height=45)
+
+            if gui_ai:
+                if cau_tra_loi_hs:
+                    if api_ready:
+                        with st.spinner("AI đang suy nghĩ..."):
+                            prompt_ai = f'''
+                            Bạn là cô giáo dạy Vật lí lớp 10, rất tâm lý và khích lệ học sinh.
+                            Tình huống: {ho_so['Tên tình huống']}.
+                            Câu hỏi đặt ra: {ho_so['Câu hỏi gợi mở']}.
+                            Lời giải đúng: {ho_so['Giải thích khoa học']}.
+                            Học sinh vừa trả lời: "{cau_tra_loi_hs}".
+                            
+                            Hãy viết 1 đoạn nhận xét ngắn gọn (khoảng 2-3 câu):
+                            - Nếu học sinh nói không biết, từ bỏ, hoặc đùa giỡn: Nhẹ nhàng nhắc nhở, động viên.
+                            - Nếu trả lời sai: Chỉnh sửa nhẹ nhàng.
+                            - Nếu trả lời có ý đúng: Khen ngợi.
+                            Quy tắc BẮT BUỘC: 
+                            1. Xưng là "cô", gọi học sinh là "em".
+                            2. Bất kể học sinh trả lời đúng hay sai, CÂU CHỐT CUỐI CÙNG LUÔN LÀ: "Em hãy xem phần 'Giải thích khoa học' bên cạnh để hiểu rõ hơn nhé!"
+                            '''
+                            try:
+                                response = model.generate_content(prompt_ai)
+                                st.success(f"**🤖 AI phân tích:** {response.text}")
+                            except Exception as e:
+                                st.error(f"AI đang bận, thử lại sau nhé! (Lỗi: {e})")
+                    else:
+                        st.warning("Tính năng AI chưa được kích hoạt (Thiếu API Key).")
+                else:
+                    st.warning("⚠️ Hãy nhập câu trả lời trước khi gửi!")
+
+        with col_phai:
+            with st.container():
+                st.markdown("<h3 style='color: #0D9488;'>Giải thích khoa học</h3>", unsafe_allow_html=True)
+                st.write(ho_so['Giải thích khoa học'])
+                st.markdown("<h3 style='color: #0D9488;'>Công thức vận dụng</h3>", unsafe_allow_html=True)
+                st.markdown(ho_so['Công thức'])
+                st.markdown("<h3 style='color: #0D9488;'>Ví dụ định lượng</h3>", unsafe_allow_html=True)
+                st.write(ho_so['Ví dụ định lượng'])
+                st.markdown("<h3 style='color: #0D9488;'>Thử thách tương tác</h3>", unsafe_allow_html=True)
+                st.markdown(str(ho_so['Câu hỏi tương tác']).replace('\\n', '\n\n'))
+                with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
+                    st.success(str(ho_so['Đáp án/phản hồi']).replace('\\n', '\n\n'))
+                
+                st.markdown("---")
+                st.markdown("<h4 style='color: #0D9488;'>🛠️ Hoạt động thực hành</h4>", unsafe_allow_html=True)
+                st.info(ho_so['Hoạt động thực hành'])
+                st.markdown("<h4 style='color: #0D9488;'>🏷️ Từ khóa</h4>", unsafe_allow_html=True)
+                
+                tu_khoa_list = str(ho_so['Từ khóa']).split(',')
+                html_tu_khoa = "".join([f"<span style='background-color: #E2E8F0; padding: 4px 8px; border-radius: 4px; margin-right: 5px; font-size: 0.85em;'>{tag.strip()}</span>" for tag in tu_khoa_list])
+                st.markdown(html_tu_khoa, unsafe_allow_html=True)
