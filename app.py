@@ -204,6 +204,7 @@ with st.expander("💡 Bấm vào đây để xem Gợi ý / Phản hồi"):
     # ==========================================
     # GIAO DIỆN 3: AI CHAT (Sẽ phát triển sau)
     # ==========================================
+   
     elif menu == "🤖 Hỏi Nhà khám phá AI":
         st.markdown("<h2 style='color: #0D9488;'>Nhà khám phá AI</h2>", unsafe_allow_html=True)
         st.info("Tính năng trò chuyện tương tác trực tiếp với mô hình Gemini AI đang được lắp ráp và sẽ sớm ra mắt. Em hãy quay lại sau nhé!")
