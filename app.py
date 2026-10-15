@@ -58,7 +58,7 @@ try:
             
             st.markdown("### Công thức vận dụng")
             # Hiển thị công thức Toán học định dạng LaTeX
-            st.latex(ho_so['Công thức'])
+            st.markdown(ho_so['Công thức'])
             
             st.markdown("### Câu hỏi tương tác")
             st.write(ho_so['Câu hỏi tương tác'])
