@@ -4,20 +4,6 @@ import os
 import google.generativeai as genai
 import time
 
-# --- HÀM THEO DÕI LƯỢT TRA CỨU ---
-def get_view_count():
-    try:
-        with open("view_count.txt", "r") as f:
-            return int(f.read())
-    except Exception:
-        return 0
-
-def add_view_count():
-    count = get_view_count() + 1
-    with open("view_count.txt", "w") as f:
-        f.write(str(count))
-    return count
-
 # 1. CẤU HÌNH TRANG WEB & MÀU SẮC TÙY CHỈNH
 st.set_page_config(page_title="PHY-LIFE 10", page_icon="🚀", layout="wide", initial_sidebar_state="expanded")
 
@@ -29,13 +15,13 @@ try:
 except Exception as e:
     api_ready = False
 
-# Nhúng CSS tùy chỉnh cơ bản
+# Nhúng CSS tùy chỉnh cơ bản (Cho toàn bộ App)
 st.markdown('''
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
     html, body, [class*="css"] { font-family: 'Quicksand', sans-serif !important; }
     .stApp { background-color: #FCFBF4; }
-    .main-text { color: #1E293B; }
+    h1, h2, h3, h4, h5, h6, p, span, div { color: #1E293B; }
     [data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e2e8f0; }
     .stAlert { border-radius: 1rem !important; border: none !important; }
     .phy-card { background-color: white; padding: 2rem 1.5rem; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; height: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 10px; }
@@ -47,8 +33,14 @@ st.markdown('''
 # 2. ĐỌC DỮ LIỆU TỪ EXCEL
 @st.cache_data
 def load_data():
-    df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx')
-    return df
+    xls = pd.ExcelFile('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx')
+    sheet_names = xls.sheet_names
+    df_main = pd.read_excel(xls, sheet_name=sheet_names[0])
+    if 'Du_lieu_Game' in sheet_names:
+        df_game = pd.read_excel(xls, sheet_name='Du_lieu_Game')
+    else:
+        df_game = pd.DataFrame()
+    return df_main, df_game
 
 # 3. ĐIỀU HƯỚNG TRANG THÔNG MINH
 if "nav_page" not in st.session_state:
@@ -69,9 +61,11 @@ if not api_ready:
     st.sidebar.warning("Vui lòng cấu hình GEMINI_API_KEY trong Settings > Secrets trên Streamlit Cloud.")
 
 try:
-    df = load_data()
+    df_main, df_game = load_data()
     
+    # ==========================================
     # === GIAO DIỆN 1: TRANG CHỦ ===
+    # ==========================================
     if st.session_state.nav_page == "🏠 Trang chủ":
         col_text, col_img = st.columns([1.2, 1])
         with col_text:
@@ -89,9 +83,10 @@ try:
 
         with col_img:
             st.markdown('''
-            <div style="border: 2px dashed #1E293B; border-radius: 1rem; padding: 2.5rem; background-color: white; position: relative; margin-top: 2rem; text-align: center; box-shadow: 8px 8px 0px #FEF08A;">
-                <h3 style="font-family: 'Caveat', cursive; color: #0D9488; font-size: 3rem; margin-bottom: 15px;">v = s / t</h3>
-                <div style="font-size: 5rem;">🚴‍♂️ 💨</div>
+            <div style="border: 2px dashed #1E293B; border-radius: 1rem; padding: 2rem; background-color: white; position: relative; margin-top: 2rem; text-align: center; box-shadow: 8px 8px 0px #FEF08A;">
+                <h3 style="font-family: 'Caveat', cursive; color: #0D9488;">v = s / t</h3>
+                <p style="color: #64748b;"><i>(Khu vực hiển thị ảnh minh họa)</i></p>
+                <div style="font-size: 4rem;">🚴‍♂️ 💨</div>
             </div>
             ''', unsafe_allow_html=True)
 
@@ -123,41 +118,19 @@ try:
                 st.session_state.nav_page = "🤖 Hỏi Nhà khám phá AI"
                 st.rerun()
 
+    # ==========================================
     # === GIAO DIỆN 2: THƯ VIỆN HIỆN TƯỢNG ===
+    # ==========================================
     elif st.session_state.nav_page == "📚 Khám phá Hiện tượng":
-        
-        col_title, col_stat = st.columns([3, 1])
-        with col_title:
-            st.markdown("<h2 style='color: #0D9488;'>Thư viện Hiện tượng thực tiễn</h2>", unsafe_allow_html=True)
-            
+        st.markdown("<h2 style='color: #0D9488;'>Thư viện Hiện tượng thực tiễn</h2>", unsafe_allow_html=True)
         col_loc1, col_loc2 = st.columns(2)
         with col_loc1:
-            danh_sach_bai = df['Bài học liên quan'].unique()
+            danh_sach_bai = df_main['Bài học liên quan'].unique()
             bai_hoc_chon = st.selectbox("📌 Chiều 1: Từ Sách giáo khoa (Bài học) đến Hiện tượng:", danh_sach_bai)
         
-        df_loc = df[df['Bài học liên quan'] == bai_hoc_chon]
+        df_loc = df_main[df_main['Bài học liên quan'] == bai_hoc_chon]
         with col_loc2:
             tinh_huong_chon = st.selectbox("🔍 Chiều 2: Chọn tình huống thực tiễn để xem kiến thức:", df_loc['Tên tình huống'])
-            
-        # LOGIC ĐẾM LƯỢT TRA CỨU
-        if "last_viewed" not in st.session_state:
-            st.session_state.last_viewed = tinh_huong_chon
-            current_views = add_view_count()
-        elif st.session_state.last_viewed != tinh_huong_chon:
-            st.session_state.last_viewed = tinh_huong_chon
-            current_views = add_view_count()
-        else:
-            current_views = get_view_count()
-
-        # HIỂN THỊ THỐNG KÊ LƯỢT TRA CỨU (ĐÃ THU NHỎ GỌN GÀNG)
-        with col_stat:
-            st.markdown(f'''
-            <div style="background-color: #FEF2F2; padding: 6px 10px; border-radius: 8px; border: 1.5px solid #EF4444; text-align: center; float: right; width: 130px;">
-                <p style="margin: 0; color: #991B1B; font-weight: 700; font-size: 0.75rem; text-transform: uppercase;">🔥 Lượt tra cứu</p>
-                <h4 style="margin: 0; color: #DC2626; font-size: 1.3rem; line-height: 1.2;">{current_views}</h4>
-            </div>
-            ''', unsafe_allow_html=True)
-            
         st.markdown("---")
         
         if "current_scenario" not in st.session_state:
@@ -177,12 +150,18 @@ try:
             st.info(f"📍 **Bối cảnh:** {ho_so['Bối cảnh']}")
             st.markdown(f"<span style='color: #1E293B;'>**Quan sát:** {ho_so['Mô tả quan sát']}</span>", unsafe_allow_html=True)
             
-            ten_file_anh = str(ho_so['Tên file ảnh'])
+            # --- CẬP NHẬT: XỬ LÝ ẢNH HOẶC VIDEO ---
+            ten_file_anh = str(ho_so['Tên file ảnh']).strip()
             duong_dan_anh = os.path.join("images", ten_file_anh)
+            
             if os.path.exists(duong_dan_anh):
-                st.image(duong_dan_anh, use_container_width=True)
+                # Kiểm tra nếu là file video (mp4, mov, webm)
+                if ten_file_anh.lower().endswith(('.mp4', '.mov', '.webm')):
+                    st.video(duong_dan_anh)
+                else:
+                    st.image(duong_dan_anh, use_container_width=True)
             else:
-                st.warning(f"✍️ Đang chờ nét vẽ Sketchnote... (Tên file cần có: {ten_file_anh})")
+                st.warning(f"✍️ Đang chờ nét vẽ Sketchnote hoặc Video... (Tên file cần có: {ten_file_anh})")
                 
             st.markdown(f"<span style='color: #1E293B;'>**❓ Câu hỏi gợi mở:** *{ho_so['Câu hỏi gợi mở']}*</span>", unsafe_allow_html=True)
             
@@ -218,7 +197,7 @@ try:
                             except Exception as e:
                                 st.session_state.ai_response = f"❌ AI đang bận, thử lại sau nhé! (Lỗi: {e})"
                     else:
-                        st.session_state.ai_response = "⚠️ Tính năng AI chưa được kích hoạt (Thiếu API Key)."
+                        st.session_state.ai_response = "⚠️ Tính năng AI chưa được kích hoạt."
                 else:
                     st.warning("⚠️ Hãy nhập câu trả lời trước khi gửi!")
 
@@ -263,8 +242,7 @@ try:
     # === GIAO DIỆN 3: BẢN ĐỒ THỬ THÁCH (GAME) ===
     elif st.session_state.nav_page == "🎮 Bản đồ Thử thách (Game)":
         
-        st.session_state.play_sound = False
-
+        # CSS RIÊNG BIỆT CHO TRANG GAME (Nền tối, chữ sáng)
         st.markdown('''
         <style>
             .stApp {
@@ -272,15 +250,34 @@ try:
                 background-image: linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px) !important;
                 background-size: 30px 30px !important;
             }
+            /* Ép toàn bộ chữ Markdown trên trang Game thành màu sáng */
             .stMarkdown p, .stMarkdown li, .stMarkdown span, .stMarkdown strong { color: #f8fafc !important; font-size: 1.15rem; }
+            
             .neon-title { text-align: center; color: #ef4444 !important; font-weight: 900; font-size: 3.5rem; text-transform: uppercase; text-shadow: 0 0 10px #dc2626, 0 0 20px #991b1b, 0 0 30px #7f1d1d; margin-bottom: 0px; letter-spacing: 3px; }
             .cyber-warning { background-color: rgba(220, 38, 38, 0.1); border: 2px solid #ef4444; color: #fca5a5 !important; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.2rem; margin-bottom: 30px; }
             .led-screen { background-color: #0f172a; border: 3px solid #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 12px; text-align: center; font-size: 1.8rem; font-family: 'Courier New', Courier, monospace; letter-spacing: 8px; margin-bottom: 30px; color: #38bdf8 !important; }
             .led-code { color: #fde047 !important; font-weight: bold; text-shadow: 0 0 10px #facc15; }
             .mission-panel { background: rgba(15, 23, 42, 0.8); border-left: 5px solid #38bdf8; border-radius: 10px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
             .mission-header { color: #38bdf8 !important; font-size: 1.8rem !important; font-weight: 800; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px;}
-            div[data-testid="stRadio"], div[data-testid="stSelectbox"], div[data-testid="stTextInput"] { background-color: #f8fafc !important; padding: 20px !important; border-radius: 12px !important; border: 2px solid #38bdf8 !important; box-shadow: 0 0 15px rgba(56,189,248,0.2) !important; margin-top: 10px; margin-bottom: 20px; }
-            div[data-testid="stRadio"] p, div[data-testid="stRadio"] span, div[data-testid="stRadio"] div, div[data-testid="stRadio"] label, div[data-testid="stSelectbox"] p, div[data-testid="stSelectbox"] span, div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] p, div[data-testid="stTextInput"] span, div[data-testid="stTextInput"] label { color: #0f172a !important; font-weight: 700 !important; font-size: 1.1rem !important; }
+            
+            /* SỬA LỖI CHỮ CHÌM Ở CÁC Ô NHẬP LIỆU/TRẮC NGHIỆM */
+            div[data-testid="stRadio"], div[data-testid="stSelectbox"], div[data-testid="stTextInput"] {
+                background-color: #f8fafc !important; 
+                padding: 20px !important;
+                border-radius: 12px !important;
+                border: 2px solid #38bdf8 !important;
+                box-shadow: 0 0 15px rgba(56,189,248,0.2) !important;
+                margin-top: 10px;
+                margin-bottom: 20px;
+            }
+            /* Chữ bên trong khung câu hỏi là màu đen/tối để tương phản với nền trắng của khung */
+            div[data-testid="stRadio"] p, div[data-testid="stRadio"] span, div[data-testid="stRadio"] div, div[data-testid="stRadio"] label,
+            div[data-testid="stSelectbox"] p, div[data-testid="stSelectbox"] span, div[data-testid="stSelectbox"] label,
+            div[data-testid="stTextInput"] p, div[data-testid="stTextInput"] span, div[data-testid="stTextInput"] label {
+                color: #0f172a !important; 
+                font-weight: 700 !important;
+                font-size: 1.1rem !important;
+            }
         </style>
         ''', unsafe_allow_html=True)
 
@@ -288,6 +285,7 @@ try:
             st.session_state.station = 1
             st.session_state.passcodes = ["_", "_", "_", "_"]
             st.session_state.tram2_matched = False
+            st.session_state.play_sound = False
 
         st.markdown("<div class='neon-title'>🕵️‍♂️ ĐIỆP VỤ PHYSIX</div>", unsafe_allow_html=True)
         st.markdown("<div class='cyber-warning'>🚨 CẢNH BÁO: Tàu tốc hành đang mất phanh. Các đặc vụ PHY-LIFE cần giải mã 4 trạm điều khiển để kích hoạt hệ thống phanh khẩn cấp!</div>", unsafe_allow_html=True)
@@ -301,7 +299,14 @@ try:
         </div>
         """, unsafe_allow_html=True)
 
-        # --- TRẠM 1: KHÔNG LƯU ---
+        if st.session_state.play_sound:
+            sound_html = '<audio autoplay><source src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" type="audio/mpeg"></audio>'
+            st.markdown(sound_html, unsafe_allow_html=True)
+            st.session_state.play_sound = False
+
+        # ==========================================
+        # TRẠM 1: KHÔNG LƯU
+        # ==========================================
         if st.session_state.station == 1:
             st.markdown("""
             <div class='mission-panel'>
@@ -322,6 +327,7 @@ try:
                 if ans1 and ans1.startswith("C"):
                     st.success("✅ Phân tích đáp án C... Phát hiện mã in chìm! Hệ thống ghi nhận mã số: 4. Đã mở khóa Trạm 2!")
                     st.session_state.passcodes[0] = "4"
+                    st.session_state.play_sound = True
                     time.sleep(1.5)
                     st.session_state.station = 2
                     st.rerun()
@@ -330,7 +336,9 @@ try:
                 else:
                     st.warning("⚠️ Đặc vụ cần chọn một đáp án!")
 
-        # --- TRẠM 2: ĐỘNG CƠ ---
+        # ==========================================
+        # TRẠM 2: ĐỘNG CƠ
+        # ==========================================
         elif st.session_state.station == 2:
             st.markdown("""
             <div class='mission-panel'>
@@ -374,13 +382,16 @@ try:
                     if ans2.strip() == "8":
                         st.success("✅ Hệ thống ghi nhận mã số: 8. Đã mở khóa Trạm 3!")
                         st.session_state.passcodes[1] = "8"
+                        st.session_state.play_sound = True
                         time.sleep(1.5)
                         st.session_state.station = 3
                         st.rerun()
                     else:
                         st.error("❌ Sai mã số. Động cơ đang quá tải!")
 
-        # --- TRẠM 3: ẢO GIÁC ---
+        # ==========================================
+        # TRẠM 3: ẢO GIÁC
+        # ==========================================
         elif st.session_state.station == 3:
             st.markdown("""
             <div class='mission-panel'>
@@ -399,6 +410,7 @@ try:
                 if q1 == "Sai (0)" and q2 == "Đúng (1)" and q3 == "Sai (0)" and q4 == "Đúng (1)":
                     st.success("✅ Dữ liệu nhị phân thu được: **0101**. Quy đổi sang hệ thập phân chính là số 5!")
                     st.session_state.passcodes[2] = "5"
+                    st.session_state.play_sound = True
                     time.sleep(2)
                     st.session_state.station = 4
                     st.rerun()
@@ -407,7 +419,9 @@ try:
                 else:
                     st.error("❌ Lỗi hệ quy chiếu! Mã nhị phân bị sai lệch. Hãy tính lại!")
 
-        # --- TRẠM 4: BỨT TỐC ---
+        # ==========================================
+        # TRẠM 4: BỨT TỐC
+        # ==========================================
         elif st.session_state.station == 4:
             st.markdown("""
             <div class='mission-panel'>
@@ -423,13 +437,16 @@ try:
                 if ans4.strip() == "7":
                     st.success("✅ Phân tích chuẩn xác! Vali đứng yên so với băng chuyền, nên thời gian = 14m / 2(m/s) = 7s. Hệ thống ghi nhận mã số: 7.")
                     st.session_state.passcodes[3] = "7"
+                    st.session_state.play_sound = True
                     time.sleep(2)
                     st.session_state.station = 5
                     st.rerun()
                 else:
                     st.error("❌ Tính toán sai lệch. Cảnh báo va chạm cận kề!")
 
-        # --- CHẶNG CUỐI ---
+        # ==========================================
+        # CHẶNG CUỐI: NHẬP MÃ KÍCH HOẠT
+        # ==========================================
         elif st.session_state.station == 5:
             st.markdown("<div class='game-station' style='background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%); border: 3px solid #fca5a5;'><h3 style='color: white !important;'>🛑 HỆ THỐNG PHANH KHẨN CẤP</h3></div>", unsafe_allow_html=True)
             st.warning("⚠️ YÊU CẦU NHẬP MÃ KÍCH HOẠT 4 CHỮ SỐ ĐỂ DỪNG TÀU!")
@@ -440,6 +457,7 @@ try:
                 if final_code == "4857":
                     st.balloons()
                     st.markdown("<div style='background-color: rgba(34, 197, 94, 0.2); padding: 40px; border-radius: 15px; text-align: center; border: 2px solid #4ade80; box-shadow: 0 0 30px rgba(74, 222, 128, 0.5);'><h1 style='color: #4ade80 !important; font-size: 3.5rem; margin-bottom: 10px; text-shadow: 0 0 10px #4ade80;'>🎉 KÍCH HOẠT THÀNH CÔNG!</h1><h2 style='color: #86efac !important;'>CỨU HỘ HOÀN TẤT. KIỆN HÀNG TRI THỨC ĐÃ ĐƯỢC BẢO VỆ.</h2><p style='font-size: 1.2rem; color: #f8fafc !important; margin-top: 20px;'>Các đặc vụ PHY-LIFE đã xuất sắc hoàn thành nhiệm vụ!</p></div>", unsafe_allow_html=True)
+                    st.session_state.play_sound = True
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     if st.button("🔄 Chơi lại Điệp vụ", use_container_width=True):
@@ -450,7 +468,7 @@ try:
                 else:
                     st.error("❌ HỆ THỐNG TỪ CHỐI. TÀU VẪN ĐANG LAO DỐC!")
 
-    # === GIAO DIỆN 4: AI CHAT ===
+    # === GIAO DIỆN 4: AI CHAT (NHÀ KHÁM PHÁ VẬT LÍ) ===
     elif st.session_state.nav_page == "🤖 Hỏi Nhà khám phá AI":
         st.markdown("<h2 style='color: #0D9488;'>🤖 Nhà khám phá AI</h2>", unsafe_allow_html=True)
         st.markdown("<span class='main-text'>Chào em! Cô là Nhà khám phá Vật lí. Em có hiện tượng gì thú vị muốn kể cho cô nghe, nhập một khái niệm muốn tìm hiểu, hay muốn thử sức với bài tập vận dụng nào?</span>", unsafe_allow_html=True)
