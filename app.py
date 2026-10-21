@@ -18,7 +18,7 @@ def add_view_count():
         f.write(str(count))
     return count
 
-# 1. CẤU HÌNH TRANG WEB & MÀU SẮC TÙY CHỈNH
+# 1. CẤU HÌNH TRANG WEB & MÀU SẮC
 st.set_page_config(page_title="PHY-LIFE 10", page_icon="🚀", layout="wide", initial_sidebar_state="expanded")
 
 try:
@@ -28,7 +28,6 @@ try:
 except Exception as e:
     api_ready = False
 
-# Nhúng CSS tùy chỉnh cơ bản
 st.markdown('''
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
@@ -41,33 +40,21 @@ st.markdown('''
     .phy-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #0D9488; background-color: #F0FDFA; }
     .icon-box { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 15px; }
     .pretest-box { background-color: white; padding: 25px; border-radius: 15px; border: 2px solid #0D9488; box-shadow: 0 4px 6px rgba(13,148,136,0.1); margin-bottom: 20px;}
-    .node-box { background-color: #ffffff; border: 2px solid #0D9488; padding: 12px 20px; border-radius: 12px; text-align: center; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); color: #1E293B; }
-    .arrow-box { text-align: center; font-size: 24px; color: #0D9488; font-weight: bold; padding: 5px 0; }
 </style>
 ''', unsafe_allow_html=True)
 
-# 2. ĐỌC DỮ LIỆU TỪ EXCEL (3 Sheet: Thư viện, Game, Khởi động)
+# 2. ĐỌC DỮ LIỆU TỪ EXCEL
 @st.cache_data
 def load_data():
     xls = pd.ExcelFile('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx')
     sheet_names = xls.sheet_names
-    
     df_main = pd.read_excel(xls, sheet_name=sheet_names[0])
-    
-    if 'Du_lieu_Game' in sheet_names:
-        df_game = pd.read_excel(xls, sheet_name='Du_lieu_Game')
-    else:
-        df_game = pd.DataFrame()
-        
-    if 'Du_lieu_Khoi_dong' in sheet_names:
-        df_pretest = pd.read_excel(xls, sheet_name='Du_lieu_Khoi_dong')
-    else:
-        df_pretest = pd.DataFrame()
-        
+    df_game = pd.read_excel(xls, sheet_name='Du_lieu_Game') if 'Du_lieu_Game' in sheet_names else pd.DataFrame()
+    df_pretest = pd.read_excel(xls, sheet_name='Du_lieu_Khoi_dong') if 'Du_lieu_Khoi_dong' in sheet_names else pd.DataFrame()
     return df_main, df_game, df_pretest
 
 # ==========================================
-# 3. KHỞI TẠO TRẠNG THÁI HỆ THỐNG (CHỐNG LỖI BỘ NHỚ)
+# 3. TRẠNG THÁI HỆ THỐNG & PHÂN LUỒNG MENU
 # ==========================================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -76,20 +63,13 @@ if "logged_in" not in st.session_state:
     st.session_state.student_class = ""
     st.session_state.student_level = "" 
     st.session_state.nav_page = "🏠 Cổng Khởi động"
+    
     st.session_state.pretest_step = 1
     st.session_state.pretest_answers = {} 
-
-# Đảm bảo các biến Game luôn tồn tại độc lập
-if "station" not in st.session_state:
+    
     st.session_state.station = 1
-if "passcodes" not in st.session_state:
     st.session_state.passcodes = []
-if "tram2_matched" not in st.session_state:
-    st.session_state.tram2_matched = False
-if "play_sound" not in st.session_state:
     st.session_state.play_sound = False
-if "force_unlock_game" not in st.session_state:
-    st.session_state.force_unlock_game = False
 
 st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE 10</h2>", unsafe_allow_html=True)
 
@@ -97,9 +77,9 @@ st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE
 if not st.session_state.pretest_done:
     menu_list = ["🏠 Cổng Khởi động"]
 else:
-    if st.session_state.student_level in ["Khá giỏi", "Tốt"]:
-        menu_list = ["📚 Khám phá Hiện tượng", "🕸️ Bản đồ Kết nối", "🎮 Bản đồ Thử thách (Game)", "🤖 Hỏi Nhà khám phá AI"]
-    else: 
+    if st.session_state.student_level == "Tốt": # Nhóm 100%
+        menu_list = ["📚 Khám phá Hiện tượng", "🎮 Thử thách (Game)", "🤖 Hỏi Nhà khám phá AI"]
+    else: # Nhóm Yếu/Cơ bản (<100%)
         menu_list = ["📖 Ôn tập cốt lõi", "🤖 Gia sư AI (Hỗ trợ)"]
 
 selected_menu = st.sidebar.radio("CHUYÊN MỤC", menu_list, index=menu_list.index(st.session_state.nav_page) if st.session_state.nav_page in menu_list else 0)
@@ -125,7 +105,7 @@ try:
     df_main, df_game, df_pretest = load_data()
     
     # ==========================================
-    # CỔNG KHỞI ĐỘNG (PRE-TEST ĐỘNG TỪ EXCEL)
+    # CỔNG KHỞI ĐỘNG (PRE-TEST)
     # ==========================================
     if st.session_state.nav_page == "🏠 Cổng Khởi động":
         st.markdown("<h1 style='text-align: center; color: #0D9488;'>Chào mừng đến với PHY-LIFE 10!</h1>", unsafe_allow_html=True)
@@ -153,7 +133,7 @@ try:
             st.info(f"Chào **{st.session_state.student_name}**! Để hệ thống thiết kế lộ trình học tốt nhất, em hãy xem các video ngắn và trả lời câu hỏi tương tác dưới đây nhé. (Yêu cầu: Đúng 100% để mở khóa toàn bộ Hệ thống)")
             
             if df_pretest.empty:
-                st.error("⚠️ Hệ thống chưa tìm thấy dữ liệu Khởi động trong file Excel (Sheet: Du_lieu_Khoi_dong).")
+                st.error("⚠️ Lỗi: Không tìm thấy dữ liệu Sheet 'Du_lieu_Khoi_dong'.")
             else:
                 tong_so_cau = len(df_pretest)
                 if st.session_state.pretest_step <= tong_so_cau:
@@ -192,15 +172,14 @@ try:
                         nhan_nut = "Nộp bài & Phân luồng 🔓" if st.session_state.pretest_step == tong_so_cau else "Tiếp tục ➡️"
                         if st.button(nhan_nut, use_container_width=True):
                             if tra_loi:
-                                is_correct = tra_loi.startswith(dap_an_dung)
-                                st.session_state.pretest_answers[st.session_state.pretest_step] = is_correct
+                                st.session_state.pretest_answers[st.session_state.pretest_step] = tra_loi.startswith(dap_an_dung)
                                 
                                 if st.session_state.pretest_step == tong_so_cau:
                                     score = sum(st.session_state.pretest_answers.values())
                                     
                                     # YÊU CẦU ĐẠT 100% ĐỂ MỞ KHÓA
                                     if score == tong_so_cau:
-                                        st.session_state.student_level = "Khá giỏi"
+                                        st.session_state.student_level = "Tốt"
                                         st.success(f"🎉 Xuất sắc! Em làm đúng 100% ({score}/{tong_so_cau} câu). Hệ thống đã mở khóa TOÀN BỘ CHỨC NĂNG!")
                                         st.session_state.nav_page = "📚 Khám phá Hiện tượng"
                                     else:
@@ -407,16 +386,13 @@ try:
             else:
                 st.markdown('''<div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 40px 20px; text-align: center; margin-top: 20px;"><div style="font-size: 3.5rem; margin-bottom: 15px;">🔒</div><h3 style="color: #64748b; margin-top: 0;">Nội dung đang khóa</h3><p style="color: #94a3b8; font-size: 1.05em; max-width: 90%; margin: 0 auto;">Em hãy suy nghĩ và <strong>Gửi AI phân tích</strong> câu trả lời ở cột bên trái để mở khóa nhé!</p></div>''', unsafe_allow_html=True)
 
-    # === GIAO DIỆN MỚI: BẢN ĐỒ KẾT NỐI ===
-    elif st.session_state.nav_page == "🕸️ Bản đồ Kết nối":
-        st.markdown("<h2 style='color: #0D9488;'>🕸️ Bản đồ Kết nối Tư duy Động học</h2>", unsafe_allow_html=True)
-        st.info("Tính năng Bản đồ kết nối sẽ hiển thị tại đây.")
-
-    # === GIAO DIỆN 3: BẢN ĐỒ THỬ THÁCH (GAME TỪ EXCEL) ===
-    elif st.session_state.nav_page == "🎮 Bản đồ Thử thách (Game)":
+    # ==========================================
+    # GIAO DIỆN 3: THỬ THÁCH (GAME TỪ EXCEL)
+    # ==========================================
+    elif st.session_state.nav_page == "🎮 Thử thách (Game)":
         if st.session_state.student_level == "Cơ bản" and not st.session_state.force_unlock_game:
             st.error("### 🔒 Chuyên mục bị khóa")
-            st.markdown("Phần Game đòi hỏi vận dụng cao. Em cần ôn tập lại lý thuyết trước!")
+            st.markdown("Phần **Thử thách** đòi hỏi vận dụng cao. Em cần đạt 100% bài Test đầu vào để mở khóa!")
             if st.button("Mở khóa đặc quyền (Dành cho Giáo viên Test)"):
                 st.session_state.force_unlock_game = True
                 st.rerun()
@@ -440,13 +416,12 @@ try:
             st.markdown("<div class='cyber-warning'>🚨 CẢNH BÁO: Tàu tốc hành đang mất phanh. Các đặc vụ PHY-LIFE cần giải mã các trạm điều khiển để kích hoạt hệ thống phanh khẩn cấp!</div>", unsafe_allow_html=True)
             
             if df_game.empty:
-                st.error("⚠️ Hệ thống chưa tìm thấy dữ liệu Sheet 'Du_lieu_Game'.")
+                st.error("⚠️ Lỗi: Không tìm thấy dữ liệu Sheet 'Du_lieu_Game'.")
             else:
                 tong_so_tram = len(df_game)
-                if "passcodes" not in st.session_state or len(st.session_state.passcodes) != tong_so_tram:
+                if len(st.session_state.passcodes) != tong_so_tram:
                     st.session_state.passcodes = ["_"] * tong_so_tram
                 
-                progress_val = int(((st.session_state.station - 1) / tong_so_tram) * 100)
                 st.progress((st.session_state.station - 1) / tong_so_tram)
                 
                 passcodes_display = []
@@ -585,49 +560,40 @@ try:
                         st.session_state.tram2_matched = False
                         st.rerun()
 
-    # === GIAO DIỆN 4: HỎI NHÀ KHÁM PHÁ AI ===
+    # === GIAO DIỆN 5: CHATBOT AI KHÁM PHÁ ===
     elif st.session_state.nav_page == "🤖 Hỏi Nhà khám phá AI":
-        st.markdown("<h2 style='color: #0D9488;'>🤖 Nhà khám phá AI</h2>", unsafe_allow_html=True)
-        st.markdown("<span class='main-text'>Chào em! Cô là Nhà khám phá Vật lí. Em có hiện tượng gì thú vị muốn kể cho cô nghe, nhập một khái niệm muốn tìm hiểu, hay muốn thử sức với bài tập vận dụng nào?</span>", unsafe_allow_html=True)
-
-        if not api_ready:
-            st.warning("⚠️ Tính năng AI chưa được kích hoạt. Vui lòng kiểm tra lại GEMINI_API_KEY trong Secrets.")
+        if st.session_state.student_level == "Cơ bản" and not st.session_state.force_unlock_game:
+            st.error("### 🔒 Chuyên mục bị khóa")
+            st.markdown("Cần đạt 100% bài Test đầu vào để mở khóa Trợ lý AI Khám phá đa năng!")
+            if st.button("Mở khóa đặc quyền"):
+                st.session_state.force_unlock_game = True
+                st.rerun()
         else:
-            if "chat_exp_messages" not in st.session_state:
-                st.session_state.chat_exp_messages = []
-            for msg in st.session_state.chat_exp_messages:
-                with st.chat_message(msg["role"]):
-                    st.markdown(msg["content"])
-            if prompt := st.chat_input("Nhập câu hỏi, hiện tượng hoặc khái niệm em muốn khám phá..."):
-                st.session_state.chat_exp_messages.append({"role": "user", "content": prompt})
-                with st.chat_message("user"):
-                    st.markdown(prompt)
-                with st.chat_message("assistant"):
-                    with st.spinner("Cô đang phân tích..."):
-                        history_context = "".join([f"{'Học sinh' if m['role']=='user' else 'Cô giáo'}: {m['content']}\n" for m in st.session_state.chat_exp_messages[-5:-1]])
-                        
-                        sys_prompt = f'''
-                        [HƯỚNG DẪN CHO AI]
-                        Bạn là "Nhà khám phá Vật lí", chuyên gia sư phạm hỗ trợ học sinh GIỎI lớp 10.
-                        Dựa vào câu hỏi của học sinh, thực hiện linh hoạt 1 trong 5 chức năng sau:
-                        1. Giải thích hiện tượng chuyên sâu.
-                        2. Tìm hiện tượng thực tiễn theo khái niệm.
-                        3. Phân tích tình huống mới và tạo ví dụ định lượng.
-                        4. Đặt câu hỏi gợi mở để kích thích tư duy phản biện.
-                        5. Tạo bài tập vận dụng cao (On-demand).
+            st.markdown("<h2 style='color: #0D9488;'>🤖 Nhà khám phá AI</h2>", unsafe_allow_html=True)
+            st.markdown("<span class='main-text'>Chào em! Cô là Nhà khám phá Vật lí. Em có hiện tượng gì thú vị muốn kể cho cô nghe, nhập một khái niệm muốn tìm hiểu, hay muốn thử sức với bài tập vận dụng nào?</span>", unsafe_allow_html=True)
 
-                        Quy tắc: Xưng "cô", gọi "em". Ngôn ngữ uyên bác, truyền cảm hứng.
-                        [KẾT THÚC HƯỚNG DẪN]
-
-                        Lịch sử trò chuyện gần đây: {history_context}
-                        Học sinh vừa nhắn: "{prompt}"
-                        '''
-                        try:
-                            response = model.generate_content(sys_prompt)
-                            st.markdown(response.text)
-                            st.session_state.chat_exp_messages.append({"role": "assistant", "content": response.text})
-                        except Exception as e:
-                            st.error(f"Hệ thống đang bận, em thử lại sau nhé! (Lỗi chi tiết: {e})")
+            if not api_ready:
+                st.warning("⚠️ Tính năng AI chưa được kích hoạt. Vui lòng kiểm tra lại GEMINI_API_KEY trong Secrets.")
+            else:
+                if "chat_exp_messages" not in st.session_state:
+                    st.session_state.chat_exp_messages = []
+                for msg in st.session_state.chat_exp_messages:
+                    with st.chat_message(msg["role"]):
+                        st.markdown(msg["content"])
+                if prompt := st.chat_input("Nhập câu hỏi, hiện tượng hoặc khái niệm em muốn khám phá..."):
+                    st.session_state.chat_exp_messages.append({"role": "user", "content": prompt})
+                    with st.chat_message("user"):
+                        st.markdown(prompt)
+                    with st.chat_message("assistant"):
+                        with st.spinner("Cô đang phân tích..."):
+                            history_context = "".join([f"{'Học sinh' if m['role']=='user' else 'Cô giáo'}: {m['content']}\n" for m in st.session_state.chat_exp_messages[-5:-1]])
+                            sys_prompt = f'''Bạn là "Nhà khám phá Vật lí", chuyên gia sư phạm hỗ trợ học sinh GIỎI lớp 10. Dựa vào câu hỏi, thực hiện 1 trong 5 chức năng: 1. Giải thích hiện tượng. 2. Tìm hiện tượng theo khái niệm. 3. Phân tích tình huống mới. 4. Học bằng câu hỏi gợi mở. 5. Tạo bài tập vận dụng cao. Quy tắc: Xưng "cô", gọi "em". Lịch sử: {history_context}. Học sinh hỏi: "{prompt}"'''
+                            try:
+                                response = model.generate_content(sys_prompt)
+                                st.markdown(response.text)
+                                st.session_state.chat_exp_messages.append({"role": "assistant", "content": response.text})
+                            except Exception as e:
+                                st.error(f"Hệ thống đang bận, em thử lại sau nhé! (Lỗi: {e})")
 
 except Exception as e:
     st.error(f"Có lỗi hệ thống (Cần tạo đủ 3 sheet trong file Excel: Sheet1, Du_lieu_Game, Du_lieu_Khoi_dong): {e}")
