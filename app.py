@@ -67,7 +67,7 @@ def load_data():
     return df_main, df_game, df_pretest
 
 # ==========================================
-# 3. KHỞI TẠO TRẠNG THÁI HỆ THỐNG
+# 3. KHỞI TẠO TRẠNG THÁI HỆ THỐNG (CHỐNG LỖI BỘ NHỚ)
 # ==========================================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -76,13 +76,19 @@ if "logged_in" not in st.session_state:
     st.session_state.student_class = ""
     st.session_state.student_level = "" 
     st.session_state.nav_page = "🏠 Cổng Khởi động"
-    
     st.session_state.pretest_step = 1
     st.session_state.pretest_answers = {} 
-    
+
+# Đảm bảo các biến Game luôn tồn tại độc lập
+if "station" not in st.session_state:
     st.session_state.station = 1
+if "passcodes" not in st.session_state:
+    st.session_state.passcodes = []
+if "tram2_matched" not in st.session_state:
     st.session_state.tram2_matched = False
+if "play_sound" not in st.session_state:
     st.session_state.play_sound = False
+if "force_unlock_game" not in st.session_state:
     st.session_state.force_unlock_game = False
 
 st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE 10</h2>", unsafe_allow_html=True)
@@ -91,7 +97,7 @@ st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE
 if not st.session_state.pretest_done:
     menu_list = ["🏠 Cổng Khởi động"]
 else:
-    if st.session_state.student_level == "Tốt":
+    if st.session_state.student_level in ["Khá giỏi", "Tốt"]:
         menu_list = ["📚 Khám phá Hiện tượng", "🕸️ Bản đồ Kết nối", "🎮 Bản đồ Thử thách (Game)", "🤖 Hỏi Nhà khám phá AI"]
     else: 
         menu_list = ["📖 Ôn tập cốt lõi", "🤖 Gia sư AI (Hỗ trợ)"]
@@ -147,7 +153,7 @@ try:
             st.info(f"Chào **{st.session_state.student_name}**! Để hệ thống thiết kế lộ trình học tốt nhất, em hãy xem các video ngắn và trả lời câu hỏi tương tác dưới đây nhé. (Yêu cầu: Đúng 100% để mở khóa toàn bộ Hệ thống)")
             
             if df_pretest.empty:
-                st.error("⚠️ Lỗi: Không tìm thấy dữ liệu Sheet 'Du_lieu_Khoi_dong'.")
+                st.error("⚠️ Hệ thống chưa tìm thấy dữ liệu Khởi động trong file Excel (Sheet: Du_lieu_Khoi_dong).")
             else:
                 tong_so_cau = len(df_pretest)
                 if st.session_state.pretest_step <= tong_so_cau:
@@ -186,14 +192,15 @@ try:
                         nhan_nut = "Nộp bài & Phân luồng 🔓" if st.session_state.pretest_step == tong_so_cau else "Tiếp tục ➡️"
                         if st.button(nhan_nut, use_container_width=True):
                             if tra_loi:
-                                st.session_state.pretest_answers[st.session_state.pretest_step] = tra_loi.startswith(dap_an_dung)
+                                is_correct = tra_loi.startswith(dap_an_dung)
+                                st.session_state.pretest_answers[st.session_state.pretest_step] = is_correct
                                 
                                 if st.session_state.pretest_step == tong_so_cau:
                                     score = sum(st.session_state.pretest_answers.values())
                                     
                                     # YÊU CẦU ĐẠT 100% ĐỂ MỞ KHÓA
                                     if score == tong_so_cau:
-                                        st.session_state.student_level = "Tốt"
+                                        st.session_state.student_level = "Khá giỏi"
                                         st.success(f"🎉 Xuất sắc! Em làm đúng 100% ({score}/{tong_so_cau} câu). Hệ thống đã mở khóa TOÀN BỘ CHỨC NĂNG!")
                                         st.session_state.nav_page = "📚 Khám phá Hiện tượng"
                                     else:
@@ -364,7 +371,7 @@ try:
                     st.session_state.da_tra_loi = True
                     if api_ready:
                         with st.spinner("AI đang suy nghĩ..."):
-                            prompt_ai = f'''Bạn là cô giáo Vật lí 10. Tình huống: {ho_so['Tên tình huống']}. Câu hỏi: {ho_so['Câu hỏi gợi mở']}. Giải thích đúng: {ho_so['Giải thích khoa học']}. HS trả lời: "{cau_tra_loi_hs}". Nhận xét 2-3 câu. Khen nếu đúng, sửa nếu sai, động viên nếu không biết. LUÔN CHỐT CÂU CUỐI: "Em hãy xem phần 'Giải thích khoa học' bên cạnh để hiểu rõ hơn nhé!"'''
+                            prompt_ai = f'''Bạn là cô giáo Vật lí 10. Tình huống: {ho_so['Tên tình huống']}. Câu hỏi: {ho_so['Câu hỏi gợi mở']}. Giải thích đúng: {ho_so['Giải thích khoa học']}. Học sinh trả lời: "{cau_tra_loi_hs}". Nhận xét 2-3 câu. Khen nếu đúng, sửa nếu sai, động viên nếu không biết. LUÔN CHỐT CÂU CUỐI: "Em hãy xem phần 'Giải thích khoa học' bên cạnh để hiểu rõ hơn nhé!"'''
                             try:
                                 response = model.generate_content(prompt_ai)
                                 st.session_state.ai_response = f"**🤖 AI phân tích:** {response.text}"
@@ -400,19 +407,16 @@ try:
             else:
                 st.markdown('''<div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 40px 20px; text-align: center; margin-top: 20px;"><div style="font-size: 3.5rem; margin-bottom: 15px;">🔒</div><h3 style="color: #64748b; margin-top: 0;">Nội dung đang khóa</h3><p style="color: #94a3b8; font-size: 1.05em; max-width: 90%; margin: 0 auto;">Em hãy suy nghĩ và <strong>Gửi AI phân tích</strong> câu trả lời ở cột bên trái để mở khóa nhé!</p></div>''', unsafe_allow_html=True)
 
+    # === GIAO DIỆN MỚI: BẢN ĐỒ KẾT NỐI ===
     elif st.session_state.nav_page == "🕸️ Bản đồ Kết nối":
         st.markdown("<h2 style='color: #0D9488;'>🕸️ Bản đồ Kết nối Tư duy Động học</h2>", unsafe_allow_html=True)
-        # Giữ nguyên như phiên bản trước (đã rút gọn để tiết kiệm không gian)
         st.info("Tính năng Bản đồ kết nối sẽ hiển thị tại đây.")
 
-    # ==========================================
-    # GIAO DIỆN 3: BẢN ĐỒ THỬ THÁCH (GAME TỪ EXCEL)
-    # ==========================================
+    # === GIAO DIỆN 3: BẢN ĐỒ THỬ THÁCH (GAME TỪ EXCEL) ===
     elif st.session_state.nav_page == "🎮 Bản đồ Thử thách (Game)":
         if st.session_state.student_level == "Cơ bản" and not st.session_state.force_unlock_game:
-            st.markdown("<br><br>", unsafe_allow_html=True)
             st.error("### 🔒 Chuyên mục bị khóa")
-            st.markdown("Phần **Bản đồ Thử thách** đòi hỏi vận dụng cao. Dựa vào bài kiểm tra đầu vào, em cần ôn tập lại lý thuyết ở phần **Khám phá Hiện tượng** trước khi nhận nhiệm vụ nhé!")
+            st.markdown("Phần Game đòi hỏi vận dụng cao. Em cần ôn tập lại lý thuyết trước!")
             if st.button("Mở khóa đặc quyền (Dành cho Giáo viên Test)"):
                 st.session_state.force_unlock_game = True
                 st.rerun()
@@ -436,10 +440,10 @@ try:
             st.markdown("<div class='cyber-warning'>🚨 CẢNH BÁO: Tàu tốc hành đang mất phanh. Các đặc vụ PHY-LIFE cần giải mã các trạm điều khiển để kích hoạt hệ thống phanh khẩn cấp!</div>", unsafe_allow_html=True)
             
             if df_game.empty:
-                st.error("⚠️ Lỗi: Không tìm thấy dữ liệu Sheet 'Du_lieu_Game'.")
+                st.error("⚠️ Hệ thống chưa tìm thấy dữ liệu Sheet 'Du_lieu_Game'.")
             else:
                 tong_so_tram = len(df_game)
-                if len(st.session_state.passcodes) != tong_so_tram:
+                if "passcodes" not in st.session_state or len(st.session_state.passcodes) != tong_so_tram:
                     st.session_state.passcodes = ["_"] * tong_so_tram
                 
                 progress_val = int(((st.session_state.station - 1) / tong_so_tram) * 100)
@@ -453,11 +457,7 @@ try:
                     else:
                         passcodes_display.append("_")
                 
-                st.markdown(f"""
-                <div class='led-screen'>
-                    <span style='color: #38bdf8 !important;'>MÃ KÍCH HOẠT:</span> <span class='led-code'>{' '.join(passcodes_display)}</span>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f"<div class='led-screen'><span style='color: #38bdf8 !important;'>MÃ KÍCH HOẠT:</span> <span class='led-code'>{' '.join(passcodes_display)}</span></div>", unsafe_allow_html=True)
 
                 if getattr(st.session_state, 'play_sound', False):
                     st.markdown('<audio autoplay><source src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" type="audio/mpeg"></audio>', unsafe_allow_html=True)
@@ -598,7 +598,6 @@ try:
             for msg in st.session_state.chat_exp_messages:
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
-                    
             if prompt := st.chat_input("Nhập câu hỏi, hiện tượng hoặc khái niệm em muốn khám phá..."):
                 st.session_state.chat_exp_messages.append({"role": "user", "content": prompt})
                 with st.chat_message("user"):
@@ -618,6 +617,8 @@ try:
                         5. Tạo bài tập vận dụng cao (On-demand).
 
                         Quy tắc: Xưng "cô", gọi "em". Ngôn ngữ uyên bác, truyền cảm hứng.
+                        [KẾT THÚC HƯỚNG DẪN]
+
                         Lịch sử trò chuyện gần đây: {history_context}
                         Học sinh vừa nhắn: "{prompt}"
                         '''
@@ -626,7 +627,7 @@ try:
                             st.markdown(response.text)
                             st.session_state.chat_exp_messages.append({"role": "assistant", "content": response.text})
                         except Exception as e:
-                            st.error(f"Hệ thống đang bận, em thử lại sau nhé! (Lỗi: {e})")
+                            st.error(f"Hệ thống đang bận, em thử lại sau nhé! (Lỗi chi tiết: {e})")
 
 except Exception as e:
     st.error(f"Có lỗi hệ thống (Cần tạo đủ 3 sheet trong file Excel: Sheet1, Du_lieu_Game, Du_lieu_Khoi_dong): {e}")
