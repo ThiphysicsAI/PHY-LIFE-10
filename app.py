@@ -3,6 +3,29 @@ import pandas as pd
 import os
 import google.generativeai as genai
 import time
+import json
+import gspread
+from google.oauth2.service_account import Credentials
+import datetime
+
+# --- HÀM GHI DỮ LIỆU LÊN GOOGLE SHEETS ---
+def ghi_du_lieu_vao_sheets(loai_hoat_dong, ho_ten, lop, ket_qua, chi_tiet):
+    try:
+        if "GCP_CREDS" not in st.secrets or "SHEET_URL" not in st.secrets:
+            return # Bỏ qua nếu chưa cấu hình
+        
+        creds_json = json.loads(st.secrets["GCP_CREDS"])
+        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+        creds = Credentials.from_service_account_info(creds_json, scopes=scopes)
+        client = gspread.authorize(creds)
+        
+        sheet = client.open_by_url(st.secrets["SHEET_URL"]).sheet1
+        thoi_gian = (datetime.datetime.utcnow() + datetime.timedelta(hours=7)).strftime("%d/%m/%Y %H:%M:%S")
+        
+        row = [thoi_gian, ho_ten, lop, loai_hoat_dong, ket_qua, chi_tiet]
+        sheet.append_row(row)
+    except Exception as e:
+        pass # Chạy ngầm nên bỏ qua nếu lỗi để không gián đoạn học sinh
 
 # --- HÀM THEO DÕI LƯỢT TRA CỨU ---
 def get_view_count():
@@ -18,10 +41,9 @@ def add_view_count():
         f.write(str(count))
     return count
 
-# 1. CẤU HÌNH TRANG WEB & MÀU SẮC TÙY CHỈNH
+# 1. CẤU HÌNH TRANG WEB & MÀU SẮC
 st.set_page_config(page_title="PHY-LIFE 10", page_icon="🚀", layout="wide", initial_sidebar_state="expanded")
 
-# CẤU HÌNH GEMINI API TỪ STREAMLIT SECRETS
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     model = genai.GenerativeModel('gemini-3.5-flash-lite')
@@ -29,7 +51,6 @@ try:
 except Exception as e:
     api_ready = False
 
-# Nhúng CSS tùy chỉnh cơ bản
 st.markdown('''
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
@@ -42,8 +63,6 @@ st.markdown('''
     .phy-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #0D9488; background-color: #F0FDFA; }
     .icon-box { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 15px; }
     .pretest-box { background-color: white; padding: 25px; border-radius: 15px; border: 2px solid #0D9488; box-shadow: 0 4px 6px rgba(13,148,136,0.1); margin-bottom: 20px;}
-    .report-stat-box { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .report-stat-val { font-size: 2.5rem; font-weight: bold; color: #0D9488; }
 </style>
 ''', unsafe_allow_html=True)
 
@@ -58,7 +77,7 @@ def load_data():
     return df_main, df_game, df_pretest
 
 # ==========================================
-# 3. KHỞI TẠO TRẠNG THÁI (ĐÃ BỔ SUNG CẢM BIẾN TRACKING)
+# 3. TRẠNG THÁI HỆ THỐNG
 # ==========================================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -67,33 +86,30 @@ if "logged_in" not in st.session_state:
     st.session_state.student_class = ""
     st.session_state.student_level = "" 
     st.session_state.nav_page = "🏠 Cổng Khởi động"
-    
     st.session_state.pretest_step = 1
     st.session_state.pretest_answers = {} 
-    
-    st.session_state.station = 1
-    st.session_state.passcodes = []
-    st.session_state.tram2_matched = False
-    st.session_state.play_sound = False
-    st.session_state.force_unlock_game = False
 
-    # --- BIẾN TRACKING HÀNH VI HỌC TẬP ---
-    st.session_state.start_time = None
-    st.session_state.search_history = []  # Lưu các tình huống đã xem
-    st.session_state.game_errors = 0      # Lưu số lần giải sai trong game
-    st.session_state.ai_interactions = 0  # Lưu số lần chat với AI
-    st.session_state.ai_report_generated = "" # Lưu báo cáo năng lực
+if "station" not in st.session_state:
+    st.session_state.station = 1
+if "passcodes" not in st.session_state:
+    st.session_state.passcodes = []
+if "tram2_matched" not in st.session_state:
+    st.session_state.tram2_matched = False
+if "play_sound" not in st.session_state:
+    st.session_state.play_sound = False
+if "force_unlock_game" not in st.session_state:
+    st.session_state.force_unlock_game = False
 
 st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE 10</h2>", unsafe_allow_html=True)
 
-# LỘ TRÌNH CÁ NHÂN HÓA MENU (Bổ sung Báo cáo)
+# LỘ TRÌNH CÁ NHÂN HÓA MENU
 if not st.session_state.pretest_done:
     menu_list = ["🏠 Cổng Khởi động"]
 else:
     if st.session_state.student_level in ["Khá giỏi", "Tốt"]:
-        menu_list = ["📚 Khám phá Hiện tượng", "🎮 Thử thách (Game)", "🤖 Hỏi Nhà khám phá AI", "📊 Báo cáo Tích lũy"]
+        menu_list = ["📚 Khám phá Hiện tượng", "🎮 Thử thách (Game)", "🤖 Hỏi Nhà khám phá AI"]
     else: 
-        menu_list = ["📖 Ôn tập cốt lõi", "🤖 Gia sư AI (Hỗ trợ)", "📊 Báo cáo Tích lũy"]
+        menu_list = ["📖 Ôn tập cốt lõi", "🤖 Gia sư AI (Hỗ trợ)"]
 
 selected_menu = st.sidebar.radio("CHUYÊN MỤC", menu_list, index=menu_list.index(st.session_state.nav_page) if st.session_state.nav_page in menu_list else 0)
 
@@ -137,7 +153,6 @@ try:
                         st.session_state.student_name = name_input
                         st.session_state.student_class = class_input
                         st.session_state.logged_in = True
-                        st.session_state.start_time = time.time() # BẮT ĐẦU ĐẾM THỜI GIAN
                         st.rerun()
                     else:
                         st.error("Em nhớ nhập đầy đủ Tên và Lớp nhé!")
@@ -192,18 +207,22 @@ try:
                                 if st.session_state.pretest_step == tong_so_cau:
                                     score = sum(st.session_state.pretest_answers.values())
                                     
-                                    # YÊU CẦU ĐẠT 100% ĐỂ MỞ KHÓA
                                     if score == tong_so_cau:
                                         st.session_state.student_level = "Tốt"
                                         st.success(f"🎉 Xuất sắc! Em làm đúng 100% ({score}/{tong_so_cau} câu). Hệ thống đã mở khóa TOÀN BỘ CHỨC NĂNG!")
-                                        st.session_state.nav_page = "📚 Khám phá Hiện tượng"
                                     else:
                                         st.session_state.student_level = "Cơ bản"
-                                        st.error(f"📊 Em làm đúng {score}/{tong_so_cau} câu. Em cần đạt 100% để tiếp tục hành trình. Hệ thống sẽ điều hướng em đến tab Ôn tập cốt lõi cùng Gia sư AI.")
-                                        st.session_state.nav_page = "📖 Ôn tập cốt lõi"
+                                        st.error(f"📊 Em làm đúng {score}/{tong_so_cau} câu. Dưới 100% điểm, hệ thống sẽ điều hướng em đến tab Ôn tập cốt lõi cùng Gia sư AI.")
                                     
+                                    # GHI DỮ LIỆU ĐÁNH GIÁ LÊN SHEETS
+                                    ghi_du_lieu_vao_sheets("Pre-test (Chẩn đoán)", st.session_state.student_name, st.session_state.student_class, f"{score}/{tong_so_cau}", f"Phân luồng: {st.session_state.student_level}")
+
                                     time.sleep(3)
                                     st.session_state.pretest_done = True
+                                    if score == tong_so_cau:
+                                        st.session_state.nav_page = "📚 Khám phá Hiện tượng"
+                                    else:
+                                        st.session_state.nav_page = "📖 Ôn tập cốt lõi"
                                     st.rerun()
                                 else:
                                     st.session_state.pretest_step += 1
@@ -259,9 +278,6 @@ try:
                     else:
                         prompt_hs = st.chat_input(f"Em chưa hiểu đoạn nào ở Câu {cau_so}?", key=f"input_q_{cau_so}")
                         if prompt_hs:
-                            # TĂNG TRACKING TƯƠNG TÁC AI
-                            st.session_state.ai_interactions += 1
-                            
                             st.session_state[chat_key].append({"role": "user", "content": prompt_hs})
                             with st.chat_message("user"):
                                 st.markdown(prompt_hs)
@@ -270,12 +286,18 @@ try:
                                 with st.spinner("Gia sư đang phân tích..."):
                                     history_context = "".join([f"{'HS' if m['role']=='user' else 'AI'}: {m['content']}\n" for m in st.session_state[chat_key][-4:]])
                                     socratic_prompt = f'''
-                                    Bạn là Gia sư Vật lí. Học sinh ôn tập câu hỏi sau:
+                                    [KỶ LUẬT THÉP - GIA SƯ SOCRATIC]
+                                    Bạn là Gia sư Vật lí lớp 10. Học sinh đang ôn tập lại vì làm sai câu hỏi sau:
                                     - Câu hỏi: "{row['Câu hỏi']}"
-                                    - Đáp án đúng: "{row['Đáp án đúng']}"
+                                    - Các lựa chọn: "{row['Các lựa chọn']}"
+                                    - Đáp án đúng thực sự là: "{row['Đáp án đúng']}"
 
-                                    TUYỆT ĐỐI KHÔNG cho đáp án trực tiếp. Dùng Socratic: Đặt MỘT câu hỏi gợi mở để học sinh tự tìm đáp án.
-                                    Lịch sử: {history_context}
+                                    QUY TẮC TỐI THƯỢNG:
+                                    1. TUYỆT ĐỐI KHÔNG BAO GIỜ nói thẳng đáp án đúng là gì.
+                                    2. Dùng phương pháp Socratic: Đặt MỘT câu hỏi gợi mở để học sinh tự tìm ra đáp án.
+                                    3. Xưng "cô", gọi "em".
+
+                                    Lịch sử trò chuyện: {history_context}
                                     Học sinh hỏi: "{prompt_hs}"
                                     '''
                                     try:
@@ -283,7 +305,7 @@ try:
                                         st.markdown(response.text)
                                         st.session_state[chat_key].append({"role": "assistant", "content": response.text})
                                     except Exception as e:
-                                        st.error(f"Lỗi kết nối: {e}")
+                                        st.error(f"Lỗi: {e}")
                 st.markdown("</div>", unsafe_allow_html=True)
                 
             st.markdown("---")
@@ -311,10 +333,6 @@ try:
         col_title, col_stat = st.columns([3, 1])
         with col_title:
             st.markdown("<h2 style='color: #0D9488;'>Thư viện Hiện tượng thực tiễn</h2>", unsafe_allow_html=True)
-            if st.session_state.student_level == "Cơ bản":
-                st.warning(f"🔔 **Gia sư AI:** {st.session_state.student_name} ơi, em hãy đọc thật kỹ phần **'Quan sát'** trước khi trả lời câu hỏi để mở khóa bài học nhé. Cô luôn ở đây để giúp em!")
-            else:
-                st.success(f"🔔 **Gia sư AI:** Nền tảng của em rất vững! Hãy thử sức phân tích sâu bản chất của các hiện tượng này nhé, {st.session_state.student_name}!")
             
         col_loc1, col_loc2 = st.columns(2)
         with col_loc1:
@@ -325,16 +343,14 @@ try:
         with col_loc2:
             tinh_huong_chon = st.selectbox("🔍 Chiều 2: Chọn tình huống thực tiễn:", df_loc['Tên tình huống'])
             
-        # LƯU TRACKING HIỆN TƯỢNG ĐÃ XEM
-        if tinh_huong_chon not in st.session_state.search_history:
-            st.session_state.search_history.append(tinh_huong_chon)
-            
         if "last_viewed" not in st.session_state:
             st.session_state.last_viewed = tinh_huong_chon
             current_views = add_view_count()
+            ghi_du_lieu_vao_sheets("Tra cứu Hiện tượng", st.session_state.student_name, st.session_state.student_class, "Thành công", f"Đã xem: {tinh_huong_chon}")
         elif st.session_state.last_viewed != tinh_huong_chon:
             st.session_state.last_viewed = tinh_huong_chon
             current_views = add_view_count()
+            ghi_du_lieu_vao_sheets("Tra cứu Hiện tượng", st.session_state.student_name, st.session_state.student_class, "Thành công", f"Đã xem: {tinh_huong_chon}")
         else:
             current_views = get_view_count()
 
@@ -374,15 +390,14 @@ try:
                 else:
                     st.image(duong_dan_anh, use_container_width=True)
             else:
-                st.warning(f"✍️ Đang chờ nét vẽ Sketchnote hoặc Video... (Tên file cần có: {ten_file_anh})")
+                st.warning(f"✍️ Đang chờ nét vẽ Sketchnote hoặc Video...")
                 
             st.markdown(f"<span style='color: #1E293B;'>**❓ Câu hỏi gợi mở:** *{ho_so['Câu hỏi gợi mở']}*</span>", unsafe_allow_html=True)
-            
             st.markdown(f'''
             <div style="background-color: #F0FDF4; padding: 15px; border-radius: 10px; border-left: 5px solid #22C55E; margin-top: 20px; margin-bottom: 10px;">
-                <h4 style="color: #15803D; margin-top: 0; display: flex; align-items: center; gap: 8px;">🤖 Gia sư AI phân tích</h4>
+                <h4 style="color: #15803D; margin-top: 0; display: flex; align-items: center; gap: 8px;">🤖 AI phân tích nhanh</h4>
                 <p style="font-size: 0.95em; color: #1E293B; margin-bottom: 5px;"><strong>Dựa vào câu hỏi:</strong> <em>"{ho_so['Câu hỏi gợi mở']}"</em></p>
-                <p style="font-size: 0.85em; color: #64748b;">Hãy nhập hoặc đọc câu trả lời để mở khóa kiến thức nhé!</p>
+                <p style="font-size: 0.85em; color: #64748b;">Hãy nhập hoặc đọc câu trả lời để mở khóa bài học nhé!</p>
             </div>
             ''', unsafe_allow_html=True)
             
@@ -400,22 +415,14 @@ try:
 
             if gui_ai:
                 if cau_tra_loi_hs:
-                    # TĂNG TRACKING TƯƠNG TÁC AI
-                    st.session_state.ai_interactions += 1
-                    
                     st.session_state.da_tra_loi = True
                     if api_ready:
                         with st.spinner("AI đang suy nghĩ..."):
-                            prompt_ai = f'''Bạn là Gia sư Vật lí 10 (Socratic Tutor). Trình độ học sinh: {st.session_state.student_level}. 
-                            Tình huống: {ho_so['Tên tình huống']}. Câu hỏi đặt ra: {ho_so['Câu hỏi gợi mở']}. Lời giải đúng: {ho_so['Giải thích khoa học']}. Học sinh trả lời: "{cau_tra_loi_hs}". 
-                            Quy tắc:
-                            - Nếu học sinh Cơ bản: Động viên nhiều hơn, gợi ý từ từ. Tuyệt đối không cho ngay đáp án.
-                            - Nếu học sinh Khá giỏi: Yêu cầu phân tích sâu hơn.
-                            - Nếu sai: ĐỪNG ĐƯA ĐÁP ÁN, hãy đặt một câu hỏi gợi mở để học sinh nhận ra lỗi sai.
-                            - BẮT BUỘC CHỐT CÂU CUỐI: "Em hãy xem phần 'Giải thích khoa học' bên cạnh để đối chiếu nhé!"'''
+                            prompt_ai = f'''Bạn là cô giáo dạy Vật lí lớp 10, rất tâm lý và khích lệ học sinh. Tình huống: {ho_so['Tên tình huống']}. Câu hỏi: {ho_so['Câu hỏi gợi mở']}. Giải thích đúng: {ho_so['Giải thích khoa học']}. Học sinh vừa trả lời: "{cau_tra_loi_hs}". Hãy viết 1 đoạn nhận xét ngắn gọn (khoảng 2-3 câu). LUÔN CHỐT CÂU CUỐI: "Em hãy xem phần 'Giải thích khoa học' bên cạnh để hiểu rõ hơn nhé!"'''
                             try:
                                 response = model.generate_content(prompt_ai)
-                                st.session_state.ai_response = f"**🤖 Gia sư AI phân tích:** {response.text}"
+                                st.session_state.ai_response = f"**🤖 AI phân tích:** {response.text}"
+                                ghi_du_lieu_vao_sheets("AI Tương tác", st.session_state.student_name, st.session_state.student_class, "Thành công", f"Đã trả lời câu hỏi ở hiện tượng {tinh_huong_chon}")
                             except Exception as e:
                                 st.session_state.ai_response = f"❌ AI đang bận, thử lại sau nhé! (Lỗi: {e})"
                     else:
@@ -423,14 +430,11 @@ try:
                 else:
                     st.warning("⚠️ Hãy nhập câu trả lời trước khi gửi!")
 
-            if st.session_state.da_tra_loi and st.session_state.ai_response:
-                if "❌" in st.session_state.ai_response or "⚠️" in st.session_state.ai_response:
-                    st.error(st.session_state.ai_response)
-                else:
-                    st.success(st.session_state.ai_response)
+            if getattr(st.session_state, 'da_tra_loi', False) and getattr(st.session_state, 'ai_response', ""):
+                st.success(st.session_state.ai_response)
 
         with col_phai:
-            if st.session_state.da_tra_loi:
+            if getattr(st.session_state, 'da_tra_loi', False):
                 with st.container():
                     st.markdown("<h3 style='color: #0D9488;'>Giải thích khoa học</h3>", unsafe_allow_html=True)
                     st.write(ho_so['Giải thích khoa học'])
@@ -449,16 +453,10 @@ try:
                     html_tu_khoa = "".join([f"<span style='background-color: #E2E8F0; padding: 4px 8px; border-radius: 4px; margin-right: 5px; font-size: 0.85em; color: #1E293B;'>{tag.strip()}</span>" for tag in tu_khoa_list])
                     st.markdown(html_tu_khoa, unsafe_allow_html=True)
             else:
-                st.markdown('''
-                <div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 40px 20px; text-align: center; margin-top: 20px;">
-                    <div style="font-size: 3.5rem; margin-bottom: 15px;">🔒</div>
-                    <h3 style="color: #64748b; margin-top: 0;">Nội dung đang khóa</h3>
-                    <p style="color: #94a3b8; font-size: 1.05em; max-width: 90%; margin: 0 auto;">Em hãy suy nghĩ và <strong>Gửi AI phân tích</strong> câu trả lời ở cột bên trái để mở khóa phần Giải thích khoa học nhé!</p>
-                </div>
-                ''', unsafe_allow_html=True)
+                st.markdown('''<div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 40px 20px; text-align: center; margin-top: 20px;"><div style="font-size: 3.5rem; margin-bottom: 15px;">🔒</div><h3 style="color: #64748b; margin-top: 0;">Nội dung đang khóa</h3><p style="color: #94a3b8; font-size: 1.05em; max-width: 90%; margin: 0 auto;">Em hãy suy nghĩ và <strong>Gửi AI phân tích</strong> câu trả lời ở cột bên trái để mở khóa nhé!</p></div>''', unsafe_allow_html=True)
 
     # ==========================================
-    # GIAO DIỆN 3: THỬ THÁCH GAME
+    # GIAO DIỆN 3: BẢN ĐỒ THỬ THÁCH (GAME)
     # ==========================================
     elif st.session_state.nav_page == "🎮 Thử thách (Game)":
         if st.session_state.student_level == "Cơ bản" and not st.session_state.force_unlock_game:
@@ -488,7 +486,7 @@ try:
             st.markdown("<div class='cyber-warning'>🚨 CẢNH BÁO: Tàu tốc hành đang mất phanh. Các đặc vụ PHY-LIFE cần giải mã các trạm điều khiển để kích hoạt hệ thống phanh khẩn cấp!</div>", unsafe_allow_html=True)
             
             if df_game.empty:
-                st.error("⚠️ Lỗi: Không tìm thấy dữ liệu Sheet 'Du_lieu_Game'.")
+                st.error("⚠️ Hệ thống chưa tìm thấy dữ liệu Sheet 'Du_lieu_Game'.")
             else:
                 tong_so_tram = len(df_game)
                 if len(st.session_state.passcodes) != tong_so_tram:
@@ -553,7 +551,6 @@ try:
                                 st.session_state.station += 1
                                 st.rerun()
                             else:
-                                st.session_state.game_errors += 1 # LƯU LỖI GAME
                                 st.error(f"❌ {phan_hoi_sai}")
                                 
                     elif loai_cau_hoi == "Ghép nối":
@@ -582,7 +579,6 @@ try:
                                         st.session_state[match_state_key] = True
                                         st.rerun()
                                 else:
-                                    st.session_state.game_errors += 1 # LƯU LỖI GAME
                                     st.error("❌ Ghép thẻ thất bại. Hệ thống báo lỗi đồng bộ!")
                         
                         if st.session_state[match_state_key]:
@@ -596,7 +592,6 @@ try:
                                     st.session_state[match_state_key] = False
                                     st.rerun()
                                 else:
-                                    st.session_state.game_errors += 1 # LƯU LỖI GAME
                                     st.error(f"❌ {phan_hoi_sai}")
                                     
                     elif loai_cau_hoi == "Đúng/Sai":
@@ -618,7 +613,6 @@ try:
                                 st.session_state.station += 1
                                 st.rerun()
                             else:
-                                st.session_state.game_errors += 1 # LƯU LỖI GAME
                                 st.error(f"❌ {phan_hoi_sai}")
                                 
                     elif loai_cau_hoi == "Điền khuyết": 
@@ -632,7 +626,6 @@ try:
                                 st.session_state.station += 1
                                 st.rerun()
                             else:
-                                st.session_state.game_errors += 1 # LƯU LỖI GAME
                                 st.error(f"❌ {phan_hoi_sai}")
 
                 else:
@@ -640,6 +633,9 @@ try:
                     correct_final_code = "".join([str(df_game.iloc[i].get('Mã khóa', '')).strip() for i in range(tong_so_tram) if str(df_game.iloc[i].get('Mã khóa', '')).strip() and str(df_game.iloc[i].get('Mã khóa', '')).strip() != 'nan'])
                     
                     st.markdown("<div style='background-color: rgba(34, 197, 94, 0.2); padding: 40px; border-radius: 15px; text-align: center; border: 2px solid #4ade80; box-shadow: 0 0 30px rgba(74, 222, 128, 0.5);'><h1 style='color: #4ade80 !important; font-size: 3.5rem; margin-bottom: 10px; text-shadow: 0 0 10px #4ade80;'>🎉 KÍCH HOẠT THÀNH CÔNG!</h1><h2 style='color: #86efac !important;'>CỨU HỘ HOÀN TẤT. MÃ CUỐI LÀ: " + correct_final_code + "</h2></div>", unsafe_allow_html=True)
+                    
+                    # GHI DỮ LIỆU GAME LÊN GOOGLE SHEETS
+                    ghi_du_lieu_vao_sheets("Game Điệp vụ PHYSIX", st.session_state.student_name, st.session_state.student_class, "Hoàn thành 100%", "Đã phá đảo thành công tất cả các trạm")
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     if st.button("🔄 Chơi lại Điệp vụ", use_container_width=True):
@@ -651,106 +647,58 @@ try:
 
     # === GIAO DIỆN 5: CHATBOT AI KHÁM PHÁ ===
     elif st.session_state.nav_page == "🤖 Hỏi Nhà khám phá AI":
-        st.markdown("<h2 style='color: #0D9488;'>🤖 Nhà khám phá AI</h2>", unsafe_allow_html=True)
-        st.markdown("<span class='main-text'>Chào em! Cô là Nhà khám phá Vật lí. Em có hiện tượng gì thú vị muốn kể cho cô nghe, nhập một khái niệm muốn tìm hiểu, hay muốn thử sức với bài tập vận dụng nào?</span>", unsafe_allow_html=True)
-
-        if not api_ready:
-            st.warning("⚠️ Tính năng AI chưa được kích hoạt. Vui lòng kiểm tra lại GEMINI_API_KEY trong Secrets.")
+        if st.session_state.student_level == "Cơ bản" and not st.session_state.force_unlock_game:
+            st.error("### 🔒 Chuyên mục bị khóa")
+            st.markdown("Cần đạt 100% bài Test đầu vào để mở khóa Trợ lý AI Khám phá đa năng!")
+            if st.button("Mở khóa đặc quyền"):
+                st.session_state.force_unlock_game = True
+                st.rerun()
         else:
-            if "chat_exp_messages" not in st.session_state:
-                st.session_state.chat_exp_messages = []
-            for msg in st.session_state.chat_exp_messages:
-                with st.chat_message(msg["role"]):
-                    st.markdown(msg["content"])
-            if prompt := st.chat_input("Nhập câu hỏi, hiện tượng hoặc khái niệm em muốn khám phá..."):
-                # TĂNG TRACKING TƯƠNG TÁC AI
-                st.session_state.ai_interactions += 1
-                
-                st.session_state.chat_exp_messages.append({"role": "user", "content": prompt})
-                with st.chat_message("user"):
-                    st.markdown(prompt)
-                with st.chat_message("assistant"):
-                    with st.spinner("Cô đang phân tích..."):
-                        history_context = "".join([f"{'Học sinh' if m['role']=='user' else 'Cô giáo'}: {m['content']}\n" for m in st.session_state.chat_exp_messages[-5:-1]])
-                        
-                        sys_prompt = f'''
-                        [HƯỚNG DẪN CHO AI]
-                        Bạn là "Nhà khám phá Vật lí", chuyên gia sư phạm hỗ trợ học sinh GIỎI lớp 10.
-                        Dựa vào câu hỏi của học sinh, thực hiện linh hoạt 1 trong 5 chức năng sau:
-                        1. Giải thích hiện tượng chuyên sâu.
-                        2. Tìm hiện tượng thực tiễn theo khái niệm.
-                        3. Phân tích tình huống mới và tạo ví dụ định lượng.
-                        4. Đặt câu hỏi gợi mở để kích thích tư duy phản biện.
-                        5. Tạo bài tập vận dụng cao (On-demand).
+            st.markdown("<h2 style='color: #0D9488;'>🤖 Nhà khám phá AI</h2>", unsafe_allow_html=True)
+            st.markdown("<span class='main-text'>Chào em! Cô là Nhà khám phá Vật lí. Em có hiện tượng gì thú vị muốn kể cho cô nghe, nhập một khái niệm muốn tìm hiểu, hay muốn thử sức với bài tập vận dụng nào?</span>", unsafe_allow_html=True)
 
-                        Quy tắc: Xưng "cô", gọi "em". Ngôn ngữ uyên bác, truyền cảm hứng.
-                        [KẾT THÚC HƯỚNG DẪN]
-
-                        Lịch sử trò chuyện gần đây: {history_context}
-                        Học sinh vừa nhắn: "{prompt}"
-                        '''
-                        try:
-                            response = model.generate_content(sys_prompt)
-                            st.markdown(response.text)
-                            st.session_state.chat_exp_messages.append({"role": "assistant", "content": response.text})
-                        except Exception as e:
-                            st.error(f"Hệ thống đang bận, em thử lại sau nhé! (Lỗi chi tiết: {e})")
-
-    # ==========================================
-    # GIAO DIỆN MỚI: BÁO CÁO NĂNG LỰC CÁ NHÂN (LEARNING ANALYTICS)
-    # ==========================================
-    elif st.session_state.nav_page == "📊 Báo cáo Tích lũy":
-        st.markdown("<h2 style='color: #0D9488;'>📊 Báo cáo Năng lực Cá nhân</h2>", unsafe_allow_html=True)
-        st.markdown("Hệ thống đã thu thập dữ liệu học tập của em trong suốt phiên này để đưa ra đánh giá tổng quan.")
-        
-        # Tính toán tổng thời gian học (phút)
-        time_spent = 0
-        if st.session_state.start_time is not None:
-            time_spent = round((time.time() - st.session_state.start_time) / 60, 1)
-
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.markdown(f"<div class='report-stat-box'>⏱️ Thời gian học<br><span class='report-stat-val'>{time_spent}</span> phút</div>", unsafe_allow_html=True)
-        with col2:
-            st.markdown(f"<div class='report-stat-box'>🔍 Tình huống đã tra<br><span class='report-stat-val'>{len(set(st.session_state.search_history))}</span> bài</div>", unsafe_allow_html=True)
-        with col3:
-            st.markdown(f"<div class='report-stat-box'>❌ Số lỗi Game<br><span class='report-stat-val' style='color: #ef4444;'>{st.session_state.game_errors}</span> lỗi</div>", unsafe_allow_html=True)
-        with col4:
-            st.markdown(f"<div class='report-stat-box'>💬 Hỏi đáp Gia sư<br><span class='report-stat-val' style='color: #3b82f6;'>{st.session_state.ai_interactions}</span> lần</div>", unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        if st.button("🧠 YÊU CẦU AI SINH BÁO CÁO NHẬN XÉT", use_container_width=True):
             if not api_ready:
-                st.error("API Key chưa sẵn sàng để sinh báo cáo.")
+                st.warning("⚠️ Tính năng AI chưa được kích hoạt. Vui lòng kiểm tra lại GEMINI_API_KEY trong Secrets.")
             else:
-                with st.spinner("Đang tổng hợp dữ liệu và phân tích hành vi..."):
-                    danh_sach_tra_cuu = ", ".join(list(set(st.session_state.search_history))) if st.session_state.search_history else "Chưa tra cứu tình huống nào"
-                    
-                    report_prompt = f'''
-                    Bạn là Chuyên gia Đánh giá Năng lực Giáo dục. Hãy viết 1 báo cáo phân tích năng lực cá nhân (khoảng 150-200 từ) cho học sinh sau:
-                    - Tên: {st.session_state.student_name} (Lớp {st.session_state.student_class})
-                    - Trình độ xếp loại đầu vào: {st.session_state.student_level}
-                    - Thời gian học trên hệ thống: {time_spent} phút
-                    - Các tình huống thực tiễn đã quan tâm tra cứu: {danh_sach_tra_cuu}
-                    - Số lần làm sai/vấp váp khi chơi Game giải đố: {st.session_state.game_errors} lần
-                    - Số lần chủ động đặt câu hỏi tương tác với Gia sư AI: {st.session_state.ai_interactions} lần
+                if "chat_exp_messages" not in st.session_state:
+                    st.session_state.chat_exp_messages = []
+                for msg in st.session_state.chat_exp_messages:
+                    with st.chat_message(msg["role"]):
+                        st.markdown(msg["content"])
+                if prompt := st.chat_input("Nhập câu hỏi, hiện tượng hoặc khái niệm em muốn khám phá..."):
+                    st.session_state.chat_exp_messages.append({"role": "user", "content": prompt})
+                    with st.chat_message("user"):
+                        st.markdown(prompt)
+                        
+                    # GHI DỮ LIỆU CÂU HỎI LÊN GOOGLE SHEETS
+                    ghi_du_lieu_vao_sheets("Hỏi AI Khám phá", st.session_state.student_name, st.session_state.student_class, "Câu hỏi mới", prompt)
+                        
+                    with st.chat_message("assistant"):
+                        with st.spinner("Cô đang phân tích..."):
+                            history_context = "".join([f"{'Học sinh' if m['role']=='user' else 'Cô giáo'}: {m['content']}\n" for m in st.session_state.chat_exp_messages[-5:-1]])
+                            
+                            sys_prompt = f'''
+                            [HƯỚNG DẪN CHO AI]
+                            Bạn là "Nhà khám phá Vật lí", chuyên gia sư phạm hỗ trợ học sinh GIỎI lớp 10.
+                            Dựa vào câu hỏi của học sinh, thực hiện linh hoạt 1 trong 5 chức năng sau:
+                            1. Giải thích hiện tượng chuyên sâu.
+                            2. Tìm hiện tượng thực tiễn theo khái niệm.
+                            3. Phân tích tình huống mới và tạo ví dụ định lượng.
+                            4. Đặt câu hỏi gợi mở để kích thích tư duy phản biện.
+                            5. Tạo bài tập vận dụng cao (On-demand).
 
-                    Yêu cầu Báo cáo:
-                    1. Giọng văn: Chuyên nghiệp, khách quan, nhưng mang tính khích lệ, xưng "cô", gọi "em".
-                    2. Phân tích: Dựa vào các con số (VD: sai nhiều nhưng hay hỏi AI là biết cố gắng; tra cứu nhiều tình huống là có tinh thần khám phá; học nhanh/chậm...).
-                    3. Gợi ý: Đưa ra lời khuyên cụ thể em cần tập trung vào kỹ năng nào tiếp theo trong chương Động học.
-                    '''
-                    try:
-                        report_res = model.generate_content(report_prompt)
-                        st.session_state.ai_report_generated = report_res.text
-                    except Exception as e:
-                        st.error(f"Có lỗi khi sinh báo cáo: {e}")
+                            Quy tắc: Xưng "cô", gọi "em". Ngôn ngữ uyên bác, truyền cảm hứng.
+                            [KẾT THÚC HƯỚNG DẪN]
 
-        if st.session_state.ai_report_generated:
-            st.markdown("---")
-            st.success("✅ Đã hoàn tất phân tích dữ liệu.")
-            st.markdown(f"<div style='background-color: white; padding: 30px; border-radius: 15px; border-left: 8px solid #0D9488; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); color: #1E293B;'>{st.session_state.ai_report_generated}</div>", unsafe_allow_html=True)
+                            Lịch sử trò chuyện gần đây: {history_context}
+                            Học sinh vừa nhắn: "{prompt}"
+                            '''
+                            try:
+                                response = model.generate_content(sys_prompt)
+                                st.markdown(response.text)
+                                st.session_state.chat_exp_messages.append({"role": "assistant", "content": response.text})
+                            except Exception as e:
+                                st.error(f"Hệ thống đang bận, em thử lại sau nhé! (Lỗi chi tiết: {e})")
 
 except Exception as e:
     st.error(f"Có lỗi hệ thống (Cần tạo đủ 3 sheet trong file Excel: Sheet1, Du_lieu_Game, Du_lieu_Khoi_dong): {e}")
