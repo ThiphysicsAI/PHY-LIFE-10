@@ -18,7 +18,7 @@ def add_view_count():
         f.write(str(count))
     return count
 
-# 1. CẤU HÌNH TRANG WEB & MÀU SẮC
+# 1. CẤU HÌNH TRANG WEB & MÀU SẮC TÙY CHỈNH
 st.set_page_config(page_title="PHY-LIFE 10", page_icon="🚀", layout="wide", initial_sidebar_state="expanded")
 
 try:
@@ -28,7 +28,7 @@ try:
 except Exception as e:
     api_ready = False
 
-# Nhúng CSS tùy chỉnh
+# Nhúng CSS tùy chỉnh cơ bản
 st.markdown('''
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
@@ -41,6 +41,7 @@ st.markdown('''
     .phy-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #0D9488; background-color: #F0FDFA; }
     .icon-box { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 15px; }
     .pretest-box { background-color: white; padding: 25px; border-radius: 15px; border: 2px solid #0D9488; box-shadow: 0 4px 6px rgba(13,148,136,0.1); margin-bottom: 20px;}
+    .review-box { background-color: white; padding: 20px; border-radius: 10px; border-left: 5px solid #f59e0b; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 25px;}
 </style>
 ''', unsafe_allow_html=True)
 
@@ -57,7 +58,7 @@ def load_data():
     return df_main, df_game, df_pretest
 
 # ==========================================
-# 3. KHỞI TẠO TRẠNG THÁI HỆ THỐNG ĐẦY ĐỦ
+# 3. KHỞI TẠO TRẠNG THÁI HỆ THỐNG
 # ==========================================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -72,15 +73,9 @@ if "logged_in" not in st.session_state:
     
     st.session_state.station = 1
     st.session_state.passcodes = []
+    st.session_state.tram2_matched = False
     st.session_state.play_sound = False
-
-# Thêm biến khởi tạo cho trang Khám phá Hiện tượng (Sửa lỗi da_tra_loi)
-if "da_tra_loi" not in st.session_state:
-    st.session_state.da_tra_loi = False
-if "ai_response" not in st.session_state:
-    st.session_state.ai_response = ""
-if "current_scenario" not in st.session_state:
-    st.session_state.current_scenario = ""
+    st.session_state.force_unlock_game = False
 
 st.sidebar.markdown("<h2 style='color: #0D9488; font-weight: 700;'>🚀 PHY-LIFE 10</h2>", unsafe_allow_html=True)
 
@@ -91,7 +86,8 @@ else:
     if st.session_state.student_level in ["Khá giỏi", "Tốt"]:
         menu_list = ["📚 Khám phá Hiện tượng", "🎮 Thử thách (Game)", "🤖 Hỏi Nhà khám phá AI"]
     else: 
-        menu_list = ["📖 Ôn tập cốt lõi", "🤖 Gia sư AI (Hỗ trợ)"]
+        # Đã gộp Gia sư AI vào bên trong Ôn tập cốt lõi
+        menu_list = ["📖 Ôn tập cốt lõi"]
 
 selected_menu = st.sidebar.radio("CHUYÊN MỤC", menu_list, index=menu_list.index(st.session_state.nav_page) if st.session_state.nav_page in menu_list else 0)
 
@@ -183,7 +179,8 @@ try:
                         nhan_nut = "Nộp bài & Phân luồng 🔓" if st.session_state.pretest_step == tong_so_cau else "Tiếp tục ➡️"
                         if st.button(nhan_nut, use_container_width=True):
                             if tra_loi:
-                                st.session_state.pretest_answers[st.session_state.pretest_step] = tra_loi.startswith(dap_an_dung)
+                                is_correct = tra_loi.startswith(dap_an_dung)
+                                st.session_state.pretest_answers[st.session_state.pretest_step] = is_correct
                                 
                                 if st.session_state.pretest_step == tong_so_cau:
                                     score = sum(st.session_state.pretest_answers.values())
@@ -209,76 +206,106 @@ try:
                     st.markdown("</div>", unsafe_allow_html=True)
 
     # ==========================================
-    # LỘ TRÌNH 1: DÀNH CHO NHÓM YẾU/CƠ BẢN (<100%)
+    # LỘ TRÌNH 1: DÀNH CHO NHÓM YẾU/CƠ BẢN (<100%) - TÍCH HỢP AI TỪNG CÂU
     # ==========================================
     elif st.session_state.nav_page == "📖 Ôn tập cốt lõi":
         st.markdown("<h2 style='color: #ef4444;'>📖 Ôn tập cốt lõi Động học</h2>", unsafe_allow_html=True)
-        st.warning("Em chưa đạt đủ 100% điểm ở bài đánh giá năng lực. Hãy xem lại các khái niệm quan trọng dưới đây một cách chậm rãi, nhờ Gia sư AI hỗ trợ, và thực hiện lại bài kiểm tra nhé!")
+        st.warning("Em chưa đạt đủ 100% điểm ở bài đánh giá năng lực. Hãy xem lại từng câu hỏi, suy nghĩ kỹ và nhờ **Gia sư AI** gợi mở nếu em gặp khó khăn nhé!")
         
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.video("https://www.youtube.com/watch?v=kKKM8Y-u7ds")
-        with col2:
-            st.markdown("### 🤖 Tóm tắt nhanh từ AI")
-            if st.button("Yêu cầu AI tóm tắt từ khóa", use_container_width=True):
-                if api_ready:
-                    with st.spinner("AI đang tổng hợp kiến thức..."):
-                        try:
-                            summary_prompt = "Hãy tóm tắt 3 từ khóa vật lý quan trọng nhất về chương Động học lớp 10 trong 3 gạch đầu dòng ngắn gọn, dễ hiểu nhất cho học sinh yếu."
-                            summary = model.generate_content(summary_prompt)
-                            st.info(summary.text)
-                        except:
-                            st.error("Lỗi kết nối AI.")
-                else:
-                    st.error("API Key chưa sẵn sàng.")
-            
+        if df_pretest.empty:
+            st.error("Không có dữ liệu bài test.")
+        else:
+            # Lặp qua từng câu hỏi trong bài Pre-test để hiển thị lại
+            for index, row in df_pretest.iterrows():
+                cau_so = index + 1
+                st.markdown(f"<div class='review-box'>", unsafe_allow_html=True)
+                st.markdown(f"<h3 style='color: #0D9488;'>🎯 Câu hỏi {cau_so}</h3>", unsafe_allow_html=True)
+                
+                col_vid, col_quest = st.columns([1, 1.5])
+                with col_vid:
+                    # Phát lại video của câu hỏi đó
+                    video_src = str(row['Video']).strip()
+                    start_t = int(row['Thời gian bắt đầu']) if pd.notna(row['Thời gian bắt đầu']) else 0
+                    if video_src.startswith("http"):
+                        st.video(video_src, start_time=start_t)
+                    else:
+                        vid_path = os.path.join("images", video_src)
+                        if os.path.exists(vid_path):
+                            st.video(vid_path, start_time=start_t)
+                
+                with col_quest:
+                    st.markdown(f"**{row['Câu hỏi']}**")
+                    lua_chon = str(row['Các lựa chọn']).split('|')
+                    for lc in lua_chon:
+                        st.markdown(f"- {lc.strip()}")
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # --- TÍCH HỢP GIA SƯ AI TRỰC TIẾP VÀO TỪNG CÂU HỎI ---
+                with st.expander(f"🤖 Bấm vào đây để hỏi Gia sư AI về Câu {cau_so}"):
+                    chat_key = f"chat_q_{cau_so}"
+                    if chat_key not in st.session_state:
+                        st.session_state[chat_key] = []
+                        
+                    for msg in st.session_state[chat_key]:
+                        with st.chat_message(msg["role"]):
+                            st.markdown(msg["content"])
+                            
+                    if not api_ready:
+                        st.error("API Key chưa sẵn sàng.")
+                    else:
+                        # Khung chat riêng biệt cho câu hỏi này
+                        prompt_hs = st.chat_input(f"Em chưa hiểu đoạn nào ở Câu {cau_so}?", key=f"input_q_{cau_so}")
+                        if prompt_hs:
+                            st.session_state[chat_key].append({"role": "user", "content": prompt_hs})
+                            with st.chat_message("user"):
+                                st.markdown(prompt_hs)
+                                
+                            with st.chat_message("assistant"):
+                                with st.spinner("Gia sư đang phân tích..."):
+                                    history_context = "".join([f"{'HS' if m['role']=='user' else 'AI'}: {m['content']}\n" for m in st.session_state[chat_key][-4:]])
+                                    
+                                    # PROMPT KỶ LUẬT THÉP CỦA GIA SƯ
+                                    socratic_prompt = f'''
+                                    [KỶ LUẬT THÉP - GIA SƯ SOCRATIC]
+                                    Bạn là Gia sư Vật lí lớp 10. Học sinh đang ôn tập lại vì làm sai câu hỏi sau:
+                                    - Câu hỏi: "{row['Câu hỏi']}"
+                                    - Các lựa chọn: "{row['Các lựa chọn']}"
+                                    - Đáp án đúng thực sự là: "{row['Đáp án đúng']}"
+
+                                    QUY TẮC TỐI THƯỢNG:
+                                    1. TUYỆT ĐỐI KHÔNG BAO GIỜ nói thẳng đáp án đúng là A, B, C hay D cho học sinh. Kể cả khi học sinh van xin.
+                                    2. KHÔNG giải thích một lèo kiến thức. 
+                                    3. Dùng phương pháp Socratic: Chỉ đặt MỘT câu hỏi gợi mở, chia nhỏ vấn đề để học sinh tự động não và tự tìm ra đáp án.
+                                    4. Khen ngợi nếu học sinh nói đúng hướng, sau đó tiếp tục hỏi để dẫn dắt đến kết luận.
+                                    5. Xưng "cô", gọi "em", ngôn ngữ ân cần nhưng nghiêm khắc về nguyên tắc không cho sẵn đáp án.
+
+                                    Lịch sử trò chuyện: {history_context}
+                                    Học sinh hỏi: "{prompt_hs}"
+                                    '''
+                                    try:
+                                        response = model.generate_content(socratic_prompt)
+                                        st.markdown(response.text)
+                                        st.session_state[chat_key].append({"role": "assistant", "content": response.text})
+                                    except Exception as e:
+                                        st.error(f"Hệ thống đang bận, em thử lại sau nhé! (Lỗi: {e})")
+                st.markdown("</div>", unsafe_allow_html=True)
+                
             st.markdown("---")
-            st.markdown("Sau khi đã ôn tập kỹ và hỏi đáp với Gia sư AI ở mục bên dưới, em hãy làm lại bài kiểm tra nhé.")
-            if st.button("🔄 LÀM LẠI BÀI KIỂM TRA", use_container_width=True):
+            st.markdown("<h3 style='text-align: center;'>🔄 Em đã hiểu bài chưa?</h3>", unsafe_allow_html=True)
+            st.info("Sau khi đã suy nghĩ kỹ và được Gia sư AI giải đáp, em hãy tự tin làm lại bài kiểm tra để lấy 100% điểm nhé!")
+            
+            # Nút Reset để làm lại bài
+            if st.button("LÀM LẠI BÀI KIỂM TRA ĐẦU VÀO 🚀", use_container_width=True):
                 st.session_state.pretest_done = False
                 st.session_state.pretest_step = 1
                 st.session_state.pretest_answers = {}
+                # Xóa lịch sử chat của Gia sư để làm lại từ đầu
+                for key in list(st.session_state.keys()):
+                    if key.startswith("chat_q_"):
+                        del st.session_state[key]
                 st.session_state.nav_page = "🏠 Cổng Khởi động"
                 st.rerun()
-
-    elif st.session_state.nav_page == "🤖 Gia sư AI (Hỗ trợ)":
-        st.markdown("<h2 style='color: #0D9488;'>🤖 Gia sư AI (Socratic Tutor)</h2>", unsafe_allow_html=True)
-        st.markdown("<span class='main-text'>Chào em! Cô là Gia sư AI. Cô ở đây để giúp em giải đáp những thắc mắc trong bài kiểm tra vừa rồi. Em không hiểu chỗ nào cứ hỏi cô nhé!</span>", unsafe_allow_html=True)
-
-        if not api_ready:
-            st.warning("⚠️ Tính năng AI chưa được kích hoạt. Vui lòng kiểm tra lại GEMINI_API_KEY trong Secrets.")
-        else:
-            if "tutor_messages" not in st.session_state:
-                st.session_state.tutor_messages = []
-            for msg in st.session_state.tutor_messages:
-                with st.chat_message(msg["role"]):
-                    st.markdown(msg["content"])
-                    
-            if prompt := st.chat_input("Hỏi Gia sư AI tại đây..."):
-                st.session_state.tutor_messages.append({"role": "user", "content": prompt})
-                with st.chat_message("user"):
-                    st.markdown(prompt)
-                with st.chat_message("assistant"):
-                    with st.spinner("Cô đang suy nghĩ..."):
-                        history_context = "".join([f"{'HS' if m['role']=='user' else 'AI'}: {m['content']}\n" for m in st.session_state.tutor_messages[-5:-1]])
-                        socratic_prompt = f'''
-                        [HƯỚNG DẪN SOCRATIC TUTOR]
-                        Bạn là Gia sư Vật lí lớp 10. Học sinh này đang yếu kiến thức Động học và chưa qua bài test.
-                        QUY TẮC BẮT BUỘC:
-                        1. TUYỆT ĐỐI KHÔNG BAO GIỜ được đưa ra đáp án trực tiếp cho học sinh.
-                        2. Dùng phương pháp Socratic: Đặt MỘT câu hỏi gợi mở, chia nhỏ vấn đề để dẫn dắt học sinh tự suy nghĩ và tự tìm ra lỗi sai/câu trả lời.
-                        3. Khen ngợi nếu học sinh có ý đúng, nhưng vẫn tiếp tục hỏi để đào sâu.
-                        4. Xưng "cô", gọi "em". Giọng điệu kiên nhẫn, động viên.
-                        
-                        Lịch sử trò chuyện: {history_context}
-                        Học sinh vừa hỏi: "{prompt}"
-                        '''
-                        try:
-                            response = model.generate_content(socratic_prompt)
-                            st.markdown(response.text)
-                            st.session_state.tutor_messages.append({"role": "assistant", "content": response.text})
-                        except Exception as e:
-                            st.error(f"Hệ thống đang bận, em thử lại sau nhé! (Lỗi chi tiết: {e})")
 
     # ==========================================
     # LỘ TRÌNH 2: DÀNH CHO NHÓM TỐT (ĐẠT 100%)
@@ -316,8 +343,11 @@ try:
             
         st.markdown("---")
         
-        # Cập nhật và Reset trạng thái Khóa khi học sinh đổi tình huống
-        if st.session_state.current_scenario != tinh_huong_chon:
+        if "current_scenario" not in st.session_state:
+            st.session_state.current_scenario = tinh_huong_chon
+            st.session_state.da_tra_loi = False
+            st.session_state.ai_response = ""
+        elif st.session_state.current_scenario != tinh_huong_chon:
             st.session_state.current_scenario = tinh_huong_chon
             st.session_state.da_tra_loi = False
             st.session_state.ai_response = ""
@@ -339,15 +369,15 @@ try:
                 else:
                     st.image(duong_dan_anh, use_container_width=True)
             else:
-                st.warning(f"✍️ Đang chờ nét vẽ Sketchnote hoặc Video... (Tên file cần có: {ten_file_anh})")
+                st.warning(f"✍️ Đang chờ nét vẽ Sketchnote hoặc Video...")
                 
             st.markdown(f"<span style='color: #1E293B;'>**❓ Câu hỏi gợi mở:** *{ho_so['Câu hỏi gợi mở']}*</span>", unsafe_allow_html=True)
             
             st.markdown(f'''
             <div style="background-color: #F0FDF4; padding: 15px; border-radius: 10px; border-left: 5px solid #22C55E; margin-top: 20px; margin-bottom: 10px;">
-                <h4 style="color: #15803D; margin-top: 0; display: flex; align-items: center; gap: 8px;">🤖 Gia sư AI phân tích</h4>
+                <h4 style="color: #15803D; margin-top: 0; display: flex; align-items: center; gap: 8px;">🤖 AI phân tích nhanh</h4>
                 <p style="font-size: 0.95em; color: #1E293B; margin-bottom: 5px;"><strong>Dựa vào câu hỏi:</strong> <em>"{ho_so['Câu hỏi gợi mở']}"</em></p>
-                <p style="font-size: 0.85em; color: #64748b;">Hãy nhập hoặc đọc câu trả lời để mở khóa kiến thức nhé!</p>
+                <p style="font-size: 0.85em; color: #64748b;">Hãy nhập hoặc đọc câu trả lời để mở khóa bài học nhé!</p>
             </div>
             ''', unsafe_allow_html=True)
             
@@ -368,16 +398,10 @@ try:
                     st.session_state.da_tra_loi = True
                     if api_ready:
                         with st.spinner("AI đang suy nghĩ..."):
-                            prompt_ai = f'''Bạn là Gia sư Vật lí 10 (Socratic Tutor). Trình độ học sinh: {st.session_state.student_level}. 
-                            Tình huống: {ho_so['Tên tình huống']}. Câu hỏi đặt ra: {ho_so['Câu hỏi gợi mở']}. Lời giải đúng: {ho_so['Giải thích khoa học']}. Học sinh trả lời: "{cau_tra_loi_hs}". 
-                            Quy tắc:
-                            - Nếu học sinh Cơ bản: Động viên nhiều hơn, gợi ý từ từ. Tuyệt đối không cho ngay đáp án.
-                            - Nếu học sinh Khá giỏi: Yêu cầu phân tích sâu hơn.
-                            - Nếu sai: ĐỪNG ĐƯA ĐÁP ÁN, hãy đặt một câu hỏi gợi mở để học sinh nhận ra lỗi sai.
-                            - BẮT BUỘC CHỐT CÂU CUỐI: "Em hãy xem phần 'Giải thích khoa học' bên cạnh để đối chiếu nhé!"'''
+                            prompt_ai = f'''Bạn là cô giáo dạy Vật lí lớp 10, rất tâm lý và khích lệ học sinh. Tình huống: {ho_so['Tên tình huống']}. Câu hỏi đặt ra: {ho_so['Câu hỏi gợi mở']}. Lời giải đúng: {ho_so['Giải thích khoa học']}. Học sinh vừa trả lời: "{cau_tra_loi_hs}". Hãy viết 1 đoạn nhận xét ngắn gọn (khoảng 2-3 câu): Nếu học sinh nói không biết, từ bỏ, hoặc đùa giỡn: Nhẹ nhàng nhắc nhở, động viên. Nếu trả lời sai: Chỉnh sửa nhẹ nhàng. Nếu trả lời có ý đúng: Khen ngợi. Quy tắc BẮT BUỘC: 1. Xưng là "cô", gọi học sinh là "em". 2. Bất kể học sinh trả lời đúng hay sai, CÂU CHỐT CUỐI CÙNG LUÔN LÀ: "Em hãy xem phần 'Giải thích khoa học' bên cạnh để hiểu rõ hơn nhé!"'''
                             try:
                                 response = model.generate_content(prompt_ai)
-                                st.session_state.ai_response = f"**🤖 Gia sư AI phân tích:** {response.text}"
+                                st.session_state.ai_response = f"**🤖 AI phân tích:** {response.text}"
                             except Exception as e:
                                 st.session_state.ai_response = f"❌ AI đang bận, thử lại sau nhé! (Lỗi: {e})"
                     else:
@@ -385,14 +409,11 @@ try:
                 else:
                     st.warning("⚠️ Hãy nhập câu trả lời trước khi gửi!")
 
-            if st.session_state.da_tra_loi and st.session_state.ai_response:
-                if "❌" in st.session_state.ai_response or "⚠️" in st.session_state.ai_response:
-                    st.error(st.session_state.ai_response)
-                else:
-                    st.success(st.session_state.ai_response)
+            if getattr(st.session_state, 'da_tra_loi', False) and getattr(st.session_state, 'ai_response', ""):
+                st.success(st.session_state.ai_response)
 
         with col_phai:
-            if st.session_state.da_tra_loi:
+            if getattr(st.session_state, 'da_tra_loi', False):
                 with st.container():
                     st.markdown("<h3 style='color: #0D9488;'>Giải thích khoa học</h3>", unsafe_allow_html=True)
                     st.write(ho_so['Giải thích khoa học'])
@@ -420,190 +441,192 @@ try:
                 ''', unsafe_allow_html=True)
 
     # ==========================================
-    # GIAO DIỆN 3: BẢN ĐỒ THỬ THÁCH (GAME TỪ EXCEL)
+    # GIAO DIỆN 3: BẢN ĐỒ THỬ THÁCH (GAME)
     # ==========================================
     elif st.session_state.nav_page == "🎮 Thử thách (Game)":
-        
-        st.markdown('''
-        <style>
-            .stApp { background-color: #020617 !important; background-image: linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px) !important; background-size: 30px 30px !important; }
-            .stMarkdown p, .stMarkdown li, .stMarkdown span, .stMarkdown strong { color: #f8fafc !important; font-size: 1.15rem; }
-            .neon-title { text-align: center; color: #ef4444 !important; font-weight: 900; font-size: 3.5rem; text-transform: uppercase; text-shadow: 0 0 10px #dc2626, 0 0 20px #991b1b, 0 0 30px #7f1d1d; margin-bottom: 0px; letter-spacing: 3px; }
-            .cyber-warning { background-color: rgba(220, 38, 38, 0.1); border: 2px solid #ef4444; color: #fca5a5 !important; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.2rem; margin-bottom: 30px; }
-            .led-screen { background-color: #0f172a; border: 3px solid #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 12px; text-align: center; font-size: 1.8rem; font-family: 'Courier New', Courier, monospace; letter-spacing: 8px; margin-bottom: 30px; color: #38bdf8 !important; }
-            .led-code { color: #fde047 !important; font-weight: bold; text-shadow: 0 0 10px #facc15; }
-            .mission-panel { background: rgba(15, 23, 42, 0.8); border-left: 5px solid #38bdf8; border-radius: 10px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
-            .mission-header { color: #38bdf8 !important; font-size: 1.8rem !important; font-weight: 800; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px;}
-            div[data-testid="stRadio"], div[data-testid="stSelectbox"], div[data-testid="stTextInput"] { background-color: #f8fafc !important; padding: 20px !important; border-radius: 12px !important; border: 2px solid #38bdf8 !important; box-shadow: 0 0 15px rgba(56,189,248,0.2) !important; margin-top: 10px; margin-bottom: 20px; }
-            div[data-testid="stRadio"] p, div[data-testid="stRadio"] span, div[data-testid="stRadio"] div, div[data-testid="stRadio"] label, div[data-testid="stSelectbox"] p, div[data-testid="stSelectbox"] span, div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] p, div[data-testid="stTextInput"] span, div[data-testid="stTextInput"] label { color: #0f172a !important; font-weight: 700 !important; font-size: 1.1rem !important; }
-        </style>
-        ''', unsafe_allow_html=True)
-
-        st.markdown("<div class='neon-title'>🕵️‍♂️ ĐIỆP VỤ PHYSIX</div>", unsafe_allow_html=True)
-        st.markdown("<div class='cyber-warning'>🚨 CẢNH BÁO: Tàu tốc hành đang mất phanh. Các đặc vụ PHY-LIFE cần giải mã các trạm điều khiển để kích hoạt hệ thống phanh khẩn cấp!</div>", unsafe_allow_html=True)
-        
-        if df_game.empty:
-            st.error("⚠️ Hệ thống chưa tìm thấy dữ liệu Sheet 'Du_lieu_Game'. Cô hãy thêm dữ liệu vào nhé!")
+        if st.session_state.student_level == "Cơ bản" and not st.session_state.force_unlock_game:
+            st.error("### 🔒 Chuyên mục bị khóa")
+            st.markdown("Phần **Thử thách** đòi hỏi vận dụng cao. Em cần đạt 100% bài Test đầu vào để mở khóa!")
+            if st.button("Mở khóa đặc quyền (Dành cho Giáo viên Test)"):
+                st.session_state.force_unlock_game = True
+                st.rerun()
         else:
-            tong_so_tram = len(df_game)
-            if len(st.session_state.passcodes) != tong_so_tram:
-                st.session_state.passcodes = ["_"] * tong_so_tram
-            
-            st.progress((st.session_state.station - 1) / tong_so_tram)
-            
-            passcodes_display = []
-            for i in range(tong_so_tram):
-                if i < st.session_state.station - 1:
-                    ma_khoa = str(df_game.iloc[i].get('Mã khóa', '')).strip()
-                    passcodes_display.append(ma_khoa if ma_khoa and ma_khoa != 'nan' else '✔️')
-                else:
-                    passcodes_display.append("_")
-            
-            st.markdown(f"""
-            <div class='led-screen'>
-                <span style='color: #38bdf8 !important;'>MÃ KÍCH HOẠT:</span> <span class='led-code'>{' '.join(passcodes_display)}</span>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown('''
+            <style>
+                .stApp { background-color: #020617 !important; background-image: linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px) !important; background-size: 30px 30px !important; }
+                .stMarkdown p, .stMarkdown li, .stMarkdown span, .stMarkdown strong { color: #f8fafc !important; font-size: 1.15rem; }
+                .neon-title { text-align: center; color: #ef4444 !important; font-weight: 900; font-size: 3.5rem; text-transform: uppercase; text-shadow: 0 0 10px #dc2626, 0 0 20px #991b1b, 0 0 30px #7f1d1d; margin-bottom: 0px; letter-spacing: 3px; }
+                .cyber-warning { background-color: rgba(220, 38, 38, 0.1); border: 2px solid #ef4444; color: #fca5a5 !important; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.2rem; margin-bottom: 30px; }
+                .led-screen { background-color: #0f172a; border: 3px solid #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 12px; text-align: center; font-size: 1.8rem; font-family: 'Courier New', Courier, monospace; letter-spacing: 8px; margin-bottom: 30px; color: #38bdf8 !important; }
+                .led-code { color: #fde047 !important; font-weight: bold; text-shadow: 0 0 10px #facc15; }
+                .mission-panel { background: rgba(15, 23, 42, 0.8); border-left: 5px solid #38bdf8; border-radius: 10px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); }
+                .mission-header { color: #38bdf8 !important; font-size: 1.8rem !important; font-weight: 800; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px;}
+                div[data-testid="stRadio"], div[data-testid="stSelectbox"], div[data-testid="stTextInput"] { background-color: #f8fafc !important; padding: 20px !important; border-radius: 12px !important; border: 2px solid #38bdf8 !important; box-shadow: 0 0 15px rgba(56,189,248,0.2) !important; margin-top: 10px; margin-bottom: 20px; }
+                div[data-testid="stRadio"] p, div[data-testid="stRadio"] span, div[data-testid="stRadio"] div, div[data-testid="stRadio"] label, div[data-testid="stSelectbox"] p, div[data-testid="stSelectbox"] span, div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] p, div[data-testid="stTextInput"] span, div[data-testid="stTextInput"] label { color: #0f172a !important; font-weight: 700 !important; font-size: 1.1rem !important; }
+            </style>
+            ''', unsafe_allow_html=True)
 
-            if getattr(st.session_state, 'play_sound', False):
-                st.markdown('<audio autoplay><source src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" type="audio/mpeg"></audio>', unsafe_allow_html=True)
-                st.session_state.play_sound = False
-
-            if st.session_state.station <= tong_so_tram:
-                tram_data = df_game.iloc[st.session_state.station - 1]
+            st.markdown("<div class='neon-title'>🕵️‍♂️ ĐIỆP VỤ PHYSIX</div>", unsafe_allow_html=True)
+            st.markdown("<div class='cyber-warning'>🚨 CẢNH BÁO: Tàu tốc hành đang mất phanh. Các đặc vụ PHY-LIFE cần giải mã các trạm điều khiển để kích hoạt hệ thống phanh khẩn cấp!</div>", unsafe_allow_html=True)
+            
+            if df_game.empty:
+                st.error("⚠️ Lỗi: Không tìm thấy dữ liệu Sheet 'Du_lieu_Game'.")
+            else:
+                tong_so_tram = len(df_game)
+                if len(st.session_state.passcodes) != tong_so_tram:
+                    st.session_state.passcodes = ["_"] * tong_so_tram
                 
-                st.markdown(f"""
-                <div class='mission-panel'>
-                    <div class='mission-header'>📍 Trạm {tram_data.get('Trạm', st.session_state.station)}: {tram_data.get('Tên trạm', '')}</div>
-                    <p><strong>Mục tiêu:</strong> {tram_data.get('Mục tiêu', '')}</p>
-                    <p><strong>Nhiệm vụ:</strong> {tram_data.get('Nhiệm vụ', '')}</p>
-                </div>
-                """, unsafe_allow_html=True)
+                st.progress((st.session_state.station - 1) / tong_so_tram)
                 
-                anh_minh_hoa = str(tram_data.get('Ảnh minh họa', '')).strip()
-                if anh_minh_hoa and anh_minh_hoa != 'nan':
-                    img_path = os.path.join("images", anh_minh_hoa)
-                    if os.path.exists(img_path):
-                        img_col1, img_col2, img_col3 = st.columns([1, 2, 1])
-                        with img_col2:
-                            st.image(img_path, use_container_width=True)
+                passcodes_display = []
+                for i in range(tong_so_tram):
+                    if i < st.session_state.station - 1:
+                        ma_khoa = str(df_game.iloc[i].get('Mã khóa', '')).strip()
+                        passcodes_display.append(ma_khoa if ma_khoa and ma_khoa != 'nan' else '✔️')
                     else:
-                        st.warning(f"✍️ Đang chờ tải ảnh: {anh_minh_hoa}")
+                        passcodes_display.append("_")
+                
+                st.markdown(f"<div class='led-screen'><span style='color: #38bdf8 !important;'>MÃ KÍCH HOẠT:</span> <span class='led-code'>{' '.join(passcodes_display)}</span></div>", unsafe_allow_html=True)
 
-                loai_cau_hoi = str(tram_data.get('Loại thử thách', tram_data.get('Loại câu hỏi', ''))).strip()
-                dap_an_dung = str(tram_data.get('Đáp án đúng', tram_data.get('Đáp án', ''))).strip()
-                du_lieu_chon = str(tram_data.get('Dữ liệu lựa chọn', tram_data.get('Các lựa chọn', ''))).strip()
-                phan_hoi_dung = str(tram_data.get('Phản hồi đúng', 'Chính xác!'))
-                phan_hoi_sai = str(tram_data.get('Phản hồi sai', 'Sai rồi!'))
-                
-                match_state_key = f"matched_tram_{st.session_state.station}"
-                if match_state_key not in st.session_state:
-                    st.session_state[match_state_key] = False
-                
-                if loai_cau_hoi == "Trắc nghiệm":
-                    lua_chon = [opt.strip() for opt in du_lieu_chon.split("|")]
-                    ans = st.radio("Chọn đáp án:", ["Chưa chọn"] + lua_chon, key=f"q_{st.session_state.station}")
+                if getattr(st.session_state, 'play_sound', False):
+                    st.markdown('<audio autoplay><source src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" type="audio/mpeg"></audio>', unsafe_allow_html=True)
+                    st.session_state.play_sound = False
+
+                if st.session_state.station <= tong_so_tram:
+                    tram_data = df_game.iloc[st.session_state.station - 1]
                     
-                    if st.button("🚀 Xác nhận", use_container_width=True):
-                        if ans != "Chưa chọn" and ans.startswith(dap_an_dung):
-                            st.success(f"✅ {phan_hoi_dung}")
-                            st.session_state.play_sound = True
-                            time.sleep(1.5)
-                            st.session_state.station += 1
-                            st.rerun()
+                    st.markdown(f"""
+                    <div class='mission-panel'>
+                        <div class='mission-header'>📍 Trạm {tram_data.get('Trạm', st.session_state.station)}: {tram_data.get('Tên trạm', '')}</div>
+                        <p><strong>Mục tiêu:</strong> {tram_data.get('Mục tiêu', '')}</p>
+                        <p><strong>Nhiệm vụ:</strong> {tram_data.get('Nhiệm vụ', '')}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    anh_minh_hoa = str(tram_data.get('Ảnh minh họa', '')).strip()
+                    if anh_minh_hoa and anh_minh_hoa != 'nan':
+                        img_path = os.path.join("images", anh_minh_hoa)
+                        if os.path.exists(img_path):
+                            img_col1, img_col2, img_col3 = st.columns([1, 2, 1])
+                            with img_col2:
+                                st.image(img_path, use_container_width=True)
                         else:
-                            st.error(f"❌ {phan_hoi_sai}")
-                            
-                elif loai_cau_hoi == "Ghép nối":
-                    pairs = du_lieu_chon.split("|")
-                    vethrai = [p.split("=")[0].strip() for p in pairs if "=" in p]
-                    vephai = [p.split("=")[1].strip() for p in pairs if "=" in p]
-                    options = ["Chưa ghép"] + sorted(list(set(vephai)))
+                            st.warning(f"✍️ Đang chờ tải ảnh: {anh_minh_hoa}")
+
+                    loai_cau_hoi = str(tram_data.get('Loại thử thách', tram_data.get('Loại câu hỏi', ''))).strip()
+                    dap_an_dung = str(tram_data.get('Đáp án đúng', tram_data.get('Đáp án', ''))).strip()
+                    du_lieu_chon = str(tram_data.get('Dữ liệu lựa chọn', tram_data.get('Các lựa chọn', ''))).strip()
+                    phan_hoi_dung = str(tram_data.get('Phản hồi đúng', 'Chính xác!'))
+                    phan_hoi_sai = str(tram_data.get('Phản hồi sai', 'Sai rồi!'))
                     
-                    user_answers = {}
-                    col1, col2 = st.columns(2)
-                    for idx, trai in enumerate(vethrai):
-                        with col1 if idx % 2 == 0 else col2:
-                            user_answers[trai] = st.selectbox(trai, options, key=f"match_{st.session_state.station}_{idx}")
+                    match_state_key = f"matched_tram_{st.session_state.station}"
+                    if match_state_key not in st.session_state:
+                        st.session_state[match_state_key] = False
                     
-                    if not st.session_state[match_state_key]:
-                        if st.button("🔍 Kiểm tra ghép nối", use_container_width=True):
-                            correct = all(user_answers[trai] == phai for trai, phai in zip(vethrai, vephai))
-                            if correct:
-                                if dap_an_dung == "" or dap_an_dung.lower() == "nan":
-                                    st.success(f"✅ {phan_hoi_dung}")
-                                    st.session_state.play_sound = True
-                                    time.sleep(1.5)
-                                    st.session_state.station += 1
-                                    st.rerun()
-                                else:
-                                    st.session_state[match_state_key] = True
-                                    st.rerun()
-                            else:
-                                st.error("❌ Ghép thẻ thất bại. Hệ thống báo lỗi đồng bộ!")
-                    
-                    if st.session_state[match_state_key]:
-                        st.success(f"✅ Ghép nối thành công! {phan_hoi_dung}")
-                        ans2 = st.text_input("Nhập mã thu được sau khi ghép:", key=f"ans_match_{st.session_state.station}")
-                        if st.button("🚀 Xác nhận mã", use_container_width=True):
-                            if ans2.strip().lower() == dap_an_dung.lower():
+                    if loai_cau_hoi == "Trắc nghiệm":
+                        lua_chon = [opt.strip() for opt in du_lieu_chon.split("|")]
+                        ans = st.radio("Chọn đáp án:", ["Chưa chọn"] + lua_chon, key=f"q_{st.session_state.station}")
+                        
+                        if st.button("🚀 Xác nhận", use_container_width=True):
+                            if ans != "Chưa chọn" and ans.startswith(dap_an_dung):
+                                st.success(f"✅ {phan_hoi_dung}")
                                 st.session_state.play_sound = True
                                 time.sleep(1.5)
                                 st.session_state.station += 1
-                                st.session_state[match_state_key] = False
                                 st.rerun()
                             else:
                                 st.error(f"❌ {phan_hoi_sai}")
                                 
-                elif loai_cau_hoi == "Đúng/Sai":
-                    statements = [opt.strip() for opt in du_lieu_chon.split("|")]
-                    correct_answers = [ans.strip() for ans in dap_an_dung.split("|")]
-                    
-                    user_answers = []
-                    for idx, stmt in enumerate(statements):
-                        ans = st.radio(f"{idx+1}. {stmt}", ["Chưa chọn", "Đúng", "Sai"], horizontal=True, key=f"tf_{st.session_state.station}_{idx}")
-                        user_answers.append(ans)
+                    elif loai_cau_hoi == "Ghép nối":
+                        pairs = du_lieu_chon.split("|")
+                        vethrai = [p.split("=")[0].strip() for p in pairs if "=" in p]
+                        vephai = [p.split("=")[1].strip() for p in pairs if "=" in p]
+                        options = ["Chưa ghép"] + sorted(list(set(vephai)))
                         
-                    if st.button("🚀 Tổng hợp mã", use_container_width=True):
-                        if "Chưa chọn" in user_answers:
-                            st.warning("⚠️ Đặc vụ cần đánh giá toàn bộ nhận định!")
-                        elif user_answers == correct_answers:
-                            st.success(f"✅ {phan_hoi_dung}")
-                            st.session_state.play_sound = True
-                            time.sleep(2)
-                            st.session_state.station += 1
-                            st.rerun()
-                        else:
-                            st.error(f"❌ {phan_hoi_sai}")
+                        user_answers = {}
+                        col1, col2 = st.columns(2)
+                        for idx, trai in enumerate(vethrai):
+                            with col1 if idx % 2 == 0 else col2:
+                                user_answers[trai] = st.selectbox(trai, options, key=f"match_{st.session_state.station}_{idx}")
+                        
+                        if not st.session_state[match_state_key]:
+                            if st.button("🔍 Kiểm tra ghép nối", use_container_width=True):
+                                correct = all(user_answers[trai] == phai for trai, phai in zip(vethrai, vephai))
+                                if correct:
+                                    if dap_an_dung == "" or dap_an_dung.lower() == "nan":
+                                        st.success(f"✅ {phan_hoi_dung}")
+                                        st.session_state.play_sound = True
+                                        time.sleep(1.5)
+                                        st.session_state.station += 1
+                                        st.rerun()
+                                    else:
+                                        st.session_state[match_state_key] = True
+                                        st.rerun()
+                                else:
+                                    st.error("❌ Ghép thẻ thất bại. Hệ thống báo lỗi đồng bộ!")
+                        
+                        if st.session_state[match_state_key]:
+                            st.success(f"✅ Ghép nối thành công! {phan_hoi_dung}")
+                            ans2 = st.text_input("Nhập mã thu được sau khi ghép:", key=f"ans_match_{st.session_state.station}")
+                            if st.button("🚀 Xác nhận mã", use_container_width=True):
+                                if ans2.strip().lower() == dap_an_dung.lower():
+                                    st.session_state.play_sound = True
+                                    time.sleep(1.5)
+                                    st.session_state.station += 1
+                                    st.session_state[match_state_key] = False
+                                    st.rerun()
+                                else:
+                                    st.error(f"❌ {phan_hoi_sai}")
+                                    
+                    elif loai_cau_hoi == "Đúng/Sai":
+                        statements = [opt.strip() for opt in du_lieu_chon.split("|")]
+                        correct_answers = [ans.strip() for ans in dap_an_dung.split("|")]
+                        
+                        user_answers = []
+                        for idx, stmt in enumerate(statements):
+                            ans = st.radio(f"{idx+1}. {stmt}", ["Chưa chọn", "Đúng", "Sai"], horizontal=True, key=f"tf_{st.session_state.station}_{idx}")
+                            user_answers.append(ans)
                             
-                elif loai_cau_hoi == "Điền khuyết": 
-                    ans = st.text_input("Nhập kết quả/mã thu được:", key=f"q_{st.session_state.station}")
+                        if st.button("🚀 Tổng hợp mã Nhị phân", use_container_width=True):
+                            if "Chưa chọn" in user_answers:
+                                st.warning("⚠️ Đặc vụ cần đánh giá toàn bộ nhận định!")
+                            elif user_answers == correct_answers:
+                                st.success(f"✅ {phan_hoi_dung}")
+                                st.session_state.play_sound = True
+                                time.sleep(2)
+                                st.session_state.station += 1
+                                st.rerun()
+                            else:
+                                st.error(f"❌ {phan_hoi_sai}")
+                                
+                    elif loai_cau_hoi == "Điền khuyết": 
+                        ans = st.text_input("Nhập kết quả/mã thu được:", key=f"q_{st.session_state.station}")
+                        
+                        if st.button("🚀 Xác nhận mã", use_container_width=True):
+                            if ans.strip().lower() == dap_an_dung.lower():
+                                st.success(f"✅ {phan_hoi_dung}")
+                                st.session_state.play_sound = True
+                                time.sleep(1.5)
+                                st.session_state.station += 1
+                                st.rerun()
+                            else:
+                                st.error(f"❌ {phan_hoi_sai}")
+
+                else:
+                    st.balloons()
+                    correct_final_code = "".join([str(df_game.iloc[i].get('Mã khóa', '')).strip() for i in range(tong_so_tram) if str(df_game.iloc[i].get('Mã khóa', '')).strip() and str(df_game.iloc[i].get('Mã khóa', '')).strip() != 'nan'])
                     
-                    if st.button("🚀 Xác nhận mã", use_container_width=True):
-                        if ans.strip().lower() == dap_an_dung.lower():
-                            st.success(f"✅ {phan_hoi_dung}")
-                            st.session_state.play_sound = True
-                            time.sleep(1.5)
-                            st.session_state.station += 1
-                            st.rerun()
-                        else:
-                            st.error(f"❌ {phan_hoi_sai}")
+                    st.markdown("<div style='background-color: rgba(34, 197, 94, 0.2); padding: 40px; border-radius: 15px; text-align: center; border: 2px solid #4ade80; box-shadow: 0 0 30px rgba(74, 222, 128, 0.5);'><h1 style='color: #4ade80 !important; font-size: 3.5rem; margin-bottom: 10px; text-shadow: 0 0 10px #4ade80;'>🎉 KÍCH HOẠT THÀNH CÔNG!</h1><h2 style='color: #86efac !important;'>CỨU HỘ HOÀN TẤT. MÃ CUỐI LÀ: " + correct_final_code + "</h2></div>", unsafe_allow_html=True)
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    if st.button("🔄 Chơi lại Điệp vụ", use_container_width=True):
+                        st.session_state.station = 1
+                        for key in list(st.session_state.keys()):
+                            if key.startswith("matched_tram_"):
+                                st.session_state[key] = False
+                        st.rerun()
 
-            else:
-                st.balloons()
-                correct_final_code = "".join([str(df_game.iloc[i].get('Mã khóa', '')).strip() for i in range(tong_so_tram) if str(df_game.iloc[i].get('Mã khóa', '')).strip() and str(df_game.iloc[i].get('Mã khóa', '')).strip() != 'nan'])
-                
-                st.markdown("<div style='background-color: rgba(34, 197, 94, 0.2); padding: 40px; border-radius: 15px; text-align: center; border: 2px solid #4ade80; box-shadow: 0 0 30px rgba(74, 222, 128, 0.5);'><h1 style='color: #4ade80 !important; font-size: 3.5rem; margin-bottom: 10px; text-shadow: 0 0 10px #4ade80;'>🎉 KÍCH HOẠT THÀNH CÔNG!</h1><h2 style='color: #86efac !important;'>CỨU HỘ HOÀN TẤT. MÃ CUỐI LÀ: " + correct_final_code + "</h2></div>", unsafe_allow_html=True)
-                
-                st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("🔄 Chơi lại Điệp vụ", use_container_width=True):
-                    st.session_state.station = 1
-                    for key in list(st.session_state.keys()):
-                        if key.startswith("matched_tram_"):
-                            st.session_state[key] = False
-                    st.rerun()
-
-    # === GIAO DIỆN 5: CHATBOT AI ===
+    # === GIAO DIỆN 5: CHATBOT AI KHÁM PHÁ ===
     elif st.session_state.nav_page == "🤖 Hỏi Nhà khám phá AI":
         if st.session_state.student_level == "Cơ bản" and not st.session_state.force_unlock_game:
             st.error("### 🔒 Chuyên mục bị khóa")
