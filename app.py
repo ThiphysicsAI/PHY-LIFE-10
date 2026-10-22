@@ -158,6 +158,7 @@ try:
                 st.error("⚠️ Lỗi: Không tìm thấy dữ liệu Sheet 'Du_lieu_Khoi_dong'.")
             else:
                 tong_so_cau = len(df_pretest)
+                
                 if st.session_state.pretest_step <= tong_so_cau:
                     cau_hien_tai = df_pretest.iloc[st.session_state.pretest_step - 1]
                     
@@ -178,6 +179,7 @@ try:
                             st.warning(f"⚠️ Không tìm thấy video: {video_src}.")
                     
                     st.markdown("---")
+                    
                     cac_lua_chon = [opt.strip() for opt in str(cau_hien_tai['Các lựa chọn']).split("|")]
                     dap_an_dung = str(cau_hien_tai['Đáp án đúng']).strip()
                     
