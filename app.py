@@ -108,7 +108,7 @@ if not st.session_state.logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("""
-        <div class='main-card' style='margin-bottom: 1.5rem; padding: 1.5rem;'>
+        <div class='main-card' style='margin-bottom: 2.5rem; padding: 2.0rem;'>
             <h3 style='text-align: center; margin-bottom: 0; color: #0f766e;'>Bắt đầu hành trình</h3>
         </div>
         """, unsafe_allow_html=True)
