@@ -148,15 +148,24 @@ elif not st.session_state.pretest_completed:
         """, unsafe_allow_html=True)
         
         media_src = str(cau_hien_tai.get('Video/Ảnh', '')).strip()
+        media_src = str(cau_hien_tai.get('Video/Ảnh', '')).strip()
         if media_src and media_src.lower() != 'nan':
             st.info("🎬 Quan sát tình huống dưới đây:")
             if media_src.startswith("http"):
                 st.video(media_src)
             else:
-                try:
-                    st.image(f"images/{media_src}", use_container_width=True)
-                except:
-                    st.warning(f"Không tải được tệp: {media_src}")
+                # Kiểm tra định dạng video
+                if media_src.lower().endswith(('.mp4', '.mov', '.avi')):
+                    try:
+                        st.video(f"images/{media_src}") # Đảm bảo video nằm trong thư mục images
+                    except Exception as e:
+                        st.warning(f"Không tải được video: {media_src}. Lỗi: {e}")
+                # Xử lý hình ảnh
+                else:
+                    try:
+                        st.image(f"images/{media_src}", use_container_width=True)
+                    except Exception as e:
+                        st.warning(f"Không tải được hình ảnh: {media_src}. Lỗi: {e}")
         
         st.markdown("---")
         
