@@ -206,3 +206,99 @@ elif not getattr(st.session_state, 'pretest_completed', False):
                     st.warning("⚠️ Em cần chọn một đáp án để đi tiếp nhé!")
         
         st.markdown("</div>", unsafe_allow_html=True)
+# ========================================================
+# 6. KHỐI GIA SƯ SOCRATIC AI & THƯ VIỆN HIỆN TƯỢNG
+else:
+    # 6.1 Khởi tạo API và Cấu hình System Prompt
+    if "GEMINI_API_KEY" not in st.secrets:
+        st.error("⚠️ Chưa cấu hình GEMINI_API_KEY trong Streamlit Secrets.")
+    else:
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        
+        system_instruction = """
+        Bạn là Gia sư Socratic môn Vật lí 10, người đồng hành cùng học sinh khám phá kiến thức chứ không phải cỗ máy giải bài.
+        
+        KỶ LUẬT CỐT LÕI (TUYỆT ĐỐI TUÂN THỦ):
+        1. KHÔNG BAO GIỜ cung cấp đáp án trực tiếp, công thức trọn vẹn, hay lời giải cuối cùng.
+        2. Nếu học sinh hỏi đáp án, hãy từ chối khéo léo và đặt một câu hỏi gợi mở nhỏ hơn để học sinh tự suy luận.
+        3. Luôn phản hồi bằng tiếng Việt, giọng điệu gần gũi, khích lệ (xưng "Thầy/Cô" và gọi "em").
+        4. Mỗi lần phản hồi chỉ đặt TỐI ĐA 1 CÂU HỎI để tránh làm học sinh quá tải.
+        
+        TÍCH HỢP THỰC TIỄN (THƯ VIỆN HIỆN TƯỢNG):
+        Khi học sinh bế tắc hoặc bắt đầu một chủ đề mới, bạn BẮT BUỘC phải lấy một ví dụ thực tiễn trong đời sống (giao thông, thể thao, tự nhiên, vũ trụ...) để làm mỏ neo trực quan trước khi đi vào tính toán.
+        """
+        
+        # Khởi tạo mô hình Gemini 3.5 Flash Lite
+        model = genai.GenerativeModel(
+            model_name="gemini-3.5-flash-lite",
+            system_instruction=system_instruction
+        )
+
+        # 6.2 Xử lý phân luồng và Tạo câu chào mồi (Prompt mồi)
+        if "chat_history" not in st.session_state:
+            st.session_state.chat_history = []
+            
+            # Phân tích kết quả Pre-test
+            so_cau_sai = len(st.session_state.wrong_answers)
+            
+            if so_cau_sai == 0:
+                # Nhóm Đạt 100%
+                loi_chao = f"🎉 Chúc mừng {st.session_state.student_name}! Em đã xuất sắc vượt qua bài kiểm tra với điểm tuyệt đối.\n\nBây giờ, em đã mở khóa **Trợ lý AI Đa năng**. Em có thể hỏi tôi giải thích bất kỳ hiện tượng vật lí nào trong cuộc sống, hoặc yêu cầu tôi tạo ra một bài toán thử thách dành riêng cho em (ví dụ: bài toán gia tốc trong bóng đá). Em muốn khám phá điều gì nào?"
+            else:
+                # Nhóm cần hỗ trợ (Có câu sai)
+                cau_sai_dau_tien = st.session_state.wrong_answers[0]
+                loi_chao = f"Chào {st.session_state.student_name}, em đã hoàn thành bài kiểm tra rất cố gắng! Tuy nhiên, chúng ta có một vài chỗ cần làm rõ để em hiểu sâu hơn.\n\nTrong câu hỏi: *'{cau_sai_dau_tien['cau_hoi']}'*, em đã chọn *'{cau_sai_dau_tien['lua_chon_sai']}'*.\n\nThay vì đưa ngay đáp án, chúng ta hãy thử hình dung một tình huống thực tế nhé: [AI sẽ tự động chèn tình huống phù hợp vào đây ở lượt chat sau]. Theo em, yếu tố nào ảnh hưởng nhiều nhất đến hiện tượng đó?"
+            
+            # Lưu câu chào vào lịch sử chat
+            st.session_state.chat_history.append({"role": "model", "content": loi_chao})
+
+        # 6.3 Giao diện Cửa sổ Chat (Tối giản)
+        st.markdown("<div class='main-card'>", unsafe_allow_html=True)
+        
+        if len(st.session_state.wrong_answers) == 0:
+            st.markdown("<h3 style='color: #0f766e; text-align: center;'>🌟 Nhà Khám Phá AI Đa Năng</h3>", unsafe_allow_html=True)
+        else:
+            st.markdown("<h3 style='color: #0f766e; text-align: center;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
+            
+        st.markdown("---")
+
+        # Hiển thị lịch sử chat
+        for message in st.session_state.chat_history:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+        # 6.4 Xử lý tin nhắn của học sinh
+        user_input = st.chat_input("Nhập câu trả lời hoặc câu hỏi của em vào đây...")
+        
+        if user_input:
+            # Hiện tin nhắn của học sinh
+            st.session_state.chat_history.append({"role": "user", "content": user_input})
+            with st.chat_message("user"):
+                st.markdown(user_input)
+            
+            # Ghi log tương tác lên Google Sheets âm thầm
+            ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Chat AI", "Hỏi/Đáp", user_input)
+
+            # Gọi Gemini API
+            with st.chat_message("model"):
+                message_placeholder = st.empty()
+                message_placeholder.markdown("Gia sư đang suy nghĩ... ⏳")
+                
+                try:
+                    # Chuyển đổi định dạng lịch sử chat cho Gemini
+                    gemini_history = []
+                    for msg in st.session_state.chat_history[:-1]: # Bỏ câu vừa nhập
+                        role = "user" if msg["role"] == "user" else "model"
+                        gemini_history.append({"role": role, "parts": [msg["content"]]})
+                    
+                    chat = model.start_chat(history=gemini_history)
+                    response = chat.send_message(user_input)
+                    
+                    # Hiện phản hồi
+                    message_placeholder.markdown(response.text)
+                    st.session_state.chat_history.append({"role": "model", "content": response.text})
+                    
+                except Exception as e:
+                    message_placeholder.error(f"Đã có lỗi xảy ra kết nối với Gia sư. Em thử lại nhé! (Lỗi: {e})")
+                    
+        st.markdown("</div>", unsafe_allow_html=True)
