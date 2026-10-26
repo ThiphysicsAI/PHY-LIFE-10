@@ -318,15 +318,33 @@ else:
             
             # --- Tích hợp Thư viện Hiện tượng (Đọc trực tiếp từ Thu_vien_hien_tuong) ---
             try:
+                # Đọc dữ liệu từ file Excel (Lưu ý: Tên file phải khớp với file trên GitHub)
                 df_hien_tuong = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Thu_vien_hien_tuong')
+                
                 if not df_hien_tuong.empty:
                     st.markdown("#### 📚 Thư Viện Hiện Tượng Thực Tế")
                     hien_tuong_chon = st.selectbox("Chọn một tình huống em muốn khám phá:", df_hien_tuong['Tên tình huống'].tolist())
                     
                     if hien_tuong_chon:
                         chi_tiet = df_hien_tuong[df_hien_tuong['Tên tình huống'] == hien_tuong_chon].iloc[0]
+                        
+                        # Hiển thị Bài học liên quan
+                        bai_hoc = str(chi_tiet.get('Bài học liên quan', '')).strip()
+                        if bai_hoc and bai_hoc.lower() != 'nan':
+                            st.markdown(f"<p style='color: #0d9488; font-weight: 600;'>📖 Bài học liên quan: {bai_hoc}</p>", unsafe_allow_html=True)
+                        
+                        # Hiển thị Ảnh minh họa
+                        anh_minh_hoa = str(chi_tiet.get('Tên file ảnh', '')).strip()
+                        if anh_minh_hoa and anh_minh_hoa.lower() != 'nan':
+                            try:
+                                st.image(f"images/{anh_minh_hoa}", use_container_width=True)
+                            except Exception:
+                                st.warning(f"⚠️ Không tìm thấy tệp ảnh: {anh_minh_hoa} trong thư mục images/")
+                        
+                        # Hiển thị Mô tả quan sát
                         st.info(f"**👀 Quan sát:** {chi_tiet.get('Mô tả quan sát', '')}")
                         
+                        st.markdown("<br>", unsafe_allow_html=True)
                         if st.button("💬 Nhờ AI giải thích hiện tượng này", use_container_width=True):
                             user_prompt_hien_tuong = f"Cô hãy đóng vai Nhà Khám phá Vật lí, giải thích bản chất vật lí của hiện tượng: '{hien_tuong_chon}'. Cụ thể: {chi_tiet.get('Mô tả quan sát', '')}. Giải thích thật dễ hiểu, ngắn gọn và gợi mở để học sinh suy nghĩ thêm."
                             
@@ -348,7 +366,7 @@ else:
                                     st.error("Có lỗi kết nối AI, em thử lại nhé!")
                             st.rerun()
             except Exception as e:
-                st.warning("⚠️ Không thể tải dữ liệu Thư viện hiện tượng từ Thu_vien_hien_tuong. Thầy/Cô giáo vui lòng kiểm tra lại file Excel.")
+                st.warning(f"⚠️ Không thể tải dữ liệu Thư viện hiện tượng. Lỗi chi tiết: {e}")
                 
             st.markdown("---")
 
