@@ -386,14 +386,17 @@ else:
                             # Đổi nút bấm và Lệnh ngầm cho AI
                             if st.button("💬 Trò chuyện & Cùng AI săn hiện tượng mới 🚀", use_container_width=True, key="btn_giai_thich_duy_nhat"):
                                 user_prompt_hien_tuong = f"""
-                                Bạn là Nhà Khám phá Vật lí. Học sinh vừa tự đọc toàn bộ Bách khoa toàn thư về hiện tượng: '{hien_tuong_chon}' trên hệ thống.
-                                (Tài liệu học sinh đã đọc bao gồm: Giải thích: {giai_thich}. Công thức: {cong_thuc}. Ví dụ: {vi_du}. Tương tự: {tuong_tu}).
+                                Bạn là Đội trưởng Nhà Khám phá Vật lí. Học sinh vừa đọc xong tư liệu về hiện tượng: '{hien_tuong_chon}'.
                                 
-                                CHIẾN LƯỢC CỦA BẠN LÚC NÀY (Không dùng Socratic để hỏi bài cũ nữa):
-                                1. Chào mừng học sinh. Gợi mở xem các em có thắc mắc chi tiết nào trong phần kiến thức vừa đọc không.
-                                2. NHIỆM VỤ CHÍNH: Phát động thử thách "Săn Hiện Tượng". Khích lệ học sinh quan sát đời sống quanh mình (trên đường, chơi thể thao, làm việc nhà...) để tự phát hiện ra MỘT hiện tượng động học MỚI, chưa có trong thư viện.
-                                3. Hướng dẫn các em cách ghi chép lại hiện tượng đó để mang lên lớp chia sẻ, giúp cô giáo bổ sung vào Ngân hàng dữ liệu.
-                                4. Giọng điệu hào hứng, như một người đồng đội cùng đi thám hiểm.
+                                CHIẾN LƯỢC CỦA BẠN LÚC NÀY:
+                                1. Chào mừng và hỏi xem học sinh có thắc mắc nào về công thức hay giải thích của hiện tượng vừa đọc không.
+                                2. Phát động "Thử thách Săn Hiện Tượng". Hãy đưa ra hướng dẫn CHI TIẾT (không trả lời quá ngắn) gợi ý các địa điểm hoặc hoạt động thực tế để học sinh đi săn hiện tượng tương tự (ví dụ: sân bóng, đường phố, nhà bếp, công viên...).
+                                3. Cung cấp cho học sinh "Sổ tay thợ săn" (trình bày rõ ràng bằng bullet points) gồm các bước cần ghi chép để mang lên lớp báo cáo và nộp cho cô giáo:
+                                   - 📍 Tên hiện tượng và bối cảnh (Em phát hiện nó ở đâu, lúc nào?).
+                                   - 👁️ Mô tả chi tiết chuyển động (Vật di chuyển thế nào? Quỹ đạo, vận tốc thay đổi ra sao?).
+                                   - 📸 Bằng chứng (Khuyến khích em quay video ngắn 5-10s hoặc chụp ảnh lại).
+                                
+                                Yêu cầu quan trọng: Viết dài hơn bình thường một chút, trình bày thật rõ ràng, sinh động. Giọng điệu cực kỳ hào hứng, nhiệt huyết để truyền lửa cho học sinh xách ba lô lên và đi khám phá thực tế ngay lập tức!
                                 """
                                 
                                 st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, em đã đọc xong tư liệu về **{hien_tuong_chon}**. Cô trò mình cùng trao đổi và đi săn hiện tượng mới nhé!"})
