@@ -321,7 +321,7 @@ else:
             """, unsafe_allow_html=True)
             
             try:
-                df_hien_tuong = load_thu_vien_data()
+                df_hien_tuong = load_phenomena_data()
                 if not df_hien_tuong.empty:
                     with st.expander("📚 Mở/Đóng Thư Viện Hiện Tượng Thực Tế", expanded=True):
                         hien_tuong_chon = st.selectbox("Chọn một tình huống em muốn khám phá:", df_hien_tuong['Tên tình huống'].tolist(), key="chon_hien_tuong_duy_nhat")
