@@ -244,61 +244,31 @@ else:
             if so_cau_sai == 0:
                 # Nhóm Đạt 100%
                 loi_chao = f"🎉 Chúc mừng {st.session_state.student_name}! Em đã xuất sắc vượt qua bài kiểm tra với điểm tuyệt đối.\n\nBây giờ, em đã mở khóa **Trợ lý AI Đa năng**. Em có thể hỏi tôi giải thích bất kỳ hiện tượng vật lí nào trong cuộc sống, hoặc yêu cầu tôi tạo ra một bài toán thử thách dành riêng cho em (ví dụ: bài toán gia tốc trong bóng đá). Em muốn khám phá điều gì nào?"
+                st.session_state.chat_history.append({"role": "model", "content": loi_chao})
             else:
-                # Nhóm cần hỗ trợ (Có câu sai)
-                cau_sai_dau_tien = st.session_state.wrong_answers[0]
-                loi_chao = f"Chào {st.session_state.student_name}, em đã hoàn thành bài kiểm tra rất cố gắng! Tuy nhiên, chúng ta có một vài chỗ cần làm rõ để em hiểu sâu hơn.\n\nTrong câu hỏi: *'{cau_sai_dau_tien['cau_hoi']}'*, em đã chọn *'{cau_sai_dau_tien['lua_chon_sai']}'*.\n\nThay vì đưa ngay đáp án, chúng ta hãy thử hình dung một tình huống thực tế nhé: [AI sẽ tự động chèn tình huống phù hợp vào đây ở lượt chat sau]. Theo em, yếu tố nào ảnh hưởng nhiều nhất đến hiện tượng đó?"
-            
-            # Lưu câu chào vào lịch sử chat
-            st.session_state.chat_history.append({"role": "model", "content": loi_chao})
+                # Nhóm cần hỗ trợ (Có câu sai) - Tạo Prompt mồi ẩn để AI tự sinh lời chào
+                danh_sach_loi = ""
+                for i, loi in enumerate(st.session_state.wrong_answers):
+                    danh_sach_loi += f"\n- Câu hỏi {i+1}: '{loi['cau_hoi']}' | Học sinh chọn sai: '{loi['lua_chon_sai']}'"
 
-        # 6.3 Giao diện Cửa sổ Chat (Tối giản)
-        st.markdown("<div class='main-card'>", unsafe_allow_html=True)
-        
-        if len(st.session_state.wrong_answers) == 0:
-            st.markdown("<h3 style='color: #0f766e; text-align: center;'>🌟 Nhà Khám Phá AI Đa Năng</h3>", unsafe_allow_html=True)
-        else:
-            st.markdown("<h3 style='color: #0f766e; text-align: center;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
-            
-        st.markdown("---")
-
-        # Hiển thị lịch sử chat
-        for message in st.session_state.chat_history:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
-
-        # 6.4 Xử lý tin nhắn của học sinh
-        user_input = st.chat_input("Nhập câu trả lời hoặc câu hỏi của em vào đây...")
-        
-        if user_input:
-            # Hiện tin nhắn của học sinh
-            st.session_state.chat_history.append({"role": "user", "content": user_input})
-            with st.chat_message("user"):
-                st.markdown(user_input)
-            
-            # Ghi log tương tác lên Google Sheets âm thầm
-            ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Chat AI", "Hỏi/Đáp", user_input)
-
-            # Gọi Gemini API
-            with st.chat_message("model"):
-                message_placeholder = st.empty()
-                message_placeholder.markdown("Gia sư đang suy nghĩ... ⏳")
+                prompt_moi_ngam = f"""
+                Học sinh {st.session_state.student_name} vừa làm bài kiểm tra Pre-test và làm sai {so_cau_sai} câu sau:
+                {danh_sach_loi}
                 
-                try:
-                    # Chuyển đổi định dạng lịch sử chat cho Gemini
-                    gemini_history = []
-                    for msg in st.session_state.chat_history[:-1]: # Bỏ câu vừa nhập
-                        role = "user" if msg["role"] == "user" else "model"
-                        gemini_history.append({"role": role, "parts": [msg["content"]]})
-                    
-                    chat = model.start_chat(history=gemini_history)
-                    response = chat.send_message(user_input)
-                    
-                    # Hiện phản hồi
-                    message_placeholder.markdown(response.text)
-                    st.session_state.chat_history.append({"role": "model", "content": response.text})
-                    
-                except Exception as e:
-                    message_placeholder.error(f"Đã có lỗi xảy ra kết nối với Gia sư. Em thử lại nhé! (Lỗi: {e})")
-                    
-        st.markdown("</div>", unsafe_allow_html=True)
+                Nhiệm vụ của bạn:
+                Hãy viết một câu chào đầu tiên gửi đến {st.session_state.student_name}.
+                1. Động viên em ấy vì đã hoàn thành bài thi.
+                2. Chọn ra CÂU SAI ĐẦU TIÊN trong danh sách trên để bắt đầu sửa lỗi. Nhắc lại ngắn gọn câu hỏi và lựa chọn sai của học sinh.
+                3. BẮT BUỘC: Lấy ngay 1 ví dụ thực tiễn (như thể thao, xe cộ...) liên quan đến lỗi sai đó, và đặt 1 câu hỏi gợi mở đầu tiên dựa trên ví dụ thực tiễn này để ép học sinh suy luận. 
+                (Không được in ra các chỉ dẫn kỹ thuật trong ngoặc vuông, hãy nói chuyện tự nhiên).
+                """
+                
+                # Gọi AI tạo lời chào đầu tiên một cách tự nhiên
+                with st.spinner("Gia sư đang phân tích bài làm của em..."):
+                    try:
+                        chat = model.start_chat()
+                        response = chat.send_message(prompt_moi_ngam)
+                        st.session_state.chat_history.append({"role": "model", "content": response.text})
+                    except Exception as e:
+                        # Fallback nếu API lỗi
+                        st.session_state.chat_history.append({"role": "model", "content": f"Chào {st.session_state.student_name}, em đã hoàn thành bài kiểm tra rất cố gắng! Chúng ta có {so_cau_sai} câu cần làm rõ. Em hãy nhắn 'Bắt đầu sửa lỗi' để chúng ta đi vào câu đầu tiên nhé!"})
