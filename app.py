@@ -302,11 +302,6 @@ else:
             st.markdown("""
             <p style='text-align: center; color: #1e3a8a; font-style: italic;'>
                 Phòng Ôn Tập Socratic - nơi em được thoải mái nghĩ và thử sai<br><br>
-                Cô không giải hộ và không chấm điểm. Cô sẽ hỏi từng câu nhỏ để em tự tìm ra bản chất vấn đề.<br><br>
-                Em kể cô nghe em đang nghĩ gì, nghĩ sai cũng không sao.<br>
-                Cô hỏi một câu, em trả lời bằng lời của mình, không cần viết đúng công thức.<br>
-                Bí rồi thì bấm "Gợi ý thêm", cô sẽ gợi ý rõ hơn từng bước.<br>
-                Khi thấy mình đã hiểu, bấm "Làm lại trạm khởi động" để xem em tiến bộ thế nào.
             </p>
             """, unsafe_allow_html=True)
             
