@@ -297,15 +297,20 @@ else:
                         st.session_state.chat_history.append({"role": "model", "content": fallback_msg})
 
         # Giao diện Cửa sổ Chat
-        st.markdown("<div class='main-card'>", unsafe_allow_html=True)
         if len(st.session_state.wrong_answers) == 0:
-            st.markdown("<h3 style='color: #0f766e; text-align: center;'>🌟 Nhà Khám Phá AI Đa Năng</h3>", unsafe_allow_html=True)
-        else:
-            st.markdown("<h3 style='color: #e63946; text-align: center;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
             st.markdown("""
-            <p style='text-align: center; color: #1e3a8a; font-style: italic;'>
-                Phòng Ôn Tập Socratic - nơi em được thoải mái nghĩ và thử sai<br><br>
-            </p>
+            <div class='main-card' style='padding: 1.5rem; margin-bottom: 1.5rem;'>
+                <h3 style='color: #0f766e; text-align: center; margin-bottom: 0;'>🌟 Nhà Khám Phá AI Đa Năng</h3>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div class='main-card' style='padding: 1.5rem; margin-bottom: 1.5rem;'>
+                <h3 style='color: #e63946; text-align: center; margin-top: 0;'>🧠 Phòng Ôn Tập Socratic</h3>
+                <p style='text-align: center; color: #1e3a8a; font-style: italic; margin-bottom: 0;'>
+                    Phòng Ôn Tập Socratic - nơi em được thoải mái nghĩ và thử sai<br><br>
+                </p>
+            </div>
             """, unsafe_allow_html=True)
             
             # --- Hiển thị danh sách các câu làm sai ---
@@ -345,5 +350,3 @@ else:
                     
                 except Exception as e:
                     message_placeholder.error(f"Đã có lỗi xảy ra kết nối với hệ thống. Em thử lại nhé!")
-                    
-        st.markdown("</div>", unsafe_allow_html=True)
