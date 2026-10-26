@@ -78,6 +78,14 @@ def load_pretest_data():
     except Exception:
         return pd.DataFrame()
 
+@st.cache_data
+def load_phenomena_data():
+    try:
+        # Dữ liệu hiện tượng được lưu tại Sheet Thư viện hiện tượng
+        df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Thu_vien_hien_tuong')
+        return df
+    except Exception:
+        return pd.DataFrame()
 # Khởi tạo trạng thái phiên (Session State)
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
