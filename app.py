@@ -306,6 +306,10 @@ else:
 
         # Giao diện Cửa sổ Chat
         st.markdown("<div class='main-card'>", unsafe_allow_html=True)
+        
+        # ==========================================
+        # PHẦN 1: THƯ VIỆN HIỆN TƯỢNG (LUÔN Ở TRÊN CÙNG)
+        # ==========================================
         if len(st.session_state.wrong_answers) == 0:
             st.markdown("""
             <div style='padding: 1.5rem; margin-bottom: 1.5rem; background-color: #f0fdfa; border-radius: 1rem; border-left: 5px solid #0d9488;'>
@@ -316,70 +320,118 @@ else:
             </div>
             """, unsafe_allow_html=True)
             
-           # --- Tích hợp Thư viện Hiện tượng (Đọc trực tiếp từ Thu_vien_hien_tuong) ---
             try:
-                # Đọc dữ liệu từ file Excel
                 df_hien_tuong = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Thu_vien_hien_tuong')
-                
                 if not df_hien_tuong.empty:
-                    st.markdown("#### 📚 Thư Viện Hiện Tượng Thực Tế")
-                    hien_tuong_chon = st.selectbox("Chọn một tình huống em muốn khám phá:", df_hien_tuong['Tên tình huống'].tolist(), key="chon_hien_tuong_duy_nhat")
-                    
-                    if hien_tuong_chon:
-                        chi_tiet = df_hien_tuong[df_hien_tuong['Tên tình huống'] == hien_tuong_chon].iloc[0]
+                    # Giao diện thu gọn (Expander) giúp tối ưu không gian
+                    with st.expander("📚 Mở/Đóng Thư Viện Hiện Tượng Thực Tế", expanded=True):
+                        hien_tuong_chon = st.selectbox("Chọn một tình huống em muốn khám phá:", df_hien_tuong['Tên tình huống'].tolist(), key="chon_hien_tuong_duy_nhat")
                         
-                        # Hiển thị Bài học liên quan
-                        bai_hoc = str(chi_tiet.get('Bài học liên quan', '')).strip()
-                        if bai_hoc and bai_hoc.lower() != 'nan':
-                            st.markdown(f"<p style='color: #0d9488; font-weight: 600;'>📖 Bài học liên quan: {bai_hoc}</p>", unsafe_allow_html=True)
-                        
-                        # Hiển thị Ảnh minh họa
-                        anh_minh_hoa = str(chi_tiet.get('Tên file ảnh', '')).strip()
-                        if anh_minh_hoa and anh_minh_hoa.lower() != 'nan':
-                            try:
-                                st.image(f"images/{anh_minh_hoa}", use_container_width=True)
-                            except Exception:
-                                st.warning(f"⚠️ Không tìm thấy tệp ảnh: {anh_minh_hoa} trong thư mục images/")
-                        
-                        # Hiển thị Mô tả quan sát
-                        st.info(f"**👀 Quan sát:** {chi_tiet.get('Mô tả quan sát', '')}")
-                        
-                        # BỔ SUNG: Hiển thị Câu hỏi gợi mở / Câu hỏi khám phá
-                        cau_hoi_kham_pha = str(chi_tiet.get('Câu hỏi gợi mở', '')).strip()
-                        if cau_hoi_kham_pha and cau_hoi_kham_pha.lower() != 'nan':
-                            st.warning(f"**❓ Thử thách suy nghĩ:** {cau_hoi_kham_pha}")
-                        
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        if st.button("💬 Nhờ AI giải thích hiện tượng này", use_container_width=True, key="btn_giai_thich_duy_nhat"):
-                            # Ép AI bám sát vào câu hỏi gợi mở trong lệnh ngầm
-                            user_prompt_hien_tuong = f"Cô hãy đóng vai Nhà Khám phá Vật lí, cùng học sinh thảo luận về hiện tượng: '{hien_tuong_chon}'. Cụ thể quan sát: {chi_tiet.get('Mô tả quan sát', '')}. Câu hỏi đang cần giải quyết: {cau_hoi_kham_pha}. Dựa trên kỷ luật Socratic, KHÔNG đưa đáp án trực tiếp, hãy đặt một câu hỏi nhỏ gợi mở để học sinh tự suy luận."
+                        if hien_tuong_chon:
+                            chi_tiet = df_hien_tuong[df_hien_tuong['Tên tình huống'] == hien_tuong_chon].iloc[0]
                             
-                            st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, cùng em khám phá tình huống này nhé: **{hien_tuong_chon}**!"})
-                            ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Chọn hiện tượng", hien_tuong_chon)
+                            bai_hoc = str(chi_tiet.get('Bài học liên quan', '')).strip()
+                            if bai_hoc and bai_hoc.lower() != 'nan':
+                                st.markdown(f"<p style='color: #0d9488; font-weight: 600;'>📖 Bài học liên quan: {bai_hoc}</p>", unsafe_allow_html=True)
                             
-                            with st.spinner("Nhà Khám Phá AI đang phân tích..."):
+                            anh_minh_hoa = str(chi_tiet.get('Tên file ảnh', '')).strip()
+                            if anh_minh_hoa and anh_minh_hoa.lower() != 'nan':
                                 try:
-                                    gemini_history = []
-                                    for msg in st.session_state.chat_history[:-1]:
-                                        role = "user" if msg["role"] == "user" else "model"
-                                        gemini_history.append({"role": role, "parts": [msg["content"]]})
-                                    
-                                    chat = model.start_chat(history=gemini_history)
-                                    response = chat.send_message(user_prompt_hien_tuong)
-                                    
-                                    st.session_state.chat_history.append({"role": "model", "content": response.text})
-                                except Exception as e:
-                                    st.error("Có lỗi kết nối AI, em thử lại nhé!")
-                            st.rerun()
+                                    st.image(f"images/{anh_minh_hoa}", use_container_width=True)
+                                except Exception:
+                                    pass
+                            
+                            st.info(f"**👀 Quan sát:** {chi_tiet.get('Mô tả quan sát', '')}")
+                            
+                            cau_hoi_kham_pha = str(chi_tiet.get('Câu hỏi gợi mở', '')).strip()
+                            if cau_hoi_kham_pha and cau_hoi_kham_pha.lower() != 'nan':
+                                st.warning(f"**❓ Thử thách suy nghĩ:** {cau_hoi_kham_pha}")
+                            
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            if st.button("💬 Nhờ AI giải thích hiện tượng này", use_container_width=True, key="btn_giai_thich_duy_nhat"):
+                                giai_thich = str(chi_tiet.get('Giải thích khoa học', '')).strip()
+                                cong_thuc = str(chi_tiet.get('Công thức', '')).strip()
+                                vi_du = str(chi_tiet.get('Ví dụ định lượng', '')).strip()
+                                dieu_kien = str(chi_tiet.get('Điều kiện/giới hạn', '')).strip()
+                                cau_hoi_tuong_tac = str(chi_tiet.get('Câu hỏi tương tác', '')).strip()
+                                
+                                user_prompt_hien_tuong = f"""
+                                Cô hãy đóng vai Nhà Khám phá Vật lí, cùng học sinh thảo luận về hiện tượng: '{hien_tuong_chon}'. 
+                                Tình huống quan sát: {chi_tiet.get('Mô tả quan sát', '')}. 
+                                Câu hỏi mở màn: {cau_hoi_kham_pha}.
+                                
+                                BẠN BẮT BUỘC PHẢI DỰA VÀO KHUNG KIẾN THỨC SAU ĐÂY CỦA GIÁO VIÊN ĐỂ DẪN DẮT:
+                                - Giải thích bản chất: {giai_thich if giai_thich != 'nan' else 'Chưa có'}
+                                - Công thức trọng tâm: {cong_thuc if cong_thuc != 'nan' else 'Chưa có'}
+                                - Ví dụ định lượng: {vi_du if vi_du != 'nan' else 'Chưa có'}
+                                - Điều kiện/Giới hạn áp dụng: {dieu_kien if dieu_kien != 'nan' else 'Chưa có'}
+                                - Gợi ý câu hỏi dẫn dắt: {cau_hoi_tuong_tac if cau_hoi_tuong_tac != 'nan' else 'Chưa có'}
+                                
+                                Nhiệm vụ Socratic của bạn:
+                                1. KHÔNG copy paste "Giải thích bản chất" đưa cho học sinh.
+                                2. Hãy dùng "Gợi ý câu hỏi dẫn dắt" để đặt ra MỘT câu hỏi nhỏ, giúp học sinh tự đi đến kết luận.
+                                3. Nếu học sinh trả lời đúng một phần, hãy khen ngợi và hỏi tiếp phần còn lại.
+                                """
+                                
+                                st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, cùng em khám phá tình huống này nhé: **{hien_tuong_chon}**!"})
+                                ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Chọn hiện tượng", hien_tuong_chon)
+                                
+                                with st.spinner("Nhà Khám Phá AI đang phân tích dữ liệu của cô giáo..."):
+                                    try:
+                                        gemini_history = []
+                                        for msg in st.session_state.chat_history[:-1]:
+                                            role = "user" if msg["role"] == "user" else "model"
+                                            gemini_history.append({"role": role, "parts": [msg["content"]]})
+                                        
+                                        chat = model.start_chat(history=gemini_history)
+                                        response = chat.send_message(user_prompt_hien_tuong)
+                                        
+                                        st.session_state.chat_history.append({"role": "model", "content": response.text})
+                                    except Exception as e:
+                                        st.error("Có lỗi kết nối AI, em thử lại nhé!")
+                                st.rerun()
             except Exception as e:
                 st.warning(f"⚠️ Không thể tải dữ liệu Thư viện hiện tượng. Lỗi chi tiết: {e}")
                 
-            st.markdown("---")
+        else:
+            st.markdown("<h3 style='color: #e63946; text-align: center; margin-top: 0;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
+            st.markdown("""
+            <p style='text-align: center; color: #1e3a8a; font-style: italic; margin-bottom: 0;'>
+                Phòng Ôn Tập Socratic - nơi em được thoải mái nghĩ và thử sai<br><br>
+                Cô không giải hộ và không chấm điểm. Cô sẽ hỏi từng câu nhỏ để em tự tìm ra bản chất vấn đề.<br><br>
+                Em kể cô nghe em đang nghĩ gì, nghĩ sai cũng không sao.<br>
+                Cô hỏi một câu, em trả lời bằng lời của mình, không cần viết đúng công thức.<br>
+                Bí rồi thì bấm "Gợi ý thêm", cô sẽ gợi ý rõ hơn từng bước.<br>
+                Khi thấy mình đã hiểu, bấm "Làm lại trạm khởi động" để xem em tiến bộ thế nào.
+            </p>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("#### 🎯 Các câu hỏi cần ôn tập lại:")
+            for i, loi in enumerate(st.session_state.wrong_answers):
+                st.info(f"**Câu {i+1}:** {loi['cau_hoi']}\n\n❌ *Em đã chọn:* {loi['lua_chon_sai']}")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🔄 Làm lại trạm khởi động", use_container_width=True):
+                st.session_state.pretest_completed = False
+                st.session_state.pretest_step = 1
+                st.session_state.wrong_answers = []
+                if "chat_history" in st.session_state:
+                    del st.session_state.chat_history
+                ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Điều hướng", "Làm lại Pre-test", "")
+                st.rerun()
 
+        st.markdown("---")
+
+        # ==========================================
+        # PHẦN 2: HIỂN THỊ LỊCH SỬ CHAT (LUÔN Ở GIỮA)
+        # ==========================================
         for message in st.session_state.chat_history:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
+        # ==========================================
+        # PHẦN 3: XỬ LÝ NHẬP LIỆU CHAT (LUÔN Ở DƯỚI)
+        # ==========================================
         user_input = st.chat_input("Nhập câu trả lời hoặc câu hỏi của em vào đây...")
         
         if user_input:
@@ -393,60 +445,19 @@ else:
                 message_placeholder = st.empty()
                 message_placeholder.markdown("Cô đang suy nghĩ... ⏳")
                 
-                # --- Tích hợp Thư viện Hiện tượng (Đọc trực tiếp từ Thu_vien_hien_tuong) ---
-            try:
-                df_hien_tuong = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Thu_vien_hien_tuong')
-                if not df_hien_tuong.empty:
-                    st.markdown("#### 📚 Thư Viện Hiện Tượng Thực Tế")
-                    hien_tuong_chon = st.selectbox("Chọn một tình huống em muốn khám phá:", df_hien_tuong['Tên tình huống'].tolist())
+                try:
+                    gemini_history = []
+                    for msg in st.session_state.chat_history[:-1]:
+                        role = "user" if msg["role"] == "user" else "model"
+                        gemini_history.append({"role": role, "parts": [msg["content"]]})
                     
-                    if hien_tuong_chon:
-                        chi_tiet = df_hien_tuong[df_hien_tuong['Tên tình huống'] == hien_tuong_chon].iloc[0]
-                        st.info(f"**👀 Quan sát:** {chi_tiet.get('Mô tả quan sát', '')}")
-                        
-                        if st.button("💬 Nhờ AI giải thích hiện tượng này", use_container_width=True):
-                            # --- RÚT DỮ LIỆU TỪ EXCEL ĐỂ NEO AI ---
-                            giai_thich = str(chi_tiet.get('Giải thích khoa học', '')).strip()
-                            cong_thuc = str(chi_tiet.get('Công thức', '')).strip()
-                            vi_du = str(chi_tiet.get('Ví dụ định lượng', '')).strip()
-                            dieu_kien = str(chi_tiet.get('Điều kiện/giới hạn', '')).strip()
-                            cau_hoi_tuong_tac = str(chi_tiet.get('Câu hỏi tương tác', '')).strip()
-                            
-                            # --- NHÚNG LỆNH NGẦM (PROMPT INJECTION) ---
-                            user_prompt_hien_tuong = f"""
-                            Cô hãy đóng vai Nhà Khám phá Vật lí, cùng học sinh thảo luận về hiện tượng: '{hien_tuong_chon}'. 
-                            Tình huống quan sát: {chi_tiet.get('Mô tả quan sát', '')}. 
-                            Câu hỏi mở màn: {cau_hoi_kham_pha}.
-                            
-                            BẠN BẮT BUỘC PHẢI DỰA VÀO KHUNG KIẾN THỨC SAU ĐÂY CỦA GIÁO VIÊN ĐỂ DẪN DẮT (Không tự sáng tác ngoài lề):
-                            - Giải thích bản chất: {giai_thich if giai_thich != 'nan' else 'Chưa có'}
-                            - Công thức trọng tâm: {cong_thuc if cong_thuc != 'nan' else 'Chưa có'}
-                            - Ví dụ định lượng: {vi_du if vi_du != 'nan' else 'Chưa có'}
-                            - Điều kiện/Giới hạn áp dụng: {dieu_kien if dieu_kien != 'nan' else 'Chưa có'}
-                            - Gợi ý câu hỏi dẫn dắt: {cau_hoi_tuong_tac if cau_hoi_tuong_tac != 'nan' else 'Chưa có'}
-                            
-                            Nhiệm vụ Socratic của bạn:
-                            1. KHÔNG copy paste "Giải thích bản chất" đưa cho học sinh.
-                            2. Hãy dùng "Gợi ý câu hỏi dẫn dắt" để đặt ra MỘT câu hỏi nhỏ, giúp học sinh tự đi đến kết luận.
-                            3. Nếu học sinh trả lời đúng một phần, hãy khen ngợi và hỏi tiếp phần còn lại.
-                            """
-                            
-                            st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, cùng em khám phá tình huống này nhé: **{hien_tuong_chon}**!"})
-                            ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Chọn hiện tượng", hien_tuong_chon)
-                            
-                            with st.spinner("Nhà Khám Phá AI đang phân tích dữ liệu của cô giáo..."):
-                                try:
-                                    gemini_history = []
-                                    for msg in st.session_state.chat_history[:-1]:
-                                        role = "user" if msg["role"] == "user" else "model"
-                                        gemini_history.append({"role": role, "parts": [msg["content"]]})
-                                    
-                                    chat = model.start_chat(history=gemini_history)
-                                    response = chat.send_message(user_prompt_hien_tuong)
-                                    
-                                    st.session_state.chat_history.append({"role": "model", "content": response.text})
-                                except Exception as e:
-                                    st.error("Có lỗi kết nối AI, em thử lại nhé!")
-                            st.rerun()
-            except Exception as e:
-                st.warning(f"⚠️ Không thể tải dữ liệu Thư viện hiện tượng. Lỗi chi tiết: {e}")
+                    chat = model.start_chat(history=gemini_history)
+                    response = chat.send_message(user_input)
+                    
+                    message_placeholder.markdown(response.text)
+                    st.session_state.chat_history.append({"role": "model", "content": response.text})
+                    
+                except Exception as e:
+                    message_placeholder.error(f"Đã có lỗi xảy ra kết nối với hệ thống. Em thử lại nhé!")
+                    
+        st.markdown("</div>", unsafe_allow_html=True)
