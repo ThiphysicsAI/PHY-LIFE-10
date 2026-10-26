@@ -91,7 +91,10 @@ if "logged_in" not in st.session_state:
 # 3. GIAO DIỆN ĐĂNG NHẬP
 # ==========================================
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align: center; color: #d32f2f; font-size: 4.5rem; font-weight: 900; margin-top: 2rem; text-shadow: 2px 2px 5px rgba(0,0,0,0.1); letter-spacing: 2px;'>PHY-LIFE 10</h1>", unsafe_allow_html=True)
+    # Tiêu đề chính to, màu đỏ
+    st.markdown("<h1 style='text-align: center; color: #d32f2f !important; font-size: 4.5rem !important; font-weight: 900 !important; margin-top: 2rem; text-shadow: 2px 2px 5px rgba(0,0,0,0.1); letter-spacing: 2px;'>PHY-LIFE 10</h1>", unsafe_allow_html=True)
+    
+    # Tiêu đề phụ màu xanh
     st.markdown("<p style='text-align: center; font-size: 1.2rem; margin-bottom: 3rem; color: #1e3a8a; font-weight: 600; text-transform: uppercase;'>AI ĐỒNG HÀNH TỰ HỌC CÁ NHÂN HOÁ, KẾT NỐI VẬT LÍ VỚI ĐỜI SỐNG</p>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
