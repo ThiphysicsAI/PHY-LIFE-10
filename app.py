@@ -440,11 +440,12 @@ else:
                 st.info(f"**Câu {i+1}:** {loi['cau_hoi']}\n\n❌ *Em đã chọn:* {loi['lua_chon_sai']}")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            """
             # --- CHIA 2 CỘT CHO 2 LỰA CHỌN ĐIỀU HƯỚNG ---
             col_btn1, col_btn2 = st.columns(2)
-            
+
             with col_btn1:
+                if st.button("🔄 Làm lại Trạm khởi động", use_container_width=True):
+        # ... (giữ nguyên phần code bên dưới)
                 if st.button("🔄 Làm lại Trạm khởi động", use_container_width=True):
                     st.session_state.pretest_completed = False
                     st.session_state.pretest_step = 1
