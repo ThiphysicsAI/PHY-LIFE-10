@@ -405,12 +405,36 @@ else:
                         st.info(f"**👀 Quan sát:** {chi_tiet.get('Mô tả quan sát', '')}")
                         
                         if st.button("💬 Nhờ AI giải thích hiện tượng này", use_container_width=True):
-                            user_prompt_hien_tuong = f"Cô hãy đóng vai Nhà Khám phá Vật lí, giải thích bản chất vật lí của hiện tượng: '{hien_tuong_chon}'. Cụ thể: {chi_tiet.get('Mô tả quan sát', '')}. Giải thích thật dễ hiểu, ngắn gọn và gợi mở để học sinh suy nghĩ thêm."
+                            # --- RÚT DỮ LIỆU TỪ EXCEL ĐỂ NEO AI ---
+                            giai_thich = str(chi_tiet.get('Giải thích khoa học', '')).strip()
+                            cong_thuc = str(chi_tiet.get('Công thức', '')).strip()
+                            vi_du = str(chi_tiet.get('Ví dụ định lượng', '')).strip()
+                            dieu_kien = str(chi_tiet.get('Điều kiện/giới hạn', '')).strip()
+                            cau_hoi_tuong_tac = str(chi_tiet.get('Câu hỏi tương tác', '')).strip()
                             
-                            st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, giải thích giúp em hiện tượng: **{hien_tuong_chon}** với ạ!"})
+                            # --- NHÚNG LỆNH NGẦM (PROMPT INJECTION) ---
+                            user_prompt_hien_tuong = f"""
+                            Cô hãy đóng vai Nhà Khám phá Vật lí, cùng học sinh thảo luận về hiện tượng: '{hien_tuong_chon}'. 
+                            Tình huống quan sát: {chi_tiet.get('Mô tả quan sát', '')}. 
+                            Câu hỏi mở màn: {cau_hoi_kham_pha}.
+                            
+                            BẠN BẮT BUỘC PHẢI DỰA VÀO KHUNG KIẾN THỨC SAU ĐÂY CỦA GIÁO VIÊN ĐỂ DẪN DẮT (Không tự sáng tác ngoài lề):
+                            - Giải thích bản chất: {giai_thich if giai_thich != 'nan' else 'Chưa có'}
+                            - Công thức trọng tâm: {cong_thuc if cong_thuc != 'nan' else 'Chưa có'}
+                            - Ví dụ định lượng: {vi_du if vi_du != 'nan' else 'Chưa có'}
+                            - Điều kiện/Giới hạn áp dụng: {dieu_kien if dieu_kien != 'nan' else 'Chưa có'}
+                            - Gợi ý câu hỏi dẫn dắt: {cau_hoi_tuong_tac if cau_hoi_tuong_tac != 'nan' else 'Chưa có'}
+                            
+                            Nhiệm vụ Socratic của bạn:
+                            1. KHÔNG copy paste "Giải thích bản chất" đưa cho học sinh.
+                            2. Hãy dùng "Gợi ý câu hỏi dẫn dắt" để đặt ra MỘT câu hỏi nhỏ, giúp học sinh tự đi đến kết luận.
+                            3. Nếu học sinh trả lời đúng một phần, hãy khen ngợi và hỏi tiếp phần còn lại.
+                            """
+                            
+                            st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, cùng em khám phá tình huống này nhé: **{hien_tuong_chon}**!"})
                             ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Chọn hiện tượng", hien_tuong_chon)
                             
-                            with st.spinner("Nhà Khám Phá AI đang phân tích..."):
+                            with st.spinner("Nhà Khám Phá AI đang phân tích dữ liệu của cô giáo..."):
                                 try:
                                     gemini_history = []
                                     for msg in st.session_state.chat_history[:-1]:
