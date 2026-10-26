@@ -100,7 +100,7 @@ if not st.session_state.logged_in:
     
     # Tiêu đề phụ
     st.markdown("""
-    <div style='text-align: center; font-size: 2.5rem; margin-bottom: 3rem; color: #1e3a8a; font-weight: 600; text-transform: uppercase;'>
+    <div style='text-align: center; font-size: 2.0rem; margin-bottom: 3rem; color: #1e3a8a; font-weight: 600; text-transform: uppercase;'>
         AI ĐỒNG HÀNH TỰ HỌC CÁ NHÂN HOÁ, KẾT NỐI VẬT LÍ VỚI ĐỜI SỐNG
     </div>
     """, unsafe_allow_html=True)
