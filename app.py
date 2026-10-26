@@ -362,20 +362,24 @@ else:
                             with col_1:
                                 cong_thuc = str(chi_tiet.get('Công thức', '')).strip()
                                 if cong_thuc and cong_thuc.lower() != 'nan':
-                                    st.markdown(f"<div style='background-color: #f1f5f9; padding: 1rem; border-radius: 0.5rem;'><b>📐 Công thức:</b><br>{cong_thuc}</div>", unsafe_allow_html=True)
+                                    # Dùng st.info (màu xanh dương pastel) để hỗ trợ hiển thị LaTeX
+                                    st.info(f"**📐 Công thức:**\n\n{cong_thuc}")
                                 
                                 dieu_kien = str(chi_tiet.get('Điều kiện/giới hạn', '')).strip()
                                 if dieu_kien and dieu_kien.lower() != 'nan':
-                                    st.markdown(f"<div style='background-color: #fffbeb; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;'><b>⚠️ Điều kiện áp dụng:</b><br>{dieu_kien}</div>", unsafe_allow_html=True)
+                                    # Dùng st.warning (màu vàng pastel)
+                                    st.warning(f"**⚠️ Điều kiện áp dụng:**\n\n{dieu_kien}")
                                     
                             with col_2:
                                 vi_du = str(chi_tiet.get('Ví dụ định lượng', '')).strip()
                                 if vi_du and vi_du.lower() != 'nan':
-                                    st.markdown(f"<div style='background-color: #f0fdfa; padding: 1rem; border-radius: 0.5rem;'><b>🔢 Ví dụ định lượng:</b><br>{vi_du}</div>", unsafe_allow_html=True)
+                                    # Dùng st.success (màu xanh lá pastel)
+                                    st.success(f"**🔢 Ví dụ định lượng:**\n\n{vi_du}")
                                 
                                 tuong_tu = str(chi_tiet.get('Tình huống tương tự', '')).strip()
                                 if tuong_tu and tuong_tu.lower() != 'nan':
-                                    st.markdown(f"<div style='background-color: #fdf4ff; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;'><b>🔄 Tình huống tương tự:</b><br>{tuong_tu}</div>", unsafe_allow_html=True)
+                                    # Dùng st.error (màu hồng/đỏ pastel)
+                                    st.error(f"**🔄 Tình huống tương tự:**\n\n{tuong_tu}")
 
                             st.markdown("<br>", unsafe_allow_html=True)
                             
