@@ -86,8 +86,12 @@ if not st.session_state.logged_in:
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<div class='main-card'>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; margin-bottom: 1.5rem;'>Bắt đầu hành trình</h3>", unsafe_allow_html=True)
+        # Gộp chung khung và chữ vào một lệnh để chữ nằm gọn trong khung
+        st.markdown("""
+        <div class='main-card' style='margin-bottom: 1.5rem; padding: 1.5rem;'>
+            <h3 style='text-align: center; margin-bottom: 0; color: #0f766e;'>Bắt đầu hành trình</h3>
+        </div>
+        """, unsafe_allow_html=True)
         
         name_input = st.text_input("Tên của em là gì?", placeholder="Ví dụ: Nguyễn Văn A")
         class_input = st.text_input("Em học lớp mấy?", placeholder="Ví dụ: 10A1")
@@ -105,7 +109,6 @@ if not st.session_state.logged_in:
                 st.rerun()
             else:
                 st.error("⚠️ Em nhớ nhập đầy đủ Tên và Lớp nhé!")
-        st.markdown("</div>", unsafe_allow_html=True)
 
 # 5. KHỐI CHẨN ĐOÁN PRE-TEST
 elif not getattr(st.session_state, 'pretest_completed', False):
