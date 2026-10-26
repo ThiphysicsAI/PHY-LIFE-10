@@ -139,6 +139,16 @@ elif not st.session_state.pretest_completed:
         tong_so_cau = len(df_pretest)
         st.progress(st.session_state.pretest_step / tong_so_cau)
         
+        # --- BỔ SUNG LỜI GIỚI THIỆU KHỞI ĐỘNG CHỈ Ở BƯỚC 1 ---
+        if st.session_state.pretest_step == 1:
+             st.markdown("""
+             <div style='background-color: #f0fdfa; padding: 1.5rem; border-radius: 1rem; border-left: 5px solid #14b8a6; margin-bottom: 1.5rem;'>
+                 <h4 style='color: #0f766e; margin-top: 0;'>Trạm khởi động – không chấm điểm! 🕵️‍♂️</h4>
+                 <p style='color: #334155; margin-bottom: 0;'>Đây không phải bài kiểm tra. Hãy thử sức và đừng lo sai: mỗi lỗi sai giúp AI hiểu bạn cần hỗ trợ ở đâu. Điều quan trọng là cách bạn suy nghĩ, không phải đáp án cuối cùng.</p>
+             </div>
+             """, unsafe_allow_html=True)
+        # ---------------------------------------------------
+
         cau_hien_tai = df_pretest.iloc[st.session_state.pretest_step - 1]
         
         st.markdown(f"""
