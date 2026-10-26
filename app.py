@@ -321,7 +321,7 @@ else:
             """, unsafe_allow_html=True)
             
             try:
-                df_hien_tuong = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Thu_vien_hien_tuong')
+                df_hien_tuong = load_thu_vien_data()
                 if not df_hien_tuong.empty:
                     with st.expander("📚 Mở/Đóng Thư Viện Hiện Tượng Thực Tế", expanded=True):
                         hien_tuong_chon = st.selectbox("Chọn một tình huống em muốn khám phá:", df_hien_tuong['Tên tình huống'].tolist(), key="chon_hien_tuong_duy_nhat")
