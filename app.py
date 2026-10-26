@@ -125,10 +125,10 @@ elif not getattr(st.session_state, 'pretest_completed', False):
         cau_hien_tai = df_pretest.iloc[st.session_state.pretest_step - 1]
         
        st.markdown(f"""
-<div class='main-card' style='padding: 1.5rem; margin-bottom: 1rem;'>
-    <h3 style='color: #0f766e; margin-bottom: 0;'>Nhiệm vụ {st.session_state.pretest_step}/{tong_so_cau}</h3>
-</div>
-""", unsafe_allow_html=True)
+        <div class='main-card' style='padding: 1.5rem; margin-bottom: 1rem;'>
+            <h3 style='color: #0f766e; margin-bottom: 0;'>Nhiệm vụ {st.session_state.pretest_step}/{tong_so_cau}</h3>
+        </div>
+        """, unsafe_allow_html=True)
         
         # Phần Media (Video/Ảnh) nếu có
         media_src = str(cau_hien_tai.get('Video/Ảnh', '')).strip()
