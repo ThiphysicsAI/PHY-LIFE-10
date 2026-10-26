@@ -119,6 +119,14 @@ elif not getattr(st.session_state, 'pretest_completed', False):
     else:
         tong_so_cau = len(df_pretest)
         
+        # --- THÊM PHẦN GIỚI THIỆU PRE-TEST ---
+        st.markdown(f"""
+        <div style='background-color: #e0f2fe; padding: 1.5rem; border-radius: 1rem; border-left: 5px solid #0284c7; margin-bottom: 2rem;'>
+            <h4 style='color: #0369a1; margin-top: 0;'>Chào {st.session_state.student_name}, Chào mừng em đến với Trạm Chẩn Đoán! 🎯</h4>
+            <p style='color: #334155; margin-bottom: 0;'>Để AI có thể thiết kế lộ trình học tập phù hợp nhất, em hãy hoàn thành {tong_so_cau} nhiệm vụ khởi động dưới đây. Hãy quan sát kỹ các hiện tượng thực tế và suy luận nhé.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
         # Thanh tiến trình
         st.progress(st.session_state.pretest_step / tong_so_cau)
         
@@ -130,17 +138,25 @@ elif not getattr(st.session_state, 'pretest_completed', False):
         </div>
         """, unsafe_allow_html=True)
         
-        # Phần Media (Video/Ảnh) nếu có
+        # --- SỬA LẠI LOGIC ĐỌC MEDIA (HỖ TRỢ LOCAL VIDEO .MP4) ---
         media_src = str(cau_hien_tai.get('Video/Ảnh', '')).strip()
         if media_src and media_src.lower() != 'nan':
             st.info("🎬 Quan sát tình huống dưới đây:")
             if media_src.startswith("http"):
                 st.video(media_src)
             else:
-                try:
-                    st.image(f"images/{media_src}", use_container_width=True)
-                except:
-                    st.warning(f"Không tải được tệp: {media_src}")
+                file_path = f"images/{media_src}"
+                # Kiểm tra đuôi file để quyết định dùng st.video hay st.image
+                if media_src.lower().endswith(('.mp4', '.mov', '.webm')):
+                    try:
+                        st.video(file_path)
+                    except Exception:
+                        st.warning(f"Không tải được video: {media_src}. Đảm bảo file nằm trong thư mục 'images'")
+                else:
+                    try:
+                        st.image(file_path, use_container_width=True)
+                    except Exception:
+                        st.warning(f"Không tải được hình ảnh: {media_src}. Đảm bảo file nằm trong thư mục 'images'")
         
         st.markdown("---")
         
@@ -164,15 +180,20 @@ elif not getattr(st.session_state, 'pretest_completed', False):
             btn_text = "Hoàn thành & Phân tích 🔍" if st.session_state.pretest_step == tong_so_cau else "Tiếp tục ➡️"
             if st.button(btn_text, use_container_width=True):
                 if tra_loi:
-                    # Kiểm tra đúng/sai
                     is_correct = tra_loi.startswith(dap_an_dung)
+                    # Nếu câu sai, lưu lại để AI phân tích
                     if not is_correct:
-                        st.session_state.wrong_answers.append({
-                            "cau_hoi": cau_hoi_text,
-                            "lua_chon_sai": tra_loi,
-                            "dap_an_dung": dap_an_dung
-                        })
-                    
+                        # Kiểm tra xem câu này đã có trong danh sách sai chưa (tránh trùng lặp khi quay lại)
+                        if not any(item['cau_hoi'] == cau_hoi_text for item in st.session_state.wrong_answers):
+                            st.session_state.wrong_answers.append({
+                                "cau_hoi": cau_hoi_text,
+                                "lua_chon_sai": tra_loi,
+                                "dap_an_dung": dap_an_dung
+                            })
+                    else:
+                        # Nếu chọn đúng mà trước đó từng lưu sai thì xóa đi
+                        st.session_state.wrong_answers = [item for item in st.session_state.wrong_answers if item['cau_hoi'] != cau_hoi_text]
+
                     if st.session_state.pretest_step == tong_so_cau:
                         st.session_state.pretest_completed = True
                         so_cau_dung = tong_so_cau - len(st.session_state.wrong_answers)
