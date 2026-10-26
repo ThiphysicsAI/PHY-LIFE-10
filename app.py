@@ -299,7 +299,14 @@ else:
             st.markdown("<h3 style='color: #0f766e; text-align: center;'>🌟 Nhà Khám Phá AI Đa Năng</h3>", unsafe_allow_html=True)
         else:
             st.markdown("<h3 style='color: #e63946; text-align: center;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
-            st.markdown("<p style='text-align: center; color: #1e3a8a; font-style: italic;'>Không đưa lời giải sẵn, chỉ đặt câu hỏi gợi mở để HS tự tìm ra bản chất; sau đó làm lại Pre-test để thấy tiến bộ.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #1e3a8a; font-style: italic;'>Phòng Ôn Tập Socratic – nơi em được thoải mái nghĩ và thử sai
+
+            Cô không giải hộ và không chấm điểm. Cô sẽ hỏi từng câu nhỏ để em tự tìm ra bản chất vấn đề.
+
+            Em kể cô nghe em đang nghĩ gì, nghĩ sai cũng không sao.
+            Cô hỏi một câu, em trả lời bằng lời của mình, không cần viết đúng công thức.
+            Bí rồi thì bấm “Gợi ý thêm”, cô sẽ gợi ý rõ hơn từng bước.
+            Khi thấy mình đã hiểu, bấm “Làm lại trạm khởi động” để xem em tiến bộ thế nào.</p>", unsafe_allow_html=True)
             
             # --- Hiển thị danh sách các câu làm sai ---
             st.markdown("#### 🎯 Các câu hỏi cần ôn tập lại:")
