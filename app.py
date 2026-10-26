@@ -369,17 +369,36 @@ else:
                 message_placeholder = st.empty()
                 message_placeholder.markdown("Cô đang suy nghĩ... ⏳")
                 
-                try:
-                    gemini_history = []
-                    for msg in st.session_state.chat_history[:-1]:
-                        role = "user" if msg["role"] == "user" else "model"
-                        gemini_history.append({"role": role, "parts": [msg["content"]]})
+                # --- Tích hợp Thư viện Hiện tượng (Đọc trực tiếp từ Thu_vien_hien_tuong) ---
+            try:
+                df_hien_tuong = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Thu_vien_hien_tuong')
+                if not df_hien_tuong.empty:
+                    st.markdown("#### 📚 Thư Viện Hiện Tượng Thực Tế")
+                    hien_tuong_chon = st.selectbox("Chọn một tình huống em muốn khám phá:", df_hien_tuong['Tên tình huống'].tolist())
                     
-                    chat = model.start_chat(history=gemini_history)
-                    response = chat.send_message(user_input)
-                    
-                    message_placeholder.markdown(response.text)
-                    st.session_state.chat_history.append({"role": "model", "content": response.text})
-                    
-                except Exception as e:
-                    message_placeholder.error(f"Đã có lỗi xảy ra kết nối với hệ thống. Em thử lại nhé!")
+                    if hien_tuong_chon:
+                        chi_tiet = df_hien_tuong[df_hien_tuong['Tên tình huống'] == hien_tuong_chon].iloc[0]
+                        st.info(f"**👀 Quan sát:** {chi_tiet.get('Mô tả quan sát', '')}")
+                        
+                        if st.button("💬 Nhờ AI giải thích hiện tượng này", use_container_width=True):
+                            user_prompt_hien_tuong = f"Cô hãy đóng vai Nhà Khám phá Vật lí, giải thích bản chất vật lí của hiện tượng: '{hien_tuong_chon}'. Cụ thể: {chi_tiet.get('Mô tả quan sát', '')}. Giải thích thật dễ hiểu, ngắn gọn và gợi mở để học sinh suy nghĩ thêm."
+                            
+                            st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, giải thích giúp em hiện tượng: **{hien_tuong_chon}** với ạ!"})
+                            ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Chọn hiện tượng", hien_tuong_chon)
+                            
+                            with st.spinner("Nhà Khám Phá AI đang phân tích..."):
+                                try:
+                                    gemini_history = []
+                                    for msg in st.session_state.chat_history[:-1]:
+                                        role = "user" if msg["role"] == "user" else "model"
+                                        gemini_history.append({"role": role, "parts": [msg["content"]]})
+                                    
+                                    chat = model.start_chat(history=gemini_history)
+                                    response = chat.send_message(user_prompt_hien_tuong)
+                                    
+                                    st.session_state.chat_history.append({"role": "model", "content": response.text})
+                                except Exception as e:
+                                    st.error("Có lỗi kết nối AI, em thử lại nhé!")
+                            st.rerun()
+            except Exception as e:
+                st.warning(f"⚠️ Không thể tải dữ liệu Thư viện hiện tượng. Lỗi chi tiết: {e}")
