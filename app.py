@@ -316,8 +316,7 @@ else:
         # ==========================================
         # PHẦN 1: THƯ VIỆN HIỆN TƯỢNG (LUÔN Ở TRÊN CÙNG)
         # ==========================================
-        if is_library_mode:
-        
+               
         if is_library_mode:
             st.markdown("""
             <div style='padding: 1.5rem; margin-bottom: 1.5rem; background-color: #f0fdfa; border-radius: 1rem; border-left: 5px solid #0d9488;'>
