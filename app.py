@@ -323,7 +323,7 @@ else:
                 
                 if not df_hien_tuong.empty:
                     st.markdown("#### 📚 Thư Viện Hiện Tượng Thực Tế")
-                    hien_tuong_chon = st.selectbox("Chọn một tình huống em muốn khám phá:", df_hien_tuong['Tên tình huống'].tolist())
+                    hien_tuong_chon = st.selectbox("Chọn một tình huống em muốn khám phá:", df_hien_tuong['Tên tình huống'].tolist(), key="chon_hien_tuong_duy_nhat")
                     
                     if hien_tuong_chon:
                         chi_tiet = df_hien_tuong[df_hien_tuong['Tên tình huống'] == hien_tuong_chon].iloc[0]
@@ -350,7 +350,7 @@ else:
                             st.warning(f"**❓ Thử thách suy nghĩ:** {cau_hoi_kham_pha}")
                         
                         st.markdown("<br>", unsafe_allow_html=True)
-                        if st.button("💬 Nhờ AI giải thích hiện tượng này", use_container_width=True):
+                        if st.button("💬 Nhờ AI giải thích hiện tượng này", use_container_width=True, key="btn_giai_thich_duy_nhat"):
                             # Ép AI bám sát vào câu hỏi gợi mở trong lệnh ngầm
                             user_prompt_hien_tuong = f"Cô hãy đóng vai Nhà Khám phá Vật lí, cùng học sinh thảo luận về hiện tượng: '{hien_tuong_chon}'. Cụ thể quan sát: {chi_tiet.get('Mô tả quan sát', '')}. Câu hỏi đang cần giải quyết: {cau_hoi_kham_pha}. Dựa trên kỷ luật Socratic, KHÔNG đưa đáp án trực tiếp, hãy đặt một câu hỏi nhỏ gợi mở để học sinh tự suy luận."
                             
