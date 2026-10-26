@@ -445,14 +445,29 @@ else:
                 st.info(f"**Câu {i+1}:** {loi['cau_hoi']}\n\n❌ *Em đã chọn:* {loi['lua_chon_sai']}")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("🔄 Làm lại trạm khởi động", use_container_width=True):
-                st.session_state.pretest_completed = False
-                st.session_state.pretest_step = 1
-                st.session_state.wrong_answers = []
-                if "chat_history" in st.session_state:
-                    del st.session_state.chat_history
-                ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Điều hướng", "Làm lại Pre-test", "")
-                st.rerun()
+            
+            # --- CHIA 2 CỘT CHO 2 LỰA CHỌN ĐIỀU HƯỚNG ---
+            col_btn1, col_btn2 = st.columns(2)
+            
+            with col_btn1:
+                if st.button("🔄 Làm lại Trạm khởi động", use_container_width=True):
+                    st.session_state.pretest_completed = False
+                    st.session_state.pretest_step = 1
+                    st.session_state.wrong_answers = [] # Xóa lỗi để làm lại từ đầu
+                    if "chat_history" in st.session_state:
+                        del st.session_state.chat_history
+                    ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Điều hướng", "Làm lại Pre-test", "")
+                    st.rerun()
+                    
+            with col_btn2:
+                if st.button("📚 Vào Thư viện Khám phá", use_container_width=True):
+                    # Chủ động xóa danh sách câu sai để hệ thống tự động mở khóa giao diện Thư viện
+                    st.session_state.wrong_answers = []
+                    if "chat_history" in st.session_state:
+                        del st.session_state.chat_history
+                    ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Điều hướng", "Chuyển sang Thư viện", "")
+                    st.rerun()
+            # ---------------------------------------------
 
         st.markdown("---")
 
