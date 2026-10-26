@@ -316,9 +316,9 @@ else:
             </div>
             """, unsafe_allow_html=True)
             
-            # --- Tích hợp Thư viện Hiện tượng (Đọc trực tiếp từ Thu_vien_hien_tuong) ---
+           # --- Tích hợp Thư viện Hiện tượng (Đọc trực tiếp từ Thu_vien_hien_tuong) ---
             try:
-                # Đọc dữ liệu từ file Excel (Lưu ý: Tên file phải khớp với file trên GitHub)
+                # Đọc dữ liệu từ file Excel
                 df_hien_tuong = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Thu_vien_hien_tuong')
                 
                 if not df_hien_tuong.empty:
@@ -344,11 +344,17 @@ else:
                         # Hiển thị Mô tả quan sát
                         st.info(f"**👀 Quan sát:** {chi_tiet.get('Mô tả quan sát', '')}")
                         
+                        # BỔ SUNG: Hiển thị Câu hỏi gợi mở / Câu hỏi khám phá
+                        cau_hoi_kham_pha = str(chi_tiet.get('Câu hỏi gợi mở', '')).strip()
+                        if cau_hoi_kham_pha and cau_hoi_kham_pha.lower() != 'nan':
+                            st.warning(f"**❓ Thử thách suy nghĩ:** {cau_hoi_kham_pha}")
+                        
                         st.markdown("<br>", unsafe_allow_html=True)
                         if st.button("💬 Nhờ AI giải thích hiện tượng này", use_container_width=True):
-                            user_prompt_hien_tuong = f"Cô hãy đóng vai Nhà Khám phá Vật lí, giải thích bản chất vật lí của hiện tượng: '{hien_tuong_chon}'. Cụ thể: {chi_tiet.get('Mô tả quan sát', '')}. Giải thích thật dễ hiểu, ngắn gọn và gợi mở để học sinh suy nghĩ thêm."
+                            # Ép AI bám sát vào câu hỏi gợi mở trong lệnh ngầm
+                            user_prompt_hien_tuong = f"Cô hãy đóng vai Nhà Khám phá Vật lí, cùng học sinh thảo luận về hiện tượng: '{hien_tuong_chon}'. Cụ thể quan sát: {chi_tiet.get('Mô tả quan sát', '')}. Câu hỏi đang cần giải quyết: {cau_hoi_kham_pha}. Dựa trên kỷ luật Socratic, KHÔNG đưa đáp án trực tiếp, hãy đặt một câu hỏi nhỏ gợi mở để học sinh tự suy luận."
                             
-                            st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, giải thích giúp em hiện tượng: **{hien_tuong_chon}** với ạ!"})
+                            st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, cùng em khám phá tình huống này nhé: **{hien_tuong_chon}**!"})
                             ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Chọn hiện tượng", hien_tuong_chon)
                             
                             with st.spinner("Nhà Khám Phá AI đang phân tích..."):
