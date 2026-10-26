@@ -405,7 +405,7 @@ else:
                                 3. Cung cấp cho học sinh "Sổ tay thợ săn" (trình bày rõ ràng bằng bullet points) gồm các bước cần ghi chép để mang lên lớp báo cáo và nộp cho cô giáo:
                                    - Tên hiện tượng và bối cảnh (Em phát hiện nó ở đâu, lúc nào?).
                                    - Mô tả chi tiết chuyển động (Vật di chuyển thế nào? Quỹ đạo, vận tốc thay đổi ra sao?).
-                                   - Bằng chứng (Khuyến khích em quay video ngắn 5-10s hoặc chụp ảnh lại).
+                                   - Bằng chứng (Khuyến khích em quay video ngắn từ 5 đến 10 giây hoặc chụp ảnh lại).
                                 
                                 Yêu cầu quan trọng: Viết dài hơn bình thường một chút, trình bày thật rõ ràng, sinh động. Giọng điệu cực kỳ hào hứng, nhiệt huyết để truyền lửa cho học sinh xách ba lô lên và đi khám phá thực tế ngay lập tức!
                                 """
