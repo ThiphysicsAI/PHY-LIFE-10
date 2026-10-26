@@ -291,9 +291,6 @@ else:
                 
             else:
                 prompt_moi_ngam = f"""
-                Học sinh {st.session_state.student_name} vừa hoàn thành Trạm khởi động...
-            else:
-                prompt_moi_ngam = f"""
                 Học sinh {st.session_state.student_name} vừa hoàn thành Trạm khởi động và có {so_cau_sai} câu chưa chính xác.
                 Nhiệm vụ của bạn:
                 1. Chúc mừng em ấy đã HOÀN THÀNH trạm khởi động và CHÍNH THỨC MỞ KHÓA hệ thống Gia sư AI (tuyệt đối không chê bai hay dùng từ ngữ áp lực về điểm số).
