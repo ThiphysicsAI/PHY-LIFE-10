@@ -326,7 +326,7 @@ else:
         if is_library_mode:
             st.markdown("""
             <div style='padding: 1.5rem; margin-bottom: 1.5rem; background-color: #f0fdfa; border-radius: 1rem; border-left: 5px solid #0d9488;'>
-                <h3 style='color: #0f766e; text-align: center; margin-top: 0;'>🌟 KHÔNG GIAN KHÁM PHÁ & THƯ VIỆN HIỆN TƯỢNG</h3>
+                <h3 style='color: #0f766e; text-align: center; margin-top: 0;'>KHÔNG GIAN KHÁM PHÁ & THƯ VIỆN HIỆN TƯỢNG</h3>
                 <p style='text-align: center; color: #1e3a8a; font-style: italic; margin-bottom: 0;'>
                     Nơi em tự do chọn các hiện tượng thực tế để tìm hiểu và trò chuyện cùng Nhà Khám Phá AI.
                 </p>
