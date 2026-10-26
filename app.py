@@ -284,6 +284,14 @@ else:
             if so_cau_sai == 0:
                 loi_chao = f"🎉 Chúc mừng {st.session_state.student_name}! Em đã xuất sắc vượt qua Trạm khởi động.\n\nChào mừng em bước vào **Không Gian Khám Phá & Thư Viện Hiện Tượng**! 🚀\n\nEm hãy chọn một tình huống thú vị ở menu phía trên để tìm hiểu nhé. Sau khi đọc xong, cô trò mình sẽ cùng nhau thảo luận và nhận nhiệm vụ đi săn các hiện tượng vật lí mới lạ ngoài đời thực!"
                 st.session_state.chat_history.append({"role": "model", "content": loi_chao})
+            # --- BỔ SUNG: Nếu học sinh chọn VÀO THẲNG THƯ VIỆN ---
+            elif st.session_state.get("skip_to_library", False):
+                loi_chao = f"Chào mừng {st.session_state.student_name} bước vào **Không Gian Khám Phá & Thư Viện Hiện Tượng**! 🚀\n\nCô trò mình tạm gác lại phần bài tập nhé. Em hãy chọn một tình huống thú vị ở menu phía trên để tự do khám phá và săn lùng hiện tượng mới!"
+                st.session_state.chat_history.append({"role": "model", "content": loi_chao})
+                
+            else:
+                prompt_moi_ngam = f"""
+                Học sinh {st.session_state.student_name} vừa hoàn thành Trạm khởi động...
             else:
                 prompt_moi_ngam = f"""
                 Học sinh {st.session_state.student_name} vừa làm bài kiểm tra Pre-test và làm sai {so_cau_sai} câu.
@@ -310,7 +318,10 @@ else:
         # ==========================================
         # PHẦN 1: THƯ VIỆN HIỆN TƯỢNG (LUÔN Ở TRÊN CÙNG)
         # ==========================================
-        if len(st.session_state.wrong_answers) == 0:
+        # --- Quyết định chế độ hiển thị ---
+        is_library_mode = (len(st.session_state.wrong_answers) == 0) or st.session_state.get("skip_to_library", False)
+        
+        if is_library_mode:
             st.markdown("""
             <div style='padding: 1.5rem; margin-bottom: 1.5rem; background-color: #f0fdfa; border-radius: 1rem; border-left: 5px solid #0d9488;'>
                 <h3 style='color: #0f766e; text-align: center; margin-top: 0;'>🌟 KHÔNG GIAN KHÁM PHÁ & THƯ VIỆN HIỆN TƯỢNG</h3>
