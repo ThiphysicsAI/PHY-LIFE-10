@@ -315,11 +315,13 @@ else:
         # Giao diện Cửa sổ Chat
         st.markdown("<div class='main-card'>", unsafe_allow_html=True)
         
+        # --- Quyết định chế độ hiển thị ---
+        is_library_mode = (len(st.session_state.wrong_answers) == 0) or st.session_state.get("skip_to_library", False)
+        
         # ==========================================
         # PHẦN 1: THƯ VIỆN HIỆN TƯỢNG (LUÔN Ở TRÊN CÙNG)
         # ==========================================
-        # --- Quyết định chế độ hiển thị ---
-        is_library_mode = (len(st.session_state.wrong_answers) == 0) or st.session_state.get("skip_to_library", False)
+        if is_library_mode:
         
         if is_library_mode:
             st.markdown("""
