@@ -323,60 +323,79 @@ else:
             try:
                 df_hien_tuong = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Thu_vien_hien_tuong')
                 if not df_hien_tuong.empty:
-                    # Giao diện thu gọn (Expander) giúp tối ưu không gian
                     with st.expander("📚 Mở/Đóng Thư Viện Hiện Tượng Thực Tế", expanded=True):
                         hien_tuong_chon = st.selectbox("Chọn một tình huống em muốn khám phá:", df_hien_tuong['Tên tình huống'].tolist(), key="chon_hien_tuong_duy_nhat")
                         
                         if hien_tuong_chon:
                             chi_tiet = df_hien_tuong[df_hien_tuong['Tên tình huống'] == hien_tuong_chon].iloc[0]
                             
-                            bai_hoc = str(chi_tiet.get('Bài học liên quan', '')).strip()
-                            if bai_hoc and bai_hoc.lower() != 'nan':
-                                st.markdown(f"<p style='color: #0d9488; font-weight: 600;'>📖 Bài học liên quan: {bai_hoc}</p>", unsafe_allow_html=True)
+                            # Hiển thị Ảnh & Bài học
+                            col_img, col_info = st.columns([1, 2])
+                            with col_img:
+                                anh_minh_hoa = str(chi_tiet.get('Tên file ảnh', '')).strip()
+                                if anh_minh_hoa and anh_minh_hoa.lower() != 'nan':
+                                    try:
+                                        st.image(f"images/{anh_minh_hoa}", use_container_width=True)
+                                    except Exception:
+                                        st.markdown("*(Chưa có ảnh)*")
                             
-                            anh_minh_hoa = str(chi_tiet.get('Tên file ảnh', '')).strip()
-                            if anh_minh_hoa and anh_minh_hoa.lower() != 'nan':
-                                try:
-                                    st.image(f"images/{anh_minh_hoa}", use_container_width=True)
-                                except Exception:
-                                    pass
+                            with col_info:
+                                bai_hoc = str(chi_tiet.get('Bài học liên quan', '')).strip()
+                                if bai_hoc and bai_hoc.lower() != 'nan':
+                                    st.markdown(f"<h5 style='color: #0d9488;'>📖 {bai_hoc}</h5>", unsafe_allow_html=True)
+                                
+                                st.info(f"**👀 Quan sát:** {chi_tiet.get('Mô tả quan sát', '')}")
+                                
+                                cau_hoi = str(chi_tiet.get('Câu hỏi gợi mở', '')).strip()
+                                if cau_hoi and cau_hoi.lower() != 'nan':
+                                    st.warning(f"**❓ Vấn đề đặt ra:** {cau_hoi}")
                             
-                            st.info(f"**👀 Quan sát:** {chi_tiet.get('Mô tả quan sát', '')}")
+                            # Tự động hiển thị toàn bộ Hệ thống kiến thức từ giáo viên
+                            st.markdown("---")
+                            st.markdown("<h4 style='color: #1e3a8a; text-align: center;'>💡 GIẢI MÃ BẢN CHẤT VẬT LÍ</h4>", unsafe_allow_html=True)
                             
-                            cau_hoi_kham_pha = str(chi_tiet.get('Câu hỏi gợi mở', '')).strip()
-                            if cau_hoi_kham_pha and cau_hoi_kham_pha.lower() != 'nan':
-                                st.warning(f"**❓ Thử thách suy nghĩ:** {cau_hoi_kham_pha}")
+                            giai_thich = str(chi_tiet.get('Giải thích khoa học', '')).strip()
+                            if giai_thich and giai_thich.lower() != 'nan':
+                                st.success(f"**🧠 Giải thích khoa học:**\n\n{giai_thich}")
                             
-                            st.markdown("<br>", unsafe_allow_html=True)
-                            if st.button("💬 Nhờ AI giải thích hiện tượng này", use_container_width=True, key="btn_giai_thich_duy_nhat"):
-                                giai_thich = str(chi_tiet.get('Giải thích khoa học', '')).strip()
+                            col_1, col_2 = st.columns(2)
+                            with col_1:
                                 cong_thuc = str(chi_tiet.get('Công thức', '')).strip()
-                                vi_du = str(chi_tiet.get('Ví dụ định lượng', '')).strip()
+                                if cong_thuc and cong_thuc.lower() != 'nan':
+                                    st.markdown(f"<div style='background-color: #f1f5f9; padding: 1rem; border-radius: 0.5rem;'><b>📐 Công thức:</b><br>{cong_thuc}</div>", unsafe_allow_html=True)
+                                
                                 dieu_kien = str(chi_tiet.get('Điều kiện/giới hạn', '')).strip()
-                                cau_hoi_tuong_tac = str(chi_tiet.get('Câu hỏi tương tác', '')).strip()
+                                if dieu_kien and dieu_kien.lower() != 'nan':
+                                    st.markdown(f"<div style='background-color: #fffbeb; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;'><b>⚠️ Điều kiện áp dụng:</b><br>{dieu_kien}</div>", unsafe_allow_html=True)
+                                    
+                            with col_2:
+                                vi_du = str(chi_tiet.get('Ví dụ định lượng', '')).strip()
+                                if vi_du and vi_du.lower() != 'nan':
+                                    st.markdown(f"<div style='background-color: #f0fdfa; padding: 1rem; border-radius: 0.5rem;'><b>🔢 Ví dụ định lượng:</b><br>{vi_du}</div>", unsafe_allow_html=True)
                                 
+                                tuong_tu = str(chi_tiet.get('Tình huống tương tự', '')).strip()
+                                if tuong_tu and tuong_tu.lower() != 'nan':
+                                    st.markdown(f"<div style='background-color: #fdf4ff; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;'><b>🔄 Tình huống tương tự:</b><br>{tuong_tu}</div>", unsafe_allow_html=True)
+
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            
+                            # Đổi nút bấm và Lệnh ngầm cho AI
+                            if st.button("💬 Trò chuyện & Cùng AI săn hiện tượng mới 🚀", use_container_width=True, key="btn_giai_thich_duy_nhat"):
                                 user_prompt_hien_tuong = f"""
-                                Cô hãy đóng vai Nhà Khám phá Vật lí, cùng học sinh thảo luận về hiện tượng: '{hien_tuong_chon}'. 
-                                Tình huống quan sát: {chi_tiet.get('Mô tả quan sát', '')}. 
-                                Câu hỏi mở màn: {cau_hoi_kham_pha}.
+                                Bạn là Nhà Khám phá Vật lí. Học sinh vừa tự đọc toàn bộ Bách khoa toàn thư về hiện tượng: '{hien_tuong_chon}' trên hệ thống.
+                                (Tài liệu học sinh đã đọc bao gồm: Giải thích: {giai_thich}. Công thức: {cong_thuc}. Ví dụ: {vi_du}. Tương tự: {tuong_tu}).
                                 
-                                BẠN BẮT BUỘC PHẢI DỰA VÀO KHUNG KIẾN THỨC SAU ĐÂY CỦA GIÁO VIÊN ĐỂ DẪN DẮT:
-                                - Giải thích bản chất: {giai_thich if giai_thich != 'nan' else 'Chưa có'}
-                                - Công thức trọng tâm: {cong_thuc if cong_thuc != 'nan' else 'Chưa có'}
-                                - Ví dụ định lượng: {vi_du if vi_du != 'nan' else 'Chưa có'}
-                                - Điều kiện/Giới hạn áp dụng: {dieu_kien if dieu_kien != 'nan' else 'Chưa có'}
-                                - Gợi ý câu hỏi dẫn dắt: {cau_hoi_tuong_tac if cau_hoi_tuong_tac != 'nan' else 'Chưa có'}
-                                
-                                Nhiệm vụ Socratic của bạn:
-                                1. KHÔNG copy paste "Giải thích bản chất" đưa cho học sinh.
-                                2. Hãy dùng "Gợi ý câu hỏi dẫn dắt" để đặt ra MỘT câu hỏi nhỏ, giúp học sinh tự đi đến kết luận.
-                                3. Nếu học sinh trả lời đúng một phần, hãy khen ngợi và hỏi tiếp phần còn lại.
+                                CHIẾN LƯỢC CỦA BẠN LÚC NÀY (Không dùng Socratic để hỏi bài cũ nữa):
+                                1. Chào mừng học sinh. Gợi mở xem các em có thắc mắc chi tiết nào trong phần kiến thức vừa đọc không.
+                                2. NHIỆM VỤ CHÍNH: Phát động thử thách "Săn Hiện Tượng". Khích lệ học sinh quan sát đời sống quanh mình (trên đường, chơi thể thao, làm việc nhà...) để tự phát hiện ra MỘT hiện tượng động học MỚI, chưa có trong thư viện.
+                                3. Hướng dẫn các em cách ghi chép lại hiện tượng đó để mang lên lớp chia sẻ, giúp cô giáo bổ sung vào Ngân hàng dữ liệu.
+                                4. Giọng điệu hào hứng, như một người đồng đội cùng đi thám hiểm.
                                 """
                                 
-                                st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, cùng em khám phá tình huống này nhé: **{hien_tuong_chon}**!"})
-                                ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Chọn hiện tượng", hien_tuong_chon)
+                                st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, em đã đọc xong tư liệu về **{hien_tuong_chon}**. Cô trò mình cùng trao đổi và đi săn hiện tượng mới nhé!"})
+                                ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Tìm hiểu & Săn hiện tượng", hien_tuong_chon)
                                 
-                                with st.spinner("Nhà Khám Phá AI đang phân tích dữ liệu của cô giáo..."):
+                                with st.spinner("Nhà Khám Phá AI đang chuẩn bị đồ nghề đi săn..."):
                                     try:
                                         gemini_history = []
                                         for msg in st.session_state.chat_history[:-1]:
@@ -392,7 +411,7 @@ else:
                                 st.rerun()
             except Exception as e:
                 st.warning(f"⚠️ Không thể tải dữ liệu Thư viện hiện tượng. Lỗi chi tiết: {e}")
-                
+                    
         else:
             st.markdown("<h3 style='color: #e63946; text-align: center; margin-top: 0;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
             st.markdown("""
