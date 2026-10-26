@@ -405,9 +405,9 @@ else:
                                 1. Chào mừng và hỏi xem học sinh có thắc mắc nào về công thức hay giải thích của hiện tượng vừa đọc không.
                                 2. Phát động "Thử thách Săn Hiện Tượng". Hãy đưa ra hướng dẫn CHI TIẾT (không trả lời quá ngắn) gợi ý các địa điểm hoặc hoạt động thực tế để học sinh đi săn hiện tượng tương tự (ví dụ: sân bóng, đường phố, nhà bếp, công viên...).
                                 3. Cung cấp cho học sinh "Sổ tay thợ săn" (trình bày rõ ràng bằng bullet points) gồm các bước cần ghi chép để mang lên lớp báo cáo và nộp cho cô giáo:
-                                   - 📍 Tên hiện tượng và bối cảnh (Em phát hiện nó ở đâu, lúc nào?).
-                                   - 👁️ Mô tả chi tiết chuyển động (Vật di chuyển thế nào? Quỹ đạo, vận tốc thay đổi ra sao?).
-                                   - 📸 Bằng chứng (Khuyến khích em quay video ngắn 5-10s hoặc chụp ảnh lại).
+                                   - Tên hiện tượng và bối cảnh (Em phát hiện nó ở đâu, lúc nào?).
+                                   - Mô tả chi tiết chuyển động (Vật di chuyển thế nào? Quỹ đạo, vận tốc thay đổi ra sao?).
+                                   - Bằng chứng (Khuyến khích em quay video ngắn 5-10s hoặc chụp ảnh lại).
                                 
                                 Yêu cầu quan trọng: Viết dài hơn bình thường một chút, trình bày thật rõ ràng, sinh động. Giọng điệu cực kỳ hào hứng, nhiệt huyết để truyền lửa cho học sinh xách ba lô lên và đi khám phá thực tế ngay lập tức!
                                 """
