@@ -443,7 +443,7 @@ else:
                 st.info(f"**Câu {i+1}:** {loi['cau_hoi']}\n\n❌ *Em đã chọn:* {loi['lua_chon_sai']}")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            
+            """
             # --- CHIA 2 CỘT CHO 2 LỰA CHỌN ĐIỀU HƯỚNG ---
             col_btn1, col_btn2 = st.columns(2)
             
