@@ -325,7 +325,7 @@ else:
             try:
                 df_hien_tuong = load_phenomena_data()
                 if not df_hien_tuong.empty:
-                    with st.expander("📚 Mở/Đóng Thư Viện Hiện Tượng Thực Tế", expanded=True):
+                    with st.expander("📚 Mở/Đóng Thư Viện Hiện Tượng Thực Tế", expanded=False):
                         hien_tuong_chon = st.selectbox("Chọn một tình huống em muốn khám phá:", df_hien_tuong['Tên tình huống'].tolist(), key="chon_hien_tuong_duy_nhat")
                         
                         if hien_tuong_chon:
@@ -352,36 +352,35 @@ else:
                                 if cau_hoi and cau_hoi.lower() != 'nan':
                                     st.warning(f"**❓ Vấn đề đặt ra:** {cau_hoi}")
                             # Tự động hiển thị toàn bộ Hệ thống kiến thức từ giáo viên
-                            st.markdown("---")
-                            st.markdown("<h4 style='color: #1e3a8a; text-align: center;'>💡 GIẢI MÃ BẢN CHẤT VẬT LÍ</h4>", unsafe_allow_html=True)
-                            
-                            giai_thich = str(chi_tiet.get('Giải thích khoa học', '')).strip()
-                            if giai_thich and giai_thich.lower() != 'nan':
-                                st.success(f"**🧠 Giải thích khoa học:**\n\n{giai_thich}")
-                            col_1, col_2 = st.columns(2)
-                            with col_1:
-                                cong_thuc = str(chi_tiet.get('Công thức', '')).strip()
-                                if cong_thuc and cong_thuc.lower() != 'nan':
-                                    # Dùng st.info (màu xanh dương pastel) để hỗ trợ hiển thị LaTeX
-                                    st.info(f"**📐 Công thức:**\n\n{cong_thuc}")
-                                
-                                dieu_kien = str(chi_tiet.get('Điều kiện/giới hạn', '')).strip()
-                                if dieu_kien and dieu_kien.lower() != 'nan':
-                                    # Dùng st.warning (màu vàng pastel)
-                                    st.warning(f"**⚠️ Điều kiện áp dụng:**\n\n{dieu_kien}")
-                                    
-                            with col_2:
-                                vi_du = str(chi_tiet.get('Ví dụ định lượng', '')).strip()
-                                if vi_du and vi_du.lower() != 'nan':
-                                    # Dùng st.success (màu xanh lá pastel)
-                                    st.success(f"**🔢 Ví dụ định lượng:**\n\n{vi_du}")
-                                
-                                tuong_tu = str(chi_tiet.get('Tình huống tương tự', '')).strip()
-                                if tuong_tu and tuong_tu.lower() != 'nan':
-                                    # Dùng st.error (màu hồng/đỏ pastel)
-                                    st.error(f"**🔄 Tình huống tương tự:**\n\n{tuong_tu}")
-                            
                             st.markdown("<br>", unsafe_allow_html=True)
+                            with st.expander("💡 Mở/Đóng GIẢI MÃ BẢN CHẤT VẬT LÍ", expanded=False):
+                                giai_thich = str(chi_tiet.get('Giải thích khoa học', '')).strip()
+                                if giai_thich and giai_thich.lower() != 'nan':
+                                    st.success(f"**🧠 Giải thích khoa học:**\n\n{giai_thich}")
+                                col_1, col_2 = st.columns(2)
+                                with col_1:
+                                    cong_thuc = str(chi_tiet.get('Công thức', '')).strip()
+                                    if cong_thuc and cong_thuc.lower() != 'nan':
+                                        # Dùng st.info (màu xanh dương pastel) để hỗ trợ hiển thị LaTeX
+                                        st.info(f"**📐 Công thức:**\n\n{cong_thuc}")
+                                
+                                    dieu_kien = str(chi_tiet.get('Điều kiện/giới hạn', '')).strip()
+                                    if dieu_kien and dieu_kien.lower() != 'nan':
+                                        # Dùng st.warning (màu vàng pastel)
+                                        st.warning(f"**⚠️ Điều kiện áp dụng:**\n\n{dieu_kien}")
+                                    
+                                with col_2:
+                                    vi_du = str(chi_tiet.get('Ví dụ định lượng', '')).strip()
+                                    if vi_du and vi_du.lower() != 'nan':
+                                        # Dùng st.success (màu xanh lá pastel)
+                                        st.success(f"**🔢 Ví dụ định lượng:**\n\n{vi_du}")
+                                
+                                    tuong_tu = str(chi_tiet.get('Tình huống tương tự', '')).strip()
+                                    if tuong_tu and tuong_tu.lower() != 'nan':
+                                        # Dùng st.error (màu hồng/đỏ pastel)
+                                        st.error(f"**🔄 Tình huống tương tự:**\n\n{tuong_tu}")
+                            
+                                st.markdown("<br>", unsafe_allow_html=True)
                             
                             # Đổi nút bấm và Lệnh ngầm cho AI
                             if st.button("💬 Trò chuyện & Cùng AI săn hiện tượng mới 🚀", use_container_width=True, key="btn_giai_thich_duy_nhat"):
