@@ -310,7 +310,7 @@ else:
                         st.session_state.chat_history.append({"role": "model", "content": fallback_msg})
 
         # Giao diện Cửa sổ Chat
-        
+        st.markdown("<div class='main-card'>", unsafe_allow_html=True)
         if len(st.session_state.wrong_answers) == 0:
             st.markdown("""
             <div style='padding: 1.5rem; margin-bottom: 1.5rem; background-color: #f0fdfa; border-radius: 1rem; border-left: 5px solid #0d9488;'>
@@ -332,6 +332,32 @@ else:
                             chi_tiet = df_hien_tuong[df_hien_tuong['Tên tình huống'] == hien_tuong_chon].iloc[0]
                             
                             # Hiển thị Ảnh & Bài học
+                            col_img, col_info = st.columns([1, 2])
+                            with col_img:
+                                anh_minh_hoa = str(chi_tiet.get('Tên file ảnh', '')).strip()
+                                if anh_minh_hoa and anh_minh_hoa.lower() != 'nan':
+                                    try:
+                                        st.image(f"images/{anh_minh_hoa}", use_container_width=True)
+                                    except Exception:
+                                        st.markdown("*(Chưa có ảnh)*")
+                            
+                            with col_info:
+                                bai_hoc = str(chi_tiet.get('Bài học liên quan', '')).strip()
+                                if bai_hoc and bai_hoc.lower() != 'nan':
+                                    st.markdown(f"<h5 style='color: #0d9488;'>📖 {bai_hoc}</h5>", unsafe_allow_html=True)
+                                
+                                st.info(f"**👀 Quan sát:** {chi_tiet.get('Mô tả quan sát', '')}")
+                                
+                                cau_hoi = str(chi_tiet.get('Câu hỏi gợi mở', '')).strip()
+                                if cau_hoi and cau_hoi.lower() != 'nan':
+                                    st.warning(f"**❓ Vấn đề đặt ra:** {cau_hoi}")
+                            # Tự động hiển thị toàn bộ Hệ thống kiến thức từ giáo viên
+                            st.markdown("---")
+                            st.markdown("<h4 style='color: #1e3a8a; text-align: center;'>💡 GIẢI MÃ BẢN CHẤT VẬT LÍ</h4>", unsafe_allow_html=True)
+                            
+                            giai_thich = str(chi_tiet.get('Giải thích khoa học', '')).strip()
+                            if giai_thich and giai_thich.lower() != 'nan':
+                                st.success(f"**🧠 Giải thích khoa học:**\n\n{giai_thich}")
                             col_1, col_2 = st.columns(2)
                             with col_1:
                                 cong_thuc = str(chi_tiet.get('Công thức', '')).strip()
@@ -355,33 +381,6 @@ else:
                                     # Dùng st.error (màu hồng/đỏ pastel)
                                     st.error(f"**🔄 Tình huống tương tự:**\n\n{tuong_tu}")
                             
-                            # Tự động hiển thị toàn bộ Hệ thống kiến thức từ giáo viên
-                            st.markdown("---")
-                            st.markdown("<h4 style='color: #1e3a8a; text-align: center;'>💡 GIẢI MÃ BẢN CHẤT VẬT LÍ</h4>", unsafe_allow_html=True)
-                            
-                            giai_thich = str(chi_tiet.get('Giải thích khoa học', '')).strip()
-                            if giai_thich and giai_thich.lower() != 'nan':
-                                st.success(f"**🧠 Giải thích khoa học:**\n\n{giai_thich}")
-                            
-                            col_1, col_2 = st.columns(2)
-                            with col_1:
-                                cong_thuc = str(chi_tiet.get('Công thức', '')).strip()
-                                if cong_thuc and cong_thuc.lower() != 'nan':
-                                    st.markdown(f"<div style='background-color: #f1f5f9; padding: 1rem; border-radius: 0.5rem;'><b>📐 Công thức:</b><br>{cong_thuc}</div>", unsafe_allow_html=True)
-                                
-                                dieu_kien = str(chi_tiet.get('Điều kiện/giới hạn', '')).strip()
-                                if dieu_kien and dieu_kien.lower() != 'nan':
-                                    st.markdown(f"<div style='background-color: #fffbeb; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;'><b>⚠️ Điều kiện áp dụng:</b><br>{dieu_kien}</div>", unsafe_allow_html=True)
-                                    
-                            with col_2:
-                                vi_du = str(chi_tiet.get('Ví dụ định lượng', '')).strip()
-                                if vi_du and vi_du.lower() != 'nan':
-                                    st.markdown(f"<div style='background-color: #f0fdfa; padding: 1rem; border-radius: 0.5rem;'><b>🔢 Ví dụ định lượng:</b><br>{vi_du}</div>", unsafe_allow_html=True)
-                                
-                                tuong_tu = str(chi_tiet.get('Tình huống tương tự', '')).strip()
-                                if tuong_tu and tuong_tu.lower() != 'nan':
-                                    st.markdown(f"<div style='background-color: #fdf4ff; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;'><b>🔄 Tình huống tương tự:</b><br>{tuong_tu}</div>", unsafe_allow_html=True)
-
                             st.markdown("<br>", unsafe_allow_html=True)
                             
                             # Đổi nút bấm và Lệnh ngầm cho AI
