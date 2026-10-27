@@ -297,6 +297,25 @@ else:
             st.markdown("#### 🎯 Các câu hỏi cần ôn tập lại:")
             for i, loi in enumerate(st.session_state.wrong_answers):
                 st.info(f"**Câu {i+1}:** {loi['cau_hoi']}\n\n❌ *Em đã chọn:* {loi['lua_chon_sai']}")
+            
+            # --- Tích hợp nút Làm lại trạm khởi động ---
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🔄 Làm lại trạm khởi động", use_container_width=True):
+                # Khôi phục trạng thái làm bài về ban đầu
+                st.session_state.pretest_completed = False
+                st.session_state.pretest_step = 1
+                st.session_state.wrong_answers = []
+                
+                # Xóa sạch trí nhớ của AI về cuộc hội thoại cũ
+                if "chat_history" in st.session_state:
+                    del st.session_state.chat_history
+                
+                # Âm thầm ghi log lên Google Sheets
+                ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Điều hướng", "Làm lại Pre-test", "")
+                
+                # Tải lại trang ngay lập tức
+                st.rerun()
+                
             st.markdown("---")
 
         for message in st.session_state.chat_history:
