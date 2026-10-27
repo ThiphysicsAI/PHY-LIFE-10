@@ -295,18 +295,18 @@ else:
                 
                 Nhiệm vụ của bạn:
                 Hãy viết một câu chào đầu tiên gửi đến {st.session_state.student_name}.
-                1. Động viên em ấy vì đã hoàn thành bài thi.
+                1. Động viên em ấy vì đã hoàn thành bài Khởi động.
                 2. Bắt đầu ngay vào việc hướng dẫn Câu 1 (trong danh sách sai). Nhắc lại ngắn gọn nội dung Câu 1.
                 3. BẮT BUỘC: Lấy ngay 1 ví dụ thực tiễn liên quan đến Câu 1, và đặt 1 câu hỏi gợi mở đầu tiên dựa trên ví dụ đó.
                 """
                 
-                with st.spinner("Cô đang phân tích bài làm của em..."):
+                with st.spinner("Cô đang chuẩn bị hành trang khám phá cùng em..."):
                     try:
                         chat = model.start_chat()
                         response = chat.send_message(prompt_moi_ngam)
                         st.session_state.chat_history.append({"role": "model", "content": response.text})
                     except Exception as e:
-                        fallback_msg = f"Chào {st.session_state.student_name}, em đã hoàn thành bài kiểm tra rất cố gắng! Chúng ta có {so_cau_sai} câu cần làm rõ. Em hãy nhắn 'Cô giúp em câu 1' để chúng ta bắt đầu nhé!"
+                        fallback_msg = f"Chào {st.session_state.student_name}, em đã hoàn thành bài Khởi động rất cố gắng! Chúng ta có {so_cau_sai} câu cần làm rõ. Em hãy nhắn 'Cô giúp em câu 1' để chúng ta bắt đầu nhé!"
                         st.session_state.chat_history.append({"role": "model", "content": fallback_msg})
 
         # Giao diện Cửa sổ Chat
