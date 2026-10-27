@@ -312,25 +312,28 @@ else:
                             chi_tiet = df_hien_tuong[df_hien_tuong['Tên tình huống'] == hien_tuong_chon].iloc[0]
                             
                             # Hiển thị Ảnh & Bài học
-                            col_img, col_info = st.columns([1, 2])
-                            with col_img:
-                                anh_minh_hoa = str(chi_tiet.get('Tên file ảnh', '')).strip()
-                                if anh_minh_hoa and anh_minh_hoa.lower() != 'nan':
-                                    try:
-                                        st.image(f"images/{anh_minh_hoa}", use_container_width=True)
-                                    except Exception:
-                                        st.markdown("*(Chưa có ảnh)*")
-                            
-                            with col_info:
-                                bai_hoc = str(chi_tiet.get('Bài học liên quan', '')).strip()
-                                if bai_hoc and bai_hoc.lower() != 'nan':
-                                    st.markdown(f"<h5 style='color: #0d9488;'>📖 {bai_hoc}</h5>", unsafe_allow_html=True)
+                            col_1, col_2 = st.columns(2)
+                            with col_1:
+                                cong_thuc = str(chi_tiet.get('Công thức', '')).strip()
+                                if cong_thuc and cong_thuc.lower() != 'nan':
+                                    # Dùng st.info (màu xanh dương pastel) để hỗ trợ hiển thị LaTeX
+                                    st.info(f"**📐 Công thức:**\n\n{cong_thuc}")
                                 
-                                st.info(f"**👀 Quan sát:** {chi_tiet.get('Mô tả quan sát', '')}")
+                                dieu_kien = str(chi_tiet.get('Điều kiện/giới hạn', '')).strip()
+                                if dieu_kien and dieu_kien.lower() != 'nan':
+                                    # Dùng st.warning (màu vàng pastel)
+                                    st.warning(f"**⚠️ Điều kiện áp dụng:**\n\n{dieu_kien}")
+                                    
+                            with col_2:
+                                vi_du = str(chi_tiet.get('Ví dụ định lượng', '')).strip()
+                                if vi_du and vi_du.lower() != 'nan':
+                                    # Dùng st.success (màu xanh lá pastel)
+                                    st.success(f"**🔢 Ví dụ định lượng:**\n\n{vi_du}")
                                 
-                                cau_hoi = str(chi_tiet.get('Câu hỏi gợi mở', '')).strip()
-                                if cau_hoi and cau_hoi.lower() != 'nan':
-                                    st.warning(f"**❓ Vấn đề đặt ra:** {cau_hoi}")
+                                tuong_tu = str(chi_tiet.get('Tình huống tương tự', '')).strip()
+                                if tuong_tu and tuong_tu.lower() != 'nan':
+                                    # Dùng st.error (màu hồng/đỏ pastel)
+                                    st.error(f"**🔄 Tình huống tương tự:**\n\n{tuong_tu}")
                             
                             # Tự động hiển thị toàn bộ Hệ thống kiến thức từ giáo viên
                             st.markdown("---")
@@ -364,14 +367,17 @@ else:
                             # Đổi nút bấm và Lệnh ngầm cho AI
                             if st.button("💬 Trò chuyện & Cùng AI săn hiện tượng mới 🚀", use_container_width=True, key="btn_giai_thich_duy_nhat"):
                                 user_prompt_hien_tuong = f"""
-                                Bạn là Nhà Khám phá Vật lí. Học sinh vừa tự đọc toàn bộ Bách khoa toàn thư về hiện tượng: '{hien_tuong_chon}' trên hệ thống.
-                                (Tài liệu học sinh đã đọc bao gồm: Giải thích: {giai_thich}. Công thức: {cong_thuc}. Ví dụ: {vi_du}. Tương tự: {tuong_tu}).
+                                Bạn là Đội trưởng Nhà Khám phá Vật lí. Học sinh vừa đọc xong tư liệu về hiện tượng: '{hien_tuong_chon}'.
                                 
-                                CHIẾN LƯỢC CỦA BẠN LÚC NÀY (Không dùng Socratic để hỏi bài cũ nữa):
-                                1. Chào mừng học sinh. Gợi mở xem các em có thắc mắc chi tiết nào trong phần kiến thức vừa đọc không.
-                                2. NHIỆM VỤ CHÍNH: Phát động thử thách "Săn Hiện Tượng". Khích lệ học sinh quan sát đời sống quanh mình (trên đường, chơi thể thao, làm việc nhà...) để tự phát hiện ra MỘT hiện tượng động học MỚI, chưa có trong thư viện.
-                                3. Hướng dẫn các em cách ghi chép lại hiện tượng đó để mang lên lớp chia sẻ, giúp cô giáo bổ sung vào Ngân hàng dữ liệu.
-                                4. Giọng điệu hào hứng, như một người đồng đội cùng đi thám hiểm.
+                                CHIẾN LƯỢC CỦA BẠN LÚC NÀY:
+                                1. Chào mừng và hỏi xem học sinh có thắc mắc nào về công thức hay giải thích của hiện tượng vừa đọc không.
+                                2. Phát động "Thử thách Săn Hiện Tượng". Hãy đưa ra hướng dẫn CHI TIẾT (không trả lời quá ngắn) gợi ý các địa điểm hoặc hoạt động thực tế để học sinh đi săn hiện tượng tương tự (ví dụ: sân bóng, đường phố, nhà bếp, công viên...).
+                                3. Cung cấp cho học sinh "Sổ tay thợ săn" (trình bày rõ ràng bằng bullet points) gồm các bước cần ghi chép để mang lên lớp báo cáo và nộp cho cô giáo:
+                                   - 📍 Tên hiện tượng và bối cảnh (Em phát hiện nó ở đâu, lúc nào?).
+                                   - 👁️ Mô tả chi tiết chuyển động (Vật di chuyển thế nào? Quỹ đạo, vận tốc thay đổi ra sao?).
+                                   - 📸 Bằng chứng (Khuyến khích em quay video ngắn 5-10s hoặc chụp ảnh lại).
+                                
+                                Yêu cầu quan trọng: Viết dài hơn bình thường một chút, trình bày thật rõ ràng, sinh động. Giọng điệu cực kỳ hào hứng, nhiệt huyết để truyền lửa cho học sinh xách ba lô lên và đi khám phá thực tế ngay lập tức!
                                 """
                                 
                                 st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, em đã đọc xong tư liệu về **{hien_tuong_chon}**. Cô trò mình cùng trao đổi và đi săn hiện tượng mới nhé!"})
