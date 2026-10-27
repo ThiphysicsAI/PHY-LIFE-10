@@ -433,6 +433,11 @@ else:
                 Khi thấy mình đã hiểu, bấm "Làm lại trạm khởi động" để xem em tiến bộ thế nào.
             </p>
             """, unsafe_allow_html=True)
+            # --- Hiển thị danh sách các câu làm sai ---
+            st.markdown("#### 🎯 Các câu hỏi cần ôn tập lại:")
+            for i, loi in enumerate(st.session_state.wrong_answers):
+                st.info(f"**Câu {i+1}:** {loi['cau_hoi']}\n\n❌ *Em đã chọn:* {loi['lua_chon_sai']}")
+            st.markdown("---")
         for message in st.session_state.chat_history:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
