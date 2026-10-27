@@ -382,8 +382,7 @@ else:
 
                                 thuc_hanh = str(chi_tiet.get('Hoạt động thực hành', '')).strip()
                                 if thuc_hanh and thuc_hanh.lower() != 'nan':
-                                    # Dùng st.warning (màu vàng pastel)
-                                    st.warning(f"**💡 Hoạt động thực hành:**\n\n{thuc_hanh}")
+                                    st.success(f"**💡 Hoạt động thực hành:**\n\n{thuc_hanh}")
                             
                                 st.markdown("<br>", unsafe_allow_html=True)
                             
