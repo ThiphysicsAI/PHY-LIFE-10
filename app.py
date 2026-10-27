@@ -287,7 +287,7 @@ else:
             so_cau_sai = len(st.session_state.wrong_answers)
             
             if so_cau_sai == 0:
-                loi_chao = f"🎉 Chúc mừng {st.session_state.student_name}! Em đã xuất sắc vượt qua bài kiểm tra với điểm tuyệt đối.\n\nBây giờ, em đã mở khóa **Trợ lý AI Đa năng**. Em có thể hỏi Cô giải thích bất kỳ hiện tượng vật lí nào trong cuộc sống, hoặc yêu cầu Cô tạo ra một bài toán thử thách dành riêng cho em. Em muốn khám phá điều gì nào?"
+                loi_chao = f"🎉 Chúc mừng {st.session_state.student_name}! Em đã xuất sắc vượt qua Trạm khởi động với điểm tuyệt đối.\n\nTừ giờ, em là một nhà thám hiểm Vật lí: hãy cuộn lên trên, chọn một hiện tượng thật gần gũi, quan sát và hỏi “vì sao?” hoặc cùng cô Săn lùng hiện tượng mới nhé. Cô đồng hành cùng em!"
                 st.session_state.chat_history.append({"role": "model", "content": loi_chao})
             else:
                 prompt_moi_ngam = f"""
