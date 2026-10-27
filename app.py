@@ -311,7 +311,7 @@ else:
 
         # Giao diện Cửa sổ Chat
         
-        if len(st.session_state.wrong_answers) == 0:
+        if len(st.session_state.wrong_answers) <= 1:
             st.markdown("""
             <div style='padding: 1.5rem; margin-bottom: 1.5rem; background-color: #f0fdfa; border-radius: 1rem; border-left: 5px solid #0d9488;'>
                 <h3 style='color: #0f766e; text-align: center; margin-top: 0;'>🌟 KHÔNG GIAN KHÁM PHÁ & THƯ VIỆN HIỆN TƯỢNG</h3>
@@ -320,15 +320,7 @@ else:
                 </p>
             </div>
             """, unsafe_allow_html=True)
-        else:
-            st.markdown("<h3 style='color: #e63946; text-align: center;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
-            st.markdown("""
-            <p style='text-align: center; color: #1e3a8a; font-style: italic;'>
-                Phòng Ôn Tập Socratic - nơi em được thoải mái nghĩ và thử sai<br><br>
-                Khi thấy mình đã hiểu, bấm "Làm lại trạm khởi động" để xem em tiến bộ thế nào.
-            </p>
-            """, unsafe_allow_html=True)
-            
+                    
             # --- Tích hợp Thư viện Hiện tượng (Đọc trực tiếp từ Thu_vien_hien_tuong file Excel) ---
             try:
                 df_hien_tuong = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Thu_vien_hien_tuong')
@@ -437,7 +429,14 @@ else:
         for message in st.session_state.chat_history:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
-
+        else:
+            st.markdown("<h3 style='color: #e63946; text-align: center;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
+            st.markdown("""
+            <p style='text-align: center; color: #1e3a8a; font-style: italic;'>
+                Phòng Ôn Tập Socratic - nơi em được thoải mái nghĩ và thử sai<br><br>
+                Khi thấy mình đã hiểu, bấm "Làm lại trạm khởi động" để xem em tiến bộ thế nào.
+            </p>
+            """, unsafe_allow_html=True)
         # ... (Phần code xử lý user_input giữ nguyên) ...
 
         user_input = st.chat_input("Nhập câu trả lời hoặc câu hỏi của em vào đây...")
