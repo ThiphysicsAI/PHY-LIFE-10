@@ -366,6 +366,10 @@ else:
                             
                             # Đổi nút bấm và Lệnh ngầm cho AI
                             if st.button("💬 Trò chuyện & Cùng AI săn hiện tượng mới 🚀", use_container_width=True, key="btn_giai_thich_duy_nhat"):
+    
+                                # ĐẶT LỆNH Ở ĐÂY: Xóa sạch tin nhắn cũ, tạo bộ nhớ mới tinh cho hiện tượng này
+                                st.session_state.chat_history = []
+    
                                 user_prompt_hien_tuong = f"""
                                 Bạn là Đội trưởng Nhà Khám phá Vật lí. Học sinh vừa đọc xong tư liệu về hiện tượng: '{hien_tuong_chon}'.
                                 
