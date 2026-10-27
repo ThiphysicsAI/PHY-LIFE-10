@@ -273,7 +273,6 @@ else:
         ĐỊNH DẠNG
         Văn bản thuần, công thức viết rõ (ví dụ v = v0 + a·t), không bảng, không danh sách dài.
 
-        Cuối mỗi lượt, thêm một dòng riêng: [GOI_Y:1], [GOI_Y:2] hoặc [GOI_Y:3]. App tách dòng này để ghi lên Google Sheets và xoá khỏi màn hình học sinh.
         """
         
         model = genai.GenerativeModel(
