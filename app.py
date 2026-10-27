@@ -290,7 +290,7 @@ else:
                         st.session_state.chat_history.append({"role": "model", "content": fallback_msg})
 
         # Giao diện Cửa sổ Chat
-        st.markdown("<div class='main-card'>", unsafe_allow_html=True)
+        
         if len(st.session_state.wrong_answers) == 0:
             st.markdown("""
             <div style='padding: 1.5rem; margin-bottom: 1.5rem; background-color: #f0fdfa; border-radius: 1rem; border-left: 5px solid #0d9488;'>
