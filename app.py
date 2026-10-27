@@ -295,7 +295,7 @@ else:
             st.markdown("<h3 style='color: #0f766e; text-align: center;'>🌟 Nhà Khám Phá AI Đa Năng</h3>", unsafe_allow_html=True)
         else:
             st.markdown("<h3 style='color: #e63946; text-align: center;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
-            st.markdown("<p style='text-align: center; color: #1e3a8a; font-style: italic;'>Nơi em được thoải mái nghĩ và thử sai. Khi thấy mình đã hiểu, bấm "Làm lại trạm khởi động" để xem em tiến bộ thế nào.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #1e3a8a; font-style: italic;'>Nơi em được thoải mái nghĩ và thử sai.</p>", unsafe_allow_html=True)
             
             # --- Hiển thị danh sách các câu làm sai ---
             st.markdown("#### 🎯 Các câu hỏi cần ôn tập lại:")
