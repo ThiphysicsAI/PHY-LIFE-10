@@ -214,18 +214,28 @@ else:
     else:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
         
-        # System Prompt Kỷ luật thép
-        system_instruction = """
-        Bạn là Gia sư Socratic môn Vật lí 10, người đồng hành cùng học sinh khám phá kiến thức chứ không phải cỗ máy giải bài.
+        # --- BƠM DỮ LIỆU CÂU SAI VÀO BỘ NHỚ LÕI ---
+        danh_sach_loi_he_thong = ""
+        if len(st.session_state.wrong_answers) > 0:
+            danh_sach_loi_he_thong = "\n\nDANH SÁCH CÁC CÂU HỌC SINH ĐANG LÀM SAI:\n"
+            for i, loi in enumerate(st.session_state.wrong_answers):
+                danh_sach_loi_he_thong += f"- Câu {i+1}: {loi['cau_hoi']} | Đáp án HS chọn sai: {loi['lua_chon_sai']}\n"
+        
+        # System Prompt Kỷ luật thép (Cập nhật ngữ cảnh sư phạm)
+        system_instruction = f"""
+        Bạn là Gia sư Socratic môn Vật lí 10, người đồng hành cùng học sinh khám phá kiến thức. Đối tượng học sinh của bạn ở mức trung bình - khá, vì vậy hãy luôn kiên nhẫn, giải thích dễ hiểu, không dùng từ ngữ học thuật phức tạp.
         
         KỶ LUẬT CỐT LÕI (TUYỆT ĐỐI TUÂN THỦ):
         1. KHÔNG BAO GIỜ cung cấp đáp án trực tiếp, công thức trọn vẹn, hay lời giải cuối cùng.
-        2. Nếu học sinh hỏi đáp án, hãy từ chối khéo léo và đặt một câu hỏi gợi mở nhỏ hơn để học sinh tự suy luận.
-        3. Luôn phản hồi bằng tiếng Việt, giọng điệu gần gũi, khích lệ (xưng "Thầy/Cô" và gọi "em").
+        2. Nếu học sinh hỏi đáp án hoặc yêu cầu giải hộ, hãy từ chối khéo léo và đặt một câu hỏi gợi mở nhỏ hơn.
+        3. Luôn phản hồi bằng tiếng Việt, giọng điệu gần gũi, khích lệ (Luôn xưng "Cô" và gọi "em").
         4. Mỗi lần phản hồi chỉ đặt TỐI ĐA 1 CÂU HỎI để tránh làm học sinh quá tải.
         
         TÍCH HỢP THỰC TIỄN (THƯ VIỆN HIỆN TƯỢNG):
-        Khi học sinh bế tắc hoặc bắt đầu một chủ đề mới, bạn BẮT BUỘC phải lấy một ví dụ thực tiễn trong đời sống (giao thông, thể thao, tự nhiên, vũ trụ...) để làm mỏ neo trực quan trước khi đi vào tính toán.
+        Khi học sinh bế tắc hoặc bắt đầu một chủ đề mới, bạn BẮT BUỘC phải lấy một ví dụ thực tiễn trong đời sống (giao thông, thể thao, tự nhiên...) để làm mỏ neo trực quan trước khi đi vào tính toán.
+        
+        Nếu học sinh yêu cầu giúp đỡ một "Câu" cụ thể (ví dụ: "giúp em câu 2"), HÃY TỰ ĐỘNG tra cứu nội dung câu đó trong danh sách dưới đây và bắt đầu gợi mở, TUYỆT ĐỐI KHÔNG bắt học sinh chép lại đề bài.
+        {danh_sach_loi_he_thong}
         """
         
         model = genai.GenerativeModel(
@@ -239,33 +249,26 @@ else:
             so_cau_sai = len(st.session_state.wrong_answers)
             
             if so_cau_sai == 0:
-                loi_chao = f"🎉 Chúc mừng {st.session_state.student_name}! Em đã xuất sắc vượt qua bài kiểm tra với điểm tuyệt đối.\n\nBây giờ, em đã mở khóa **Trợ lý AI Đa năng**. Em có thể hỏi tôi giải thích bất kỳ hiện tượng vật lí nào trong cuộc sống, hoặc yêu cầu tôi tạo ra một bài toán thử thách dành riêng cho em. Em muốn khám phá điều gì nào?"
+                loi_chao = f"🎉 Chúc mừng {st.session_state.student_name}! Em đã xuất sắc vượt qua bài kiểm tra với điểm tuyệt đối.\n\nBây giờ, em đã mở khóa **Trợ lý AI Đa năng**. Em có thể hỏi Cô giải thích bất kỳ hiện tượng vật lí nào trong cuộc sống, hoặc yêu cầu Cô tạo ra một bài toán thử thách dành riêng cho em. Em muốn khám phá điều gì nào?"
                 st.session_state.chat_history.append({"role": "model", "content": loi_chao})
             else:
-                # Gom danh sách lỗi ẩn cho AI
-                danh_sach_loi = ""
-                for i, loi in enumerate(st.session_state.wrong_answers):
-                    danh_sach_loi += f"\n- Câu hỏi: '{loi['cau_hoi']}' | Học sinh chọn sai: '{loi['lua_chon_sai']}'"
-
                 prompt_moi_ngam = f"""
-                Học sinh {st.session_state.student_name} vừa làm bài kiểm tra Pre-test và làm sai {so_cau_sai} câu sau:
-                {danh_sach_loi}
+                Học sinh {st.session_state.student_name} vừa làm bài kiểm tra Pre-test và làm sai {so_cau_sai} câu.
                 
                 Nhiệm vụ của bạn:
                 Hãy viết một câu chào đầu tiên gửi đến {st.session_state.student_name}.
                 1. Động viên em ấy vì đã hoàn thành bài thi.
-                2. Chọn ra CÂU SAI ĐẦU TIÊN trong danh sách trên để bắt đầu sửa lỗi. Nhắc lại ngắn gọn câu hỏi và lựa chọn sai của học sinh.
-                3. BẮT BUỘC: Lấy ngay 1 ví dụ thực tiễn (như thể thao, xe cộ...) liên quan đến lỗi sai đó, và đặt 1 câu hỏi gợi mở đầu tiên dựa trên ví dụ thực tiễn này để ép học sinh suy luận. 
-                (Tuyệt đối không in ra các chỉ dẫn kỹ thuật trong ngoặc vuông, hãy nói chuyện tự nhiên).
+                2. Bắt đầu ngay vào việc hướng dẫn Câu 1 (trong danh sách sai). Nhắc lại ngắn gọn nội dung Câu 1.
+                3. BẮT BUỘC: Lấy ngay 1 ví dụ thực tiễn liên quan đến Câu 1, và đặt 1 câu hỏi gợi mở đầu tiên dựa trên ví dụ đó.
                 """
                 
-                with st.spinner("Gia sư đang phân tích bài làm của em..."):
+                with st.spinner("Cô đang phân tích bài làm của em..."):
                     try:
                         chat = model.start_chat()
                         response = chat.send_message(prompt_moi_ngam)
                         st.session_state.chat_history.append({"role": "model", "content": response.text})
                     except Exception as e:
-                        fallback_msg = f"Chào {st.session_state.student_name}, em đã hoàn thành bài kiểm tra rất cố gắng! Chúng ta có {so_cau_sai} câu cần làm rõ. Em hãy nhắn 'Bắt đầu sửa lỗi' để chúng ta đi vào câu đầu tiên nhé!"
+                        fallback_msg = f"Chào {st.session_state.student_name}, em đã hoàn thành bài kiểm tra rất cố gắng! Chúng ta có {so_cau_sai} câu cần làm rõ. Em hãy nhắn 'Cô giúp em câu 1' để chúng ta bắt đầu nhé!"
                         st.session_state.chat_history.append({"role": "model", "content": fallback_msg})
 
         # Giao diện Cửa sổ Chat
@@ -273,8 +276,23 @@ else:
         if len(st.session_state.wrong_answers) == 0:
             st.markdown("<h3 style='color: #0f766e; text-align: center;'>🌟 Nhà Khám Phá AI Đa Năng</h3>", unsafe_allow_html=True)
         else:
-            st.markdown("<h3 style='color: #0f766e; text-align: center;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
-        st.markdown("---")
+            st.markdown("<h3 style='color: #e63946; text-align: center;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
+            st.markdown("""
+            <p style='text-align: center; color: #1e3a8a; font-style: italic;'>
+                Phòng Ôn Tập Socratic - nơi em được thoải mái nghĩ và thử sai<br><br>
+                Cô không giải hộ và không chấm điểm. Cô sẽ hỏi từng câu nhỏ để em tự tìm ra bản chất vấn đề.<br><br>
+                Em kể cô nghe em đang nghĩ gì, nghĩ sai cũng không sao.<br>
+                Cô hỏi một câu, em trả lời bằng lời của mình, không cần viết đúng công thức.<br>
+                Bí rồi thì bấm "Gợi ý thêm", cô sẽ gợi ý rõ hơn từng bước.<br>
+                Khi thấy mình đã hiểu, bấm "Làm lại trạm khởi động" để xem em tiến bộ thế nào.
+            </p>
+            """, unsafe_allow_html=True)
+            
+            # --- Hiển thị danh sách các câu làm sai ---
+            st.markdown("#### 🎯 Các câu hỏi cần ôn tập lại:")
+            for i, loi in enumerate(st.session_state.wrong_answers):
+                st.info(f"**Câu {i+1}:** {loi['cau_hoi']}\n\n❌ *Em đã chọn:* {loi['lua_chon_sai']}")
+            st.markdown("---")
 
         for message in st.session_state.chat_history:
             with st.chat_message(message["role"]):
@@ -291,7 +309,7 @@ else:
 
             with st.chat_message("model"):
                 message_placeholder = st.empty()
-                message_placeholder.markdown("Gia sư đang suy nghĩ... ⏳")
+                message_placeholder.markdown("Cô đang suy nghĩ... ⏳")
                 
                 try:
                     gemini_history = []
@@ -306,6 +324,6 @@ else:
                     st.session_state.chat_history.append({"role": "model", "content": response.text})
                     
                 except Exception as e:
-                    message_placeholder.error(f"Đã có lỗi xảy ra kết nối với Gia sư. Em thử lại nhé!")
+                    message_placeholder.error(f"Đã có lỗi xảy ra kết nối với hệ thống. Em thử lại nhé!")
                     
         st.markdown("</div>", unsafe_allow_html=True)
