@@ -320,6 +320,14 @@ else:
                 </p>
             </div>
             """, unsafe_allow_html=True)
+        else:
+            st.markdown("<h3 style='color: #e63946; text-align: center;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
+            st.markdown("""
+            <p style='text-align: center; color: #1e3a8a; font-style: italic;'>
+                Phòng Ôn Tập Socratic - nơi em được thoải mái nghĩ và thử sai<br><br>
+                Khi thấy mình đã hiểu, bấm "Làm lại trạm khởi động" để xem em tiến bộ thế nào.
+            </p>
+            """, unsafe_allow_html=True)
             
             # --- Tích hợp Thư viện Hiện tượng (Đọc trực tiếp từ Thu_vien_hien_tuong file Excel) ---
             try:
