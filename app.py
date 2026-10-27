@@ -272,7 +272,8 @@ else:
 
         ĐỊNH DẠNG
         Văn bản thuần, công thức viết rõ (ví dụ v = v0 + a·t), không bảng, không danh sách dài.
-
+        
+        {danh_sach_loi_he_thong}
         """
         
         model = genai.GenerativeModel(
