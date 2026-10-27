@@ -426,9 +426,6 @@ else:
                 
             st.markdown("---")
 
-        for message in st.session_state.chat_history:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
         else:
             st.markdown("<h3 style='color: #e63946; text-align: center;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
             st.markdown("""
@@ -437,6 +434,9 @@ else:
                 Khi thấy mình đã hiểu, bấm "Làm lại trạm khởi động" để xem em tiến bộ thế nào.
             </p>
             """, unsafe_allow_html=True)
+        for message in st.session_state.chat_history:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
         # ... (Phần code xử lý user_input giữ nguyên) ...
 
         user_input = st.chat_input("Nhập câu trả lời hoặc câu hỏi của em vào đây...")
