@@ -77,25 +77,24 @@ def load_pretest_data():
         return df
     except Exception:
         return pd.DataFrame()
+
 @st.cache_data
 def load_phenomena_data():
     try:
-        # Dữ liệu hiện tượng được lưu tại Thu_vien_hien_tuong
         df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Thu_vien_hien_tuong')
         return df
     except Exception:
         return pd.DataFrame()
-@st.cache_data
+
+@st.cache_data(ttl=600)
 def load_prompt_data():
     try:
-        # Đọc dữ liệu từ sheet Prompt_AI
         df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Prompt_AI')
-        # Chuyển thành dạng dictionary { 'Tên Nhân Cách': 'System Prompt' }
         prompts = dict(zip(df['Tên Nhân Cách'], df['System Prompt']))
         return prompts
     except Exception as e:
-        st.error(f"Lỗi tải Prompt từ Excel: {e}")
         return {}
+
 # Khởi tạo trạng thái phiên (Session State)
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -104,22 +103,24 @@ if "logged_in" not in st.session_state:
     st.session_state.pretest_completed = False
     st.session_state.pretest_step = 1
     st.session_state.wrong_answers = []
-# Khởi tạo trạng thái phiên (Session State)
-# ... (Các biến cũ) ...
+
 if "ai_prompts" not in st.session_state:
     st.session_state.ai_prompts = load_prompt_data()
+if "lib_system_instruction" not in st.session_state:
+    st.session_state.lib_system_instruction = ""
+if "socratic_system_instruction" not in st.session_state:
+    st.session_state.socratic_system_instruction = ""
+
 # ==========================================
 # 3. GIAO DIỆN ĐĂNG NHẬP
 # ==========================================
 if not st.session_state.logged_in:
-    # Dùng thẻ div ép kích thước 60px và màu đỏ
     st.markdown("""
     <div style='text-align: center; color: #d32f2f; font-size: 60px; font-weight: 900; margin-top: 30px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); letter-spacing: 2px;'>
         PHY-LIFE 10
     </div>
     """, unsafe_allow_html=True)
     
-    # Tiêu đề phụ
     st.markdown("""
     <div style='text-align: center; font-size: 1.2rem; margin-bottom: 3rem; color: #1e3a8a; font-weight: 600; text-transform: uppercase;'>
         AI ĐỒNG HÀNH TỰ HỌC CÁ NHÂN HOÁ, KẾT NỐI VẬT LÍ VỚI CUỘC SỐNG
@@ -160,7 +161,6 @@ elif not st.session_state.pretest_completed:
         tong_so_cau = len(df_pretest)
         st.progress(st.session_state.pretest_step / tong_so_cau)
         
-        # --- BỔ SUNG LỜI GIỚI THIỆU KHỞI ĐỘNG CHỈ Ở BƯỚC 1 ---
         if st.session_state.pretest_step == 1:
              st.markdown("""
              <div style='background-color: #f0fdfa; padding: 1.5rem; border-radius: 1rem; border-left: 5px solid #14b8a6; margin-bottom: 1.5rem;'>
@@ -169,7 +169,6 @@ elif not st.session_state.pretest_completed:
 Đây không phải bài kiểm tra. Hãy thử sức và đừng lo sai: mỗi lỗi sai giúp AI hiểu bạn cần hỗ trợ ở đâu. Điều quan trọng là cách bạn suy nghĩ, không phải đáp án cuối cùng.</p>
              </div>
              """, unsafe_allow_html=True)
-        # ---------------------------------------------------
 
         cau_hien_tai = df_pretest.iloc[st.session_state.pretest_step - 1]
         
@@ -185,13 +184,11 @@ elif not st.session_state.pretest_completed:
             if media_src.startswith("http"):
                 st.video(media_src)
             else:
-                # Kiểm tra định dạng video
                 if media_src.lower().endswith(('.mp4', '.mov', '.avi')):
                     try:
-                        st.video(f"images/{media_src}") # Đảm bảo video nằm trong thư mục images
+                        st.video(f"images/{media_src}") 
                     except Exception as e:
                         st.warning(f"Không tải được video: {media_src}. Lỗi: {e}")
-                # Xử lý hình ảnh
                 else:
                     try:
                         st.image(f"images/{media_src}", use_container_width=True)
@@ -253,23 +250,16 @@ else:
             for i, loi in enumerate(st.session_state.wrong_answers):
                 danh_sach_loi_he_thong += f"- Câu {i+1}: {loi['cau_hoi']} | Đáp án HS chọn sai: {loi['lua_chon_sai']}\n"
         
-        # --- Lấy Prompt Gia sư Socratic từ Excel và truyền biến ---
-        raw_socratic_prompt = st.session_state.ai_prompts.get("Gia_su_Socratic", "Lỗi: Không tìm thấy Prompt Socratic")
-        system_instruction = raw_socratic_prompt.format(
-            student_name=st.session_state.student_name,
-            so_cau_sai=len(st.session_state.wrong_answers),
-            danh_sach_loi_he_thong=danh_sach_loi_he_thong
-        )
-        
-        model = genai.GenerativeModel(
-            model_name="gemini-3.5-flash-lite",
-            system_instruction=system_instruction
-        )
         # Xử lý Logic Phân luồng & Lời chào mồi (Chỉ chạy 1 lần đầu tiên)
         if "chat_history" not in st.session_state:
             st.session_state.chat_history = []
             so_cau_sai = len(st.session_state.wrong_answers)
             
+            # --- Lấy Prompt Gia sư Socratic từ Excel và truyền biến ---
+            raw_socratic_prompt = st.session_state.ai_prompts.get("Gia_su_Socratic", "Lỗi: Không tìm thấy Prompt Socratic")
+            system_instruction_socratic = raw_socratic_prompt.replace("[TEN_HOC_SINH]", st.session_state.student_name).replace("[SO_CAU_SAI]", str(so_cau_sai)).replace("[DANH_SACH_LOI]", danh_sach_loi_he_thong)
+            st.session_state.socratic_system_instruction = system_instruction_socratic
+
             if so_cau_sai == 0:
                 loi_chao = f"🎉 Chúc mừng {st.session_state.student_name}! Em đã xuất sắc vượt qua Trạm khởi động.\n\nChào mừng em bước vào **Không Gian Khám Phá & Thư Viện Hiện Tượng**! 🚀\n\nEm hãy chọn một tình huống thú vị ở menu phía trên để tìm hiểu nhé. Sau khi đọc xong, cô trò mình sẽ cùng nhau thảo luận và nhận nhiệm vụ đi săn các hiện tượng vật lí mới lạ ngoài đời thực!"
                 st.session_state.chat_history.append({"role": "model", "content": loi_chao})
@@ -284,9 +274,14 @@ else:
                 3. BẮT BUỘC: Lấy ngay 1 ví dụ thực tiễn liên quan đến Câu 1, và đặt 1 câu hỏi gợi mở đầu tiên dựa trên ví dụ đó.
                 """
                 
+                socratic_model = genai.GenerativeModel(
+                    model_name="gemini-3.5-flash-lite",
+                    system_instruction=st.session_state.socratic_system_instruction
+                )
+
                 with st.spinner("Cô đang chuẩn bị hành trang khám phá cùng em..."):
                     try:
-                        chat = model.start_chat()
+                        chat = socratic_model.start_chat()
                         response = chat.send_message(prompt_moi_ngam)
                         st.session_state.chat_history.append({"role": "model", "content": response.text})
                     except Exception as e:
@@ -305,7 +300,7 @@ else:
             </div>
             """, unsafe_allow_html=True)
                     
-            # --- Tích hợp Thư viện Hiện tượng (Đọc trực tiếp từ Thu_vien_hien_tuong file Excel) ---
+            # --- Tích hợp Thư viện Hiện tượng ---
             try:
                 df_hien_tuong = load_phenomena_data()
                 if not df_hien_tuong.empty:
@@ -315,7 +310,6 @@ else:
                         if hien_tuong_chon:
                             chi_tiet = df_hien_tuong[df_hien_tuong['Tên tình huống'] == hien_tuong_chon].iloc[0]
                             
-                            # Hiển thị Ảnh & Bài học
                             col_img, col_info = st.columns([1, 2])
                             with col_img:
                                 anh_minh_hoa = str(chi_tiet.get('Tên file ảnh', '')).strip()
@@ -335,7 +329,7 @@ else:
                                 cau_hoi = str(chi_tiet.get('Câu hỏi gợi mở', '')).strip()
                                 if cau_hoi and cau_hoi.lower() != 'nan':
                                     st.warning(f"**❓ Vấn đề đặt ra:** {cau_hoi}")
-                            # Tự động hiển thị toàn bộ Hệ thống kiến thức từ giáo viên
+                            
                             st.markdown("<br>", unsafe_allow_html=True)
                             with st.expander("💡 Mở/Đóng GIẢI MÃ BẢN CHẤT VẬT LÍ", expanded=False):
                                 giai_thich = str(chi_tiet.get('Giải thích khoa học', '')).strip()
@@ -345,70 +339,69 @@ else:
                                 with col_1:
                                     cong_thuc = str(chi_tiet.get('Công thức', '')).strip()
                                     if cong_thuc and cong_thuc.lower() != 'nan':
-                                        # Dùng st.info (màu xanh dương pastel) để hỗ trợ hiển thị LaTeX
                                         st.info(f"**📐 Công thức:**\n\n{cong_thuc}")
                                 
                                     dieu_kien = str(chi_tiet.get('Điều kiện/giới hạn', '')).strip()
                                     if dieu_kien and dieu_kien.lower() != 'nan':
-                                        # Dùng st.warning (màu vàng pastel)
                                         st.warning(f"**⚠️ Điều kiện áp dụng:**\n\n{dieu_kien}")
                                     
                                 with col_2:
                                     vi_du = str(chi_tiet.get('Ví dụ định lượng', '')).strip()
                                     if vi_du and vi_du.lower() != 'nan':
-                                        # Dùng st.success (màu xanh lá pastel)
                                         st.success(f"**🔢 Ví dụ định lượng:**\n\n{vi_du}")
                                 
                                     tuong_tu = str(chi_tiet.get('Tình huống tương tự', '')).strip()
                                     if tuong_tu and tuong_tu.lower() != 'nan':
-                                        # Dùng st.error (màu hồng/đỏ pastel)
                                         st.error(f"**🔄 Tình huống tương tự:**\n\n{tuong_tu}")
-
-                                thuc_hanh = str(chi_tiet.get('Hoạt động thực hành', '')).strip()
-                                if thuc_hanh and thuc_hanh.lower() != 'nan':
-                                    st.success(f"**💡 Hoạt động thực hành:**\n\n{thuc_hanh}")
-                            
+                                
                                 st.markdown("<br>", unsafe_allow_html=True)
-                            
-                            # Đổi nút bấm và Lệnh ngầm cho AI
-                            st.markdown("##### 💬 Chọn bạn đồng hành cùng em:")
-                            col_chat1, col_chat2 = st.columns(2)
-                            
-                            with col_chat1:
-                                btn_kham_pha = st.button("🚀 Cùng Đội Trưởng đi săn hiện tượng", use_container_width=True)
-                            with col_chat2:
-                                btn_ban_chat = st.button("🧠 Cùng Chuyên Gia giải mã bản chất", use_container_width=True)
-                                
-                            if btn_kham_pha or btn_ban_chat:
-                                # Xóa sạch tin nhắn cũ, tạo bộ nhớ mới tinh
-                                st.session_state.chat_history = []
-                                
-                                # Xác định nhân cách nào được gọi
-                                if btn_kham_pha:
-                                    raw_prompt = st.session_state.ai_prompts.get("Nha_kham_pha", "")
-                                    loi_chao_dau = f"Đội trưởng đã sẵn sàng! Cô trò mình cùng xách balo lên và đi săn hiện tượng tương tự **{hien_tuong_chon}** nào em!"
-                                else:
-                                    raw_prompt = st.session_state.ai_prompts.get("Gia_su_Ban_chat", "")
-                                    loi_chao_dau = f"Chào em, chúng ta sẽ cùng mổ xẻ bản chất vật lí ẩn sâu bên trong hiện tượng **{hien_tuong_chon}**. Em đang thắc mắc chỗ nào?"
+                                if st.button("🧠 Trò chuyện & Giải mã bản chất cùng Chuyên Gia", use_container_width=True, key="btn_ban_chat"):
+                                    st.session_state.chat_history = []
+                                    nhan_cach = "Gia_su_Ban_chat"
+                                    loi_chao_hs = f"Cô ơi, em vừa đọc xong phần giải mã về **{hien_tuong_chon}**. Cô giúp em phân tích sâu hơn về bản chất nhé!"
+                                    
+                                    raw_prompt = st.session_state.ai_prompts.get(nhan_cach, "Lỗi: Chưa có Prompt")
+                                    st.session_state.lib_system_instruction = raw_prompt.replace("[TEN_HOC_SINH]", st.session_state.student_name).replace("[HIEN_TUONG]", hien_tuong_chon)
+                                    
+                                    st.session_state.chat_history.append({"role": "user", "content": loi_chao_hs})
+                                    ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", nhan_cach, hien_tuong_chon)
+                                    
+                                    lib_model = genai.GenerativeModel(model_name="gemini-3.5-flash-lite", system_instruction=st.session_state.lib_system_instruction)
+                                    with st.spinner("Chuyên gia đang chuẩn bị..."):
+                                        try:
+                                            chat = lib_model.start_chat()
+                                            response = chat.send_message("Học sinh vừa gửi lời chào, hãy trả lời theo đúng vai trò được giao.")
+                                            st.session_state.chat_history.append({"role": "model", "content": response.text})
+                                        except Exception as e:
+                                            st.error("Có lỗi kết nối AI, em thử lại nhé!")
+                                    st.rerun()
 
-                                # Truyền biến vào Prompt lấy từ Excel
-                                system_instruction_lib = raw_prompt.format(
-                                    student_name=st.session_state.student_name,
-                                    hien_tuong_chon=hien_tuong_chon
-                                )
+                            thuc_hanh = str(chi_tiet.get('Hoạt động thực hành', '')).strip()
+                            if thuc_hanh and thuc_hanh.lower() != 'nan':
+                                st.success(f"**💡 Hoạt động thực hành:**\n\n{thuc_hanh}")
+                            
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            if st.button("🚀 Trò chuyện & Cùng Đội trưởng đi săn hiện tượng mới", use_container_width=True, key="btn_kham_pha"):
+                                st.session_state.chat_history = []
+                                nhan_cach = "Nha_kham_pha"
+                                loi_chao_hs = f"Cô ơi, em đã sẵn sàng! Cô trò mình cùng đi săn hiện tượng tương tự **{hien_tuong_chon}** nhé!"
                                 
-                                # LƯU Ý QUAN TRỌNG: 
-                                # Khi gọi AI trong thư viện, cần khởi tạo lại model với lệnh ngầm mới
-                                lib_model = genai.GenerativeModel(
-                                    model_name="gemini-3.5-flash-lite",
-                                    system_instruction=system_instruction_lib
-                                )
+                                raw_prompt = st.session_state.ai_prompts.get(nhan_cach, "Lỗi: Chưa có Prompt")
+                                st.session_state.lib_system_instruction = raw_prompt.replace("[TEN_HOC_SINH]", st.session_state.student_name).replace("[HIEN_TUONG]", hien_tuong_chon)
                                 
-                                # Gửi lời chào mồi và lưu vào lịch sử
-                                st.session_state.chat_history.append({"role": "user", "content": loi_chao_dau})
+                                st.session_state.chat_history.append({"role": "user", "content": loi_chao_hs})
+                                ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", nhan_cach, hien_tuong_chon)
                                 
-                                with st.spinner("Đang kết nối với AI..."):
-                                    # ... (Phần try/except tạo history và gửi tin nhắn chat.send_message() tương tự code cũ, nhưng nhớ dùng lib_model thay cho model) ...
+                                lib_model = genai.GenerativeModel(model_name="gemini-3.5-flash-lite", system_instruction=st.session_state.lib_system_instruction)
+                                with st.spinner("Đội trưởng AI đang chuẩn bị..."):
+                                    try:
+                                        chat = lib_model.start_chat()
+                                        response = chat.send_message("Học sinh vừa gửi lời chào, hãy trả lời theo đúng vai trò được giao.")
+                                        st.session_state.chat_history.append({"role": "model", "content": response.text})
+                                    except Exception as e:
+                                        st.error("Có lỗi kết nối AI, em thử lại nhé!")
+                                st.rerun()
+
             except Exception as e:
                 st.warning(f"⚠️ Không thể tải dữ liệu Thư viện hiện tượng. Lỗi chi tiết: {e}")
                 
@@ -422,34 +415,27 @@ else:
                 Khi thấy mình đã hiểu, bấm "Làm lại trạm khởi động" để xem em tiến bộ thế nào.
             </p>
             """, unsafe_allow_html=True)
-            # --- Hiển thị danh sách các câu làm sai ---
             st.markdown("#### 🎯 Các câu hỏi cần ôn tập lại:")
             for i, loi in enumerate(st.session_state.wrong_answers):
                 st.info(f"**Câu {i+1}:** {loi['cau_hoi']}\n\n❌ *Em đã chọn:* {loi['lua_chon_sai']}")
             
-            # --- Tích hợp nút Làm lại trạm khởi động ---
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("🔄 Làm lại trạm khởi động", use_container_width=True):
-                # Khôi phục trạng thái làm bài về ban đầu
                 st.session_state.pretest_completed = False
                 st.session_state.pretest_step = 1
                 st.session_state.wrong_answers = []
                 
-                # Xóa sạch trí nhớ của AI về cuộc hội thoại cũ
                 if "chat_history" in st.session_state:
                     del st.session_state.chat_history
                 
-                # Âm thầm ghi log lên Google Sheets
                 ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Điều hướng", "Làm lại Pre-test", "")
-                
-                # Tải lại trang ngay lập tức
                 st.rerun()
                 
             st.markdown("---")
+            
         for message in st.session_state.chat_history:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
-        # ... (Phần code xử lý user_input giữ nguyên) ...
 
         user_input = st.chat_input("Nhập câu trả lời hoặc câu hỏi của em vào đây...")
         
@@ -465,12 +451,20 @@ else:
                 message_placeholder.markdown("Cô đang suy nghĩ... ⏳")
                 
                 try:
+                    # Xác định học sinh đang ở phòng Socratic hay Thư viện để lấy đúng Prompt
+                    if len(st.session_state.wrong_answers) > 0:
+                        sys_inst = st.session_state.get("socratic_system_instruction", "")
+                    else:
+                        sys_inst = st.session_state.get("lib_system_instruction", "")
+                        
+                    active_model = genai.GenerativeModel(model_name="gemini-3.5-flash-lite", system_instruction=sys_inst)
+                    
                     gemini_history = []
                     for msg in st.session_state.chat_history[:-1]:
                         role = "user" if msg["role"] == "user" else "model"
                         gemini_history.append({"role": role, "parts": [msg["content"]]})
                     
-                    chat = model.start_chat(history=gemini_history)
+                    chat = active_model.start_chat(history=gemini_history)
                     response = chat.send_message(user_input)
                     
                     message_placeholder.markdown(response.text)
