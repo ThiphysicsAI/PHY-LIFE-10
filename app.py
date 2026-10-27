@@ -146,6 +146,17 @@ elif not st.session_state.pretest_completed:
         tong_so_cau = len(df_pretest)
         st.progress(st.session_state.pretest_step / tong_so_cau)
         
+        # --- BỔ SUNG LỜI GIỚI THIỆU KHỞI ĐỘNG CHỈ Ở BƯỚC 1 ---
+        if st.session_state.pretest_step == 1:
+             st.markdown("""
+             <div style='background-color: #f0fdfa; padding: 1.5rem; border-radius: 1rem; border-left: 5px solid #14b8a6; margin-bottom: 1.5rem;'>
+                 <h4 style='color: #0f766e; margin-top: 0;'>Chào mừng em đến với TRẠM KHỞI ĐỘNG! 🕵️‍♂️</h4>
+                 <p style='color: #334155; margin-bottom: 0;'>Trạm khởi động – không chấm điểm!
+Đây không phải bài kiểm tra. Hãy thử sức và đừng lo sai: mỗi lỗi sai giúp AI hiểu bạn cần hỗ trợ ở đâu. Điều quan trọng là cách bạn suy nghĩ, không phải đáp án cuối cùng.</p>
+             </div>
+             """, unsafe_allow_html=True)
+        # ---------------------------------------------------
+
         cau_hien_tai = df_pretest.iloc[st.session_state.pretest_step - 1]
         
         st.markdown(f"""
@@ -281,54 +292,22 @@ else:
         # Giao diện Cửa sổ Chat
         st.markdown("<div class='main-card'>", unsafe_allow_html=True)
         if len(st.session_state.wrong_answers) == 0:
-            st.markdown("""
-            <div style='padding: 1.5rem; margin-bottom: 1.5rem; background-color: #f0fdfa; border-radius: 1rem; border-left: 5px solid #0d9488;'>
-                <h3 style='color: #0f766e; text-align: center; margin-top: 0;'>🌟 KHÔNG GIAN KHÁM PHÁ & THƯ VIỆN HIỆN TƯỢNG</h3>
-                <p style='text-align: center; color: #1e3a8a; font-style: italic; margin-bottom: 0;'>
-                    Nơi em tự do chọn các hiện tượng thực tế để tìm hiểu và trò chuyện cùng Nhà Khám Phá AI.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #0f766e; text-align: center;'>🌟 Nhà Khám Phá AI Đa Năng</h3>", unsafe_allow_html=True)
+        else:
+            st.markdown("<h3 style='color: #e63946; text-align: center;'>🧠 Phòng Ôn Tập Socratic</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #1e3a8a; font-style: italic;'>Không đưa lời giải sẵn, chỉ đặt câu hỏi gợi mở để HS tự tìm ra bản chất; sau đó làm lại Pre-test để thấy tiến bộ.</p>", unsafe_allow_html=True)
             
-            # --- Tích hợp Thư viện Hiện tượng (Đọc trực tiếp từ Sheet1) ---
-            try:
-                df_hien_tuong = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Sheet1')
-                if not df_hien_tuong.empty:
-                    st.markdown("#### 📚 Thư Viện Hiện Tượng Thực Tế")
-                    hien_tuong_chon = st.selectbox("Chọn một tình huống em muốn khám phá:", df_hien_tuong['Tên tình huống'].tolist())
-                    
-                    if hien_tuong_chon:
-                        chi_tiet = df_hien_tuong[df_hien_tuong['Tên tình huống'] == hien_tuong_chon].iloc[0]
-                        st.info(f"**👀 Quan sát:** {chi_tiet.get('Mô tả quan sát', '')}")
-                        
-                        if st.button("💬 Nhờ AI giải thích hiện tượng này", use_container_width=True):
-                            user_prompt_hien_tuong = f"Cô hãy đóng vai Nhà Khám phá Vật lí, giải thích bản chất vật lí của hiện tượng: '{hien_tuong_chon}'. Cụ thể: {chi_tiet.get('Mô tả quan sát', '')}. Giải thích thật dễ hiểu, ngắn gọn và gợi mở để học sinh suy nghĩ thêm."
-                            
-                            st.session_state.chat_history.append({"role": "user", "content": f"Cô ơi, giải thích giúp em hiện tượng: **{hien_tuong_chon}** với ạ!"})
-                            ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Chọn hiện tượng", hien_tuong_chon)
-                            
-                            with st.spinner("Nhà Khám Phá AI đang phân tích..."):
-                                try:
-                                    gemini_history = []
-                                    for msg in st.session_state.chat_history[:-1]:
-                                        role = "user" if msg["role"] == "user" else "model"
-                                        gemini_history.append({"role": role, "parts": [msg["content"]]})
-                                    
-                                    chat = model.start_chat(history=gemini_history)
-                                    response = chat.send_message(user_prompt_hien_tuong)
-                                    
-                                    st.session_state.chat_history.append({"role": "model", "content": response.text})
-                                except Exception as e:
-                                    st.error("Có lỗi kết nối AI, em thử lại nhé!")
-                            st.rerun()
-            except Exception as e:
-                st.warning("⚠️ Không thể tải dữ liệu Thư viện hiện tượng từ Sheet1. Cô giáo vui lòng kiểm tra lại file Excel.")
-                
+            # --- Hiển thị danh sách các câu làm sai ---
+            st.markdown("#### 🎯 Các câu hỏi cần ôn tập lại:")
+            for i, loi in enumerate(st.session_state.wrong_answers):
+                st.info(f"**Câu {i+1}:** {loi['cau_hoi']}\n\n❌ *Em đã chọn:* {loi['lua_chon_sai']}")
             st.markdown("---")
 
         for message in st.session_state.chat_history:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
+
+        # ... (Phần code xử lý user_input giữ nguyên) ...
 
         user_input = st.chat_input("Nhập câu trả lời hoặc câu hỏi của em vào đây...")
         
