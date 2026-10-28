@@ -300,13 +300,13 @@ else:
                     ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Nha_kham_pha", hien_tuong_chon)
                                 
                     lib_model = genai.GenerativeModel(model_name="gemini-3.5-flash-lite", system_instruction=st.session_state.lib_system_instruction)
-                        with st.spinner("Đội trưởng AI đang chuẩn bị..."):
+                    with st.spinner("Đội trưởng AI đang chuẩn bị..."):
                         try:
                             chat = lib_model.start_chat()
                             response = chat.send_message("Học sinh vừa gửi lời chào, hãy trả lời theo đúng vai trò được giao.")
                             st.session_state.chat_history.append({"role": "model", "content": response.text})
-                         except Exception as e:
-                          st.error("Có lỗi kết nối AI, em thử lại nhé!")
+                        except Exception as e:
+                            st.error("Có lỗi kết nối AI, em thử lại nhé!")
                     st.rerun()
             else:
                 prompt_moi_ngam = f"""
