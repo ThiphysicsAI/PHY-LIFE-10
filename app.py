@@ -277,6 +277,37 @@ else:
             if so_cau_sai == 0:
                 loi_chao = f"🎉 Chúc mừng {st.session_state.student_name}! Em đã xuất sắc vượt qua Trạm khởi động.\n\nChào mừng em bước vào **Không Gian Khám Phá & Thư Viện Hiện Tượng**! 🚀\n\nEm hãy chọn một tình huống thú vị ở menu phía trên để tìm hiểu nhé. Sau khi đọc xong, cô trò mình sẽ cùng nhau thảo luận và nhận nhiệm vụ đi săn các hiện tượng vật lí mới lạ ngoài đời thực!"
                 st.session_state.chat_history.append({"role": "model", "content": loi_chao})
+                            # ==========================================
+                            # NHÂN CÁCH 3: NHÀ KHÁM PHÁ
+                            # ==========================================
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            if st.button("🚀 Trò chuyện & Cùng Đội trưởng đi săn hiện tượng mới", use_container_width=True, key="btn_kham_pha"):
+                                st.session_state.chat_history = []
+                                loi_chao_hs = f"Cô ơi, em đã sẵn sàng! Cô trò mình cùng đi săn hiện tượng tương tự **{hien_tuong_chon}** nhé!"
+                                
+                                st.session_state.lib_system_instruction = f"""
+                                VAI TRÒ: Bạn là Đội trưởng Nhà Khám phá Vật lí. Học sinh {st.session_state.student_name} vừa đọc xong tư liệu về hiện tượng: '{hien_tuong_chon}'.
+                                
+                                CHIẾN LƯỢC CỦA BẠN:
+                                1. Chào mừng và phát động "Thử thách Săn Hiện Tượng".
+                                2. Gợi ý CHI TIẾT các địa điểm thực tế để học sinh đi săn hiện tượng tương tự (nhà bếp, sân bóng, công viên...).
+                                3. Hướng dẫn học sinh ghi chép "Sổ tay thợ săn" gồm: Tên hiện tượng, bối cảnh, mô tả chuyển động, và chụp ảnh/quay video làm bằng chứng.
+                                
+                                Giọng điệu cực kỳ hào hứng, nhiệt huyết để truyền lửa cho học sinh xách ba lô lên đi khám phá thực tế ngay!
+                                """
+                                
+                                st.session_state.chat_history.append({"role": "user", "content": loi_chao_hs})
+                                ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Nha_kham_pha", hien_tuong_chon)
+                                
+                                lib_model = genai.GenerativeModel(model_name="gemini-3.5-flash-lite", system_instruction=st.session_state.lib_system_instruction)
+                                with st.spinner("Đội trưởng AI đang chuẩn bị..."):
+                                    try:
+                                        chat = lib_model.start_chat()
+                                        response = chat.send_message("Học sinh vừa gửi lời chào, hãy trả lời theo đúng vai trò được giao.")
+                                        st.session_state.chat_history.append({"role": "model", "content": response.text})
+                                    except Exception as e:
+                                        st.error("Có lỗi kết nối AI, em thử lại nhé!")
+                                st.rerun()
             else:
                 prompt_moi_ngam = f"""
                 Nhiệm vụ của bạn:
@@ -398,38 +429,8 @@ else:
                                         except Exception as e:
                                             st.error("Có lỗi kết nối AI, em thử lại nhé!")
                                     st.rerun()
-                                                       
-                            # ==========================================
-                            # NHÂN CÁCH 3: NHÀ KHÁM PHÁ
-                            # ==========================================
-                            st.markdown("<br>", unsafe_allow_html=True)
-                            if st.button("🚀 Trò chuyện & Cùng Đội trưởng đi săn hiện tượng mới", use_container_width=True, key="btn_kham_pha"):
-                                st.session_state.chat_history = []
-                                loi_chao_hs = f"Cô ơi, em đã sẵn sàng! Cô trò mình cùng đi săn hiện tượng tương tự **{hien_tuong_chon}** nhé!"
-                                
-                                st.session_state.lib_system_instruction = f"""
-                                VAI TRÒ: Bạn là Đội trưởng Nhà Khám phá Vật lí. Học sinh {st.session_state.student_name} vừa đọc xong tư liệu về hiện tượng: '{hien_tuong_chon}'.
-                                
-                                CHIẾN LƯỢC CỦA BẠN:
-                                1. Chào mừng và phát động "Thử thách Săn Hiện Tượng".
-                                2. Gợi ý CHI TIẾT các địa điểm thực tế để học sinh đi săn hiện tượng tương tự (nhà bếp, sân bóng, công viên...).
-                                3. Hướng dẫn học sinh ghi chép "Sổ tay thợ săn" gồm: Tên hiện tượng, bối cảnh, mô tả chuyển động, và chụp ảnh/quay video làm bằng chứng.
-                                
-                                Giọng điệu cực kỳ hào hứng, nhiệt huyết để truyền lửa cho học sinh xách ba lô lên đi khám phá thực tế ngay!
-                                """
-                                
-                                st.session_state.chat_history.append({"role": "user", "content": loi_chao_hs})
-                                ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Nha_kham_pha", hien_tuong_chon)
-                                
-                                lib_model = genai.GenerativeModel(model_name="gemini-3.5-flash-lite", system_instruction=st.session_state.lib_system_instruction)
-                                with st.spinner("Đội trưởng AI đang chuẩn bị..."):
-                                    try:
-                                        chat = lib_model.start_chat()
-                                        response = chat.send_message("Học sinh vừa gửi lời chào, hãy trả lời theo đúng vai trò được giao.")
-                                        st.session_state.chat_history.append({"role": "model", "content": response.text})
-                                    except Exception as e:
-                                        st.error("Có lỗi kết nối AI, em thử lại nhé!")
-                                st.rerun()
+                             
+                            
 
             except Exception as e:
                 st.warning(f"⚠️ Không thể tải dữ liệu Thư viện hiện tượng. Lỗi chi tiết: {e}")
