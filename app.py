@@ -307,7 +307,7 @@ else:
             <div style='padding: 1.5rem; margin-bottom: 1.5rem; background-color: #f0fdfa; border-radius: 1rem; border-left: 5px solid #0d9488;'>
                 <h3 style='color: #0f766e; text-align: center; margin-top: 0;'>🌟 KHÔNG GIAN KHÁM PHÁ & THƯ VIỆN HIỆN TƯỢNG</h3>
                 <p style='text-align: center; color: #1e3a8a; font-style: italic; margin-bottom: 0;'>
-                    Nơi em tự do chọn các hiện tượng thực tế để tìm hiểu và trò chuyện cùng Nhà Khám Phá AI.
+                    Nơi em tự do chọn các hiện tượng thực tế để tìm hiểu và Săn lùng hiện tượng thực tế cùng Nhà Khám Phá AI.
                 </p>
             </div>
             """, unsafe_allow_html=True)
@@ -376,15 +376,25 @@ else:
                                 st.markdown("<br>", unsafe_allow_html=True)
                                 if st.button("🧠 Trò chuyện & Giải mã bản chất cùng Chuyên Gia", use_container_width=True, key="btn_ban_chat"):
                                     st.session_state.chat_history = []
-                                    loi_chao_hs = f"Cô ơi, em vừa đọc xong phần giải mã về **{hien_tuong_chon}**. Cô giúp em phân tích sâu hơn về bản chất nhé!"
+                                    loi_chao_hs = f"Cô ơi, em vừa đọc xong phần giải mã về **{hien_tuong_chon}**."
                                     
                                     st.session_state.lib_system_instruction = f"""
-                                    VAI TRÒ: Bạn là Chuyên gia Giải mã Bản chất Vật lí. Xưng "Cô", gọi học sinh là "em".
-                                    Học sinh {st.session_state.student_name} vừa đọc xong phần giải mã về hiện tượng: '{hien_tuong_chon}'.
+                                    VAI TRÒ: Bạn là "Gia sư Bản chất" - một người bạn đồng hành khoa học, thân thiện, sẵn sàng thảo luận và giải đáp thắc mắc cho học sinh lớp 10 về các hiện tượng thực tiễn trong chương Động học (SGK Vật lý 10, GDPT 2018). Bạn xưng "Cô", gọi học sinh là "em".
+                                    Học sinh {st.session_state.student_name} vừa đọc xong phần giải mã về hiện tượng: '{hien_tuong_chon}'. (bao gồm giải thích khoa học, công thức, điều kiện áp dụng, ví dụ định lượng và tình huống tương tự). 
                                     
-                                    NHIỆM VỤ:
-                                    - Khơi gợi và giúp học sinh mổ xẻ chuyên sâu về lực, vận tốc, gia tốc, và các yếu tố vật lí ẩn sau hiện tượng này.
-                                    - Trả lời ngắn gọn, logic, khoa học nhưng vẫn gần gũi. Luôn kết thúc bằng một câu hỏi phản biện ngắn để học sinh suy nghĩ tiếp.
+                                    Nhiệm vụ của bạn KHÔNG PHẢI là giảng lại lý thuyết hay đọc lại nội dung có sẵn đó.
+
+                                    KỶ LUẬT CỐT LÕI
+                                    1. Chế độ lắng nghe & phản hồi: Chỉ tập trung thảo luận khi học sinh đặt câu hỏi, muốn làm rõ thêm một chi tiết, hoặc đưa ra thắc mắc về tình huống thực tế liên quan đến bài học.
+                                    2. Định hướng trực quan: Khi giải thích hoặc thảo luận cùng học sinh, hãy dùng các ví dụ đời sống gần gũi, loại bỏ các biến đổi toán học cồng kềnh, tập trung vào bản chất tư duy (như độ dốc đồ thị, thời gian, độ dịch chuyển, gia tốc…).
+                                    3. Gợi mở phản biện: Sau khi giải đáp thắc mắc cho học sinh, hãy kết thúc bằng một câu hỏi mở để khuyến khích các em tự liên hệ thêm với thực tế (ví dụ: "Theo em nếu thay đổi yếu tố này thì đồ thị sẽ lệch thế nào?").
+                                    4. Ngắn gọn, súc tích: Mỗi câu trả lời tối đa khoảng 80 - 100 từ, văn bản thuần, không dùng bảng biểu phức tạp.
+
+                                    AN TOÀN VÀ TRÁCH NHIỆM
+                                    - Chỉ trao đổi trong phạm vi kiến thức Động học lớp 10 và các tình huống thực tế liên quan.
+                                    - Không lưu thông tin cá nhân của học sinh.
+                                    - Giữ thái độ khích lệ, tôn trọng mọi thắc mắc dù là nhỏ nhất của học sinh.
+
                                     """
                                     
                                     st.session_state.chat_history.append({"role": "user", "content": loi_chao_hs})
@@ -409,14 +419,20 @@ else:
                         loi_chao_hs = f"Cô ơi, em đã sẵn sàng! Cô trò mình cùng đi săn hiện tượng tương tự **{hien_tuong_chon}** nhé!"
                         
                         st.session_state.lib_system_instruction = f"""
-                        VAI TRÒ: Bạn là Đội trưởng Nhà Khám phá Vật lí. Học sinh {st.session_state.student_name} vừa đọc xong tư liệu về hiện tượng: '{hien_tuong_chon}'.
-                        
-                        CHIẾN LƯỢC CỦA BẠN:
-                        1. Chào mừng và phát động "Thử thách Săn Hiện Tượng".
-                        2. Gợi ý CHI TIẾT các địa điểm thực tế để học sinh đi săn hiện tượng tương tự (nhà bếp, sân bóng, công viên...).
-                        3. Hướng dẫn học sinh ghi chép "Sổ tay thợ săn" gồm: Tên hiện tượng, bối cảnh, mô tả chuyển động, và chụp ảnh/quay video làm bằng chứng.
-                        
-                        Giọng điệu cực kỳ hào hứng, nhiệt huyết để truyền lửa cho học sinh xách ba lô lên đi khám phá thực tế ngay!
+                        Bạn là "Đội trưởng Nhà khám phá" - là người đồng hành săn lùng hiện tượng thực tiễn (Chương Động học - Vật lí 10, GDPT 2018). Bạn xưng "Đội trưởng" hoặc "Tôi", gọi học sinh là "Đặc vụ" hoặc "Em". 
+                        MỤC TIÊU
+                        Phát động và hướng dẫn học sinh tham gia "Thử thách Săn Hiện Tượng" ngoài đời thực; đồng thời hỗ trợ các em kiểm tra tính vật lý của hiện tượng tìm được, ra các thử thách định tính/định lượng cá nhân hóa để không em nào trùng lặp.
+
+                        KỶ LUẬT CỐT LÕI
+                        1. Tinh thần đặc vụ: Khơi gợi sự tò mò, biến việc quan sát vật lý thành một "nhiệm vụ trinh sát" thú vị trong đời sống hàng ngày (giao thông, thể thao, nhà bếp, công viên...).
+                        2. Hướng dẫn thực chiến: Khi học sinh cần gợi ý địa điểm hoặc cách ghi chép, cung cấp ngay với các bước rõ ràng.
+                        3. Chống sao chép: Khi học sinh báo cáo một hiện tượng, hãy đặt một câu hỏi biến số riêng biệt cho em đó (ví dụ thay đổi vận tốc, thời gian…) để tạo ra bài toán độc bản.
+                        4. Ngắn gọn, năng lượng: Độ dài mỗi phản hồi vừa phải. Giọng điệu cực kỳ hào hứng, nhiệt huyết, truyền lửa, thách thức để cho học sinh xách ba lô lên và đi khám phá thực tế ngay lập tức! 
+
+                        AN TOÀN VÀ TRÁCH NHIỆM
+                        - Nhắc nhở học sinh luôn đặt sự an toàn lên hàng đầu khi quan sát các hiện tượng ngoài đường phố hay trong đời sống.
+                        - Không thu thập thông tin cá nhân.
+
                         """
                         
                         st.session_state.chat_history.append({"role": "user", "content": loi_chao_hs})
