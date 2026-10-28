@@ -342,6 +342,40 @@ else:
                 </p>
             </div>
             """, unsafe_allow_html=True)
+            
+            # ==========================================
+            # NHÂN CÁCH 3: NHÀ KHÁM PHÁ (Đã dời lên đây)
+            # ==========================================
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🚀 Trò chuyện & Cùng Đội trưởng đi săn hiện tượng mới", use_container_width=True, key="btn_kham_pha"):
+                st.session_state.chat_history = []
+                loi_chao_hs = f"Cô ơi, em đã sẵn sàng! Cô trò mình cùng đi săn hiện tượng mới nhé!"
+                
+                st.session_state.lib_system_instruction = f"""
+                VAI TRÒ: Bạn là Đội trưởng Nhà Khám phá Vật lí. Học sinh {st.session_state.student_name} vừa bước vào Không Gian Khám Phá.
+                
+                CHIẾN LƯỢC CỦA BẠN:
+                1. Chào mừng và phát động "Thử thách Săn Hiện Tượng".
+                2. Khuyến khích học sinh dạo quanh Thư Viện Hiện Tượng (bên dưới) để chọn một chủ đề yêu thích.
+                3. Gợi ý CHI TIẾT các địa điểm thực tế để học sinh đi săn hiện tượng (nhà bếp, sân bóng, công viên...).
+                4. Hướng dẫn học sinh ghi chép "Sổ tay thợ săn" gồm: Tên hiện tượng, bối cảnh, mô tả chuyển động, và chụp ảnh/quay video làm bằng chứng.
+                
+                Giọng điệu cực kỳ hào hứng, nhiệt huyết để truyền lửa cho học sinh xách ba lô lên đi khám phá thực tế ngay!
+                """
+                
+                st.session_state.chat_history.append({"role": "user", "content": loi_chao_hs})
+                ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Nha_kham_pha", "Bắt đầu săn")
+                
+                lib_model = genai.GenerativeModel(model_name="gemini-3.5-flash-lite", system_instruction=st.session_state.lib_system_instruction)
+                with st.spinner("Đội trưởng AI đang chuẩn bị..."):
+                    try:
+                        chat = lib_model.start_chat()
+                        response = chat.send_message("Học sinh vừa gửi lời chào, hãy trả lời theo đúng vai trò được giao.")
+                        st.session_state.chat_history.append({"role": "model", "content": response.text})
+                    except Exception as e:
+                        st.error("Có lỗi kết nối AI, em thử lại nhé!")
+                st.rerun()
+            st.markdown("<hr style='margin-top: 2rem; margin-bottom: 2rem;'>", unsafe_allow_html=True)
                     
             # --- Tích hợp Thư viện Hiện tượng ---
             try:
@@ -396,10 +430,11 @@ else:
                                     tuong_tu = str(chi_tiet.get('Tình huống tương tự', '')).strip()
                                     if tuong_tu and tuong_tu.lower() != 'nan':
                                         st.error(f"**🔄 Tình huống tương tự:**\n\n{tuong_tu}")
+                                
                                 thuc_hanh = str(chi_tiet.get('Hoạt động thực hành', '')).strip()
                                 if thuc_hanh and thuc_hanh.lower() != 'nan':
                                     st.success(f"**💡 Hoạt động thực hành:**\n\n{thuc_hanh}")
-                                
+                                    
                                 # ==========================================
                                 # NHÂN CÁCH 2: CHUYÊN GIA BẢN CHẤT
                                 # ==========================================
@@ -429,8 +464,6 @@ else:
                                         except Exception as e:
                                             st.error("Có lỗi kết nối AI, em thử lại nhé!")
                                     st.rerun()
-                             
-                            
 
             except Exception as e:
                 st.warning(f"⚠️ Không thể tải dữ liệu Thư viện hiện tượng. Lỗi chi tiết: {e}")
