@@ -86,15 +86,6 @@ def load_phenomena_data():
     except Exception:
         return pd.DataFrame()
 
-@st.cache_data(ttl=600)
-def load_prompt_data():
-    try:
-        df = pd.read_excel('du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx', sheet_name='Prompt_AI')
-        prompts = dict(zip(df['Tên Nhân Cách'], df['System Prompt']))
-        return prompts
-    except Exception as e:
-        return {}
-
 # Khởi tạo trạng thái phiên (Session State)
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -104,8 +95,6 @@ if "logged_in" not in st.session_state:
     st.session_state.pretest_step = 1
     st.session_state.wrong_answers = []
 
-if "ai_prompts" not in st.session_state:
-    st.session_state.ai_prompts = load_prompt_data()
 if "lib_system_instruction" not in st.session_state:
     st.session_state.lib_system_instruction = ""
 if "socratic_system_instruction" not in st.session_state:
@@ -255,18 +244,41 @@ else:
             st.session_state.chat_history = []
             so_cau_sai = len(st.session_state.wrong_answers)
             
-            # --- Lấy Prompt Gia sư Socratic từ Excel và truyền biến ---
-            raw_socratic_prompt = st.session_state.ai_prompts.get("Gia_su_Socratic", "Lỗi: Không tìm thấy Prompt Socratic")
-            system_instruction_socratic = raw_socratic_prompt.replace("[TEN_HOC_SINH]", st.session_state.student_name).replace("[SO_CAU_SAI]", str(so_cau_sai)).replace("[DANH_SACH_LOI]", danh_sach_loi_he_thong)
-            st.session_state.socratic_system_instruction = system_instruction_socratic
+            # NHÂN CÁCH 1: GIA SƯ SOCRATIC (Nhúng Code Trực Tiếp)
+            st.session_state.socratic_system_instruction = f"""
+            VAI TRÒ
+            Bạn là Gia sư Socratic môn Vật lí 10 (chương Động học), xưng "Cô", gọi học sinh là "em". Học sinh {st.session_state.student_name} vừa làm sai {so_cau_sai} câu. 
+            Cô cùng em khám phá kiến thức, không phải cỗ máy giải bài. Luôn trả lời bằng tiếng Việt, giọng gần gũi, khích lệ, không phán xét.
+
+            MỤC TIÊU
+            Giúp em tự tìm ra bản chất vật lí và rèn kĩ năng giải quyết vấn đề. Cách em suy nghĩ quan trọng hơn đáp án cuối cùng.
+
+            KỶ LUẬT CỐT LÕI
+            1. Không đưa đáp án cuối cùng, kết quả số, hay lời giải trọn vẹn của bài em đang làm.
+            2. Khi em xin đáp án hoặc nhờ giải hộ: từ chối nhẹ nhàng, rồi hỏi một câu nhỏ hơn để em bước tiếp.
+            3. Mỗi lượt: tối đa 1 câu hỏi, khoảng 80 từ trở xuống.
+            4. Khi em đúng một phần: ghi nhận cụ thể phần đúng trước, rồi mới hỏi tiếp.
+            5. Khi em sai: không nói "sai" khô khan; đặt câu hỏi để em tự phát hiện chỗ chưa ổn.
+
+            THANG GỢI Ý (tăng dần nếu em vẫn bế tắc sau mỗi lượt)
+            - Mức 1: câu hỏi mở định hướng ("Đề bài cho em biết gì, cần tìm gì?").
+            - Mức 2: gợi ý cụ thể hơn: chỉ ra đại lượng hoặc dạng đồ thị liên quan, chưa nêu công thức.
+            - Mức 3: đưa một ví dụ tương tự đã giải sẵn với số liệu khác, rồi mời em áp dụng cho bài của mình.
+            
+            MỎ NEO THỰC TIỄN
+            Khi bắt đầu chủ đề mới hoặc em bế tắc, mở bằng một tình huống đời sống ngắn. Không chèn ví dụ ở mọi lượt.
+            
+            ĐỊNH DẠNG
+            Văn bản thuần, công thức viết rõ, không bảng, không danh sách dài.
+            
+            {danh_sach_loi_he_thong}
+            """
 
             if so_cau_sai == 0:
                 loi_chao = f"🎉 Chúc mừng {st.session_state.student_name}! Em đã xuất sắc vượt qua Trạm khởi động.\n\nChào mừng em bước vào **Không Gian Khám Phá & Thư Viện Hiện Tượng**! 🚀\n\nEm hãy chọn một tình huống thú vị ở menu phía trên để tìm hiểu nhé. Sau khi đọc xong, cô trò mình sẽ cùng nhau thảo luận và nhận nhiệm vụ đi săn các hiện tượng vật lí mới lạ ngoài đời thực!"
                 st.session_state.chat_history.append({"role": "model", "content": loi_chao})
             else:
                 prompt_moi_ngam = f"""
-                Học sinh {st.session_state.student_name} vừa làm bài kiểm tra Pre-test và làm sai {so_cau_sai} câu.
-                
                 Nhiệm vụ của bạn:
                 Hãy viết một câu chào đầu tiên gửi đến {st.session_state.student_name}.
                 1. Động viên em ấy vì đã hoàn thành bài Khởi động.
@@ -353,18 +365,29 @@ else:
                                     tuong_tu = str(chi_tiet.get('Tình huống tương tự', '')).strip()
                                     if tuong_tu and tuong_tu.lower() != 'nan':
                                         st.error(f"**🔄 Tình huống tương tự:**\n\n{tuong_tu}")
+                                thuc_hanh = str(chi_tiet.get('Hoạt động thực hành', '')).strip()
+                                if thuc_hanh and thuc_hanh.lower() != 'nan':
+                                    st.success(f"**💡 Hoạt động thực hành:**\n\n{thuc_hanh}")
                                 
+                                # ==========================================
+                                # NHÂN CÁCH 2: CHUYÊN GIA BẢN CHẤT
+                                # ==========================================
                                 st.markdown("<br>", unsafe_allow_html=True)
                                 if st.button("🧠 Trò chuyện & Giải mã bản chất cùng Chuyên Gia", use_container_width=True, key="btn_ban_chat"):
                                     st.session_state.chat_history = []
-                                    nhan_cach = "Gia_su_Ban_chat"
                                     loi_chao_hs = f"Cô ơi, em vừa đọc xong phần giải mã về **{hien_tuong_chon}**. Cô giúp em phân tích sâu hơn về bản chất nhé!"
                                     
-                                    raw_prompt = st.session_state.ai_prompts.get(nhan_cach, "Lỗi: Chưa có Prompt")
-                                    st.session_state.lib_system_instruction = raw_prompt.replace("[TEN_HOC_SINH]", st.session_state.student_name).replace("[HIEN_TUONG]", hien_tuong_chon)
+                                    st.session_state.lib_system_instruction = f"""
+                                    VAI TRÒ: Bạn là Chuyên gia Giải mã Bản chất Vật lí. Xưng "Cô", gọi học sinh là "em".
+                                    Học sinh {st.session_state.student_name} vừa đọc xong phần giải mã về hiện tượng: '{hien_tuong_chon}'.
+                                    
+                                    NHIỆM VỤ:
+                                    - Khơi gợi và giúp học sinh mổ xẻ chuyên sâu về lực, vận tốc, gia tốc, và các yếu tố vật lí ẩn sau hiện tượng này.
+                                    - Trả lời ngắn gọn, logic, khoa học nhưng vẫn gần gũi. Luôn kết thúc bằng một câu hỏi phản biện ngắn để học sinh suy nghĩ tiếp.
+                                    """
                                     
                                     st.session_state.chat_history.append({"role": "user", "content": loi_chao_hs})
-                                    ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", nhan_cach, hien_tuong_chon)
+                                    ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Gia_su_Ban_chat", hien_tuong_chon)
                                     
                                     lib_model = genai.GenerativeModel(model_name="gemini-3.5-flash-lite", system_instruction=st.session_state.lib_system_instruction)
                                     with st.spinner("Chuyên gia đang chuẩn bị..."):
@@ -375,22 +398,28 @@ else:
                                         except Exception as e:
                                             st.error("Có lỗi kết nối AI, em thử lại nhé!")
                                     st.rerun()
-
-                            thuc_hanh = str(chi_tiet.get('Hoạt động thực hành', '')).strip()
-                            if thuc_hanh and thuc_hanh.lower() != 'nan':
-                                st.success(f"**💡 Hoạt động thực hành:**\n\n{thuc_hanh}")
-                            
+                                                       
+                            # ==========================================
+                            # NHÂN CÁCH 3: NHÀ KHÁM PHÁ
+                            # ==========================================
                             st.markdown("<br>", unsafe_allow_html=True)
                             if st.button("🚀 Trò chuyện & Cùng Đội trưởng đi săn hiện tượng mới", use_container_width=True, key="btn_kham_pha"):
                                 st.session_state.chat_history = []
-                                nhan_cach = "Nha_kham_pha"
                                 loi_chao_hs = f"Cô ơi, em đã sẵn sàng! Cô trò mình cùng đi săn hiện tượng tương tự **{hien_tuong_chon}** nhé!"
                                 
-                                raw_prompt = st.session_state.ai_prompts.get(nhan_cach, "Lỗi: Chưa có Prompt")
-                                st.session_state.lib_system_instruction = raw_prompt.replace("[TEN_HOC_SINH]", st.session_state.student_name).replace("[HIEN_TUONG]", hien_tuong_chon)
+                                st.session_state.lib_system_instruction = f"""
+                                VAI TRÒ: Bạn là Đội trưởng Nhà Khám phá Vật lí. Học sinh {st.session_state.student_name} vừa đọc xong tư liệu về hiện tượng: '{hien_tuong_chon}'.
+                                
+                                CHIẾN LƯỢC CỦA BẠN:
+                                1. Chào mừng và phát động "Thử thách Săn Hiện Tượng".
+                                2. Gợi ý CHI TIẾT các địa điểm thực tế để học sinh đi săn hiện tượng tương tự (nhà bếp, sân bóng, công viên...).
+                                3. Hướng dẫn học sinh ghi chép "Sổ tay thợ săn" gồm: Tên hiện tượng, bối cảnh, mô tả chuyển động, và chụp ảnh/quay video làm bằng chứng.
+                                
+                                Giọng điệu cực kỳ hào hứng, nhiệt huyết để truyền lửa cho học sinh xách ba lô lên đi khám phá thực tế ngay!
+                                """
                                 
                                 st.session_state.chat_history.append({"role": "user", "content": loi_chao_hs})
-                                ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", nhan_cach, hien_tuong_chon)
+                                ghi_du_lieu_vao_sheets(st.session_state.student_name, st.session_state.student_class, "Thư viện", "Nha_kham_pha", hien_tuong_chon)
                                 
                                 lib_model = genai.GenerativeModel(model_name="gemini-3.5-flash-lite", system_instruction=st.session_state.lib_system_instruction)
                                 with st.spinner("Đội trưởng AI đang chuẩn bị..."):
@@ -451,7 +480,6 @@ else:
                 message_placeholder.markdown("Cô đang suy nghĩ... ⏳")
                 
                 try:
-                    # Xác định học sinh đang ở phòng Socratic hay Thư viện để lấy đúng Prompt
                     if len(st.session_state.wrong_answers) > 0:
                         sys_inst = st.session_state.get("socratic_system_instruction", "")
                     else:
