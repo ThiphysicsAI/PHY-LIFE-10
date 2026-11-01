@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 PHY-LIFE 10 - AI đồng hành tự học cá nhân hóa, kết nối Vật lí với đời sống.
-
 Yêu cầu (requirements.txt):
     streamlit>=1.32
     pandas
@@ -9,14 +8,15 @@ Yêu cầu (requirements.txt):
     google-generativeai
     gspread
     google-auth
-
 Secrets cần có trên Streamlit Cloud: GEMINI_API_KEY, GCP_CREDS (chuỗi JSON), SHEET_URL.
+Lưu ý: app tự tạo thêm sheet "Tien_trinh" trong cùng file Google Sheets để nhớ những em đã vượt qua
+Trạm Khởi Động (tài khoản dịch vụ GCP_CREDS cần quyền Editor như khi ghi nhật ký).
 """
 import copy
 import datetime
 import json
 import textwrap
-
+import unicodedata
 import google.generativeai as genai
 import gspread
 import pandas as pd
@@ -28,7 +28,6 @@ from google.oauth2.service_account import Credentials
 # ==========================================
 MODEL_NAME = "gemini-3.5-flash-lite"          # đổi tên mô hình tại đây nếu cần
 EXCEL_FILE = "du_lieu_tinh_huong_dong_hoc_vat_li_10.xlsx"
-
 PERSONAS = {
     "socratic": {
         "avatar": "🎓",
@@ -51,7 +50,6 @@ PERSONAS = {
         "o_nhap": "Báo cáo với Đội trưởng hiện tượng em tìm thấy…",
     },
 }
-
 st.set_page_config(
     page_title="PHY-LIFE 10",
     page_icon="🚀",
@@ -66,20 +64,16 @@ st.markdown(
     """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
-
     /* Chỉ áp phông cho các thành phần chữ, không đụng tới phông biểu tượng của Streamlit */
     html, body, .stApp, .stApp p, .stApp label, .stApp li,
     .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5,
     .stApp input, .stApp textarea, .stApp button,
     [data-testid="stChatMessage"] { font-family: 'Quicksand', sans-serif; }
-
     .stApp { background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%); }
     .block-container { padding-top: 1.5rem; padding-bottom: 6rem; max-width: 780px; }
     #MainMenu, footer { visibility: hidden; }
-
     h1, h2, h3, h4, h5 { color: #0f172a; font-weight: 700; }
     .stApp p, .stApp label { color: #334155; font-size: 1.05rem; }
-
     /* Thẻ bo tròn: chỉ áp cho khung có đánh dấu .card-marker */
     div[data-testid="stElementContainer"]:has(.card-marker),
     div.element-container:has(.card-marker) { display: none; }
@@ -91,7 +85,6 @@ st.markdown(
         box-shadow: 0 10px 25px rgba(13, 148, 136, 0.08);
         padding: 1.2rem 1.4rem;
     }
-
     /* Tiêu đề trang đăng nhập (co giãn theo màn hình điện thoại) */
     .hero-title {
         text-align: center; color: #d32f2f; font-weight: 900;
@@ -105,7 +98,6 @@ st.markdown(
         font-size: clamp(0.9rem, 3.4vw, 1.15rem);
         margin-bottom: 1.8rem;
     }
-
     /* Hộp ghi chú */
     .note-box {
         background: #f0fdfa; padding: 1.2rem 1.4rem; border-radius: 1rem;
@@ -113,7 +105,6 @@ st.markdown(
     }
     .note-box h4 { color: #0f766e; margin: 0 0 0.5rem 0; }
     .note-box p { margin: 0; }
-
     /* Nút bấm */
     .stButton > button {
         border-radius: 1rem; background-color: #0d9488; color: #ffffff;
@@ -130,19 +121,25 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
 def the_card():
     """Khung thẻ trắng bo tròn (dùng với `with the_card():`)."""
     khung = st.container(border=True)
     khung.markdown("<span class='card-marker'></span>", unsafe_allow_html=True)
     return khung
 
+# ==========================================
+# 2. DỮ LIỆU, NHẬT KÝ VÀ TIẾN TRÌNH TRÊN GOOGLE SHEETS
+# ==========================================
+TEN_SHEET_TIEN_TRINH = "Tien_trinh"   # sheet lưu các em đã vượt qua Trạm Khởi Động (tự tạo nếu chưa có)
 
-# ==========================================
-# 2. DỮ LIỆU & GHI NHẬT KÝ LÊN GOOGLE SHEETS
-# ==========================================
+def _sheets_san_sang():
+    try:
+        return "GCP_CREDS" in st.secrets and "SHEET_URL" in st.secrets
+    except Exception:
+        return False
+
 @st.cache_resource(show_spinner=False)
-def _lay_worksheet():
+def _mo_bang_tinh():
     creds_json = json.loads(st.secrets["GCP_CREDS"])
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
@@ -150,25 +147,73 @@ def _lay_worksheet():
     ]
     creds = Credentials.from_service_account_info(creds_json, scopes=scopes)
     client = gspread.authorize(creds)
-    return client.open_by_url(st.secrets["SHEET_URL"]).sheet1
+    return client.open_by_url(st.secrets["SHEET_URL"])
 
+@st.cache_resource(show_spinner=False)
+def _lay_sheet_tien_trinh():
+    bang = _mo_bang_tinh()
+    try:
+        return bang.worksheet(TEN_SHEET_TIEN_TRINH)
+    except gspread.exceptions.WorksheetNotFound:
+        ws = bang.add_worksheet(title=TEN_SHEET_TIEN_TRINH, rows=2000, cols=6)
+        ws.append_row(["khoa", "ho_ten", "lop", "trang_thai", "thoi_gian", "so_lan_lam_lai"])
+        return ws
+
+def _chay_co_thu_lai(viec):
+    """Chạy `viec()`; nếu lỗi kết nối thì làm mới kết nối một lần rồi thử lại."""
+    try:
+        return viec()
+    except Exception:
+        _mo_bang_tinh.clear()
+        _lay_sheet_tien_trinh.clear()
+        return viec()
+
+def _gio_viet_nam():
+    mui_gio_vn = datetime.timezone(datetime.timedelta(hours=7))
+    return datetime.datetime.now(mui_gio_vn).strftime("%d/%m/%Y %H:%M:%S")
 
 def ghi_du_lieu_vao_sheets(ho_ten, lop, hoat_dong, ket_qua, chi_tiet):
-    """Ghi nhật ký tương tác. Lỗi kết nối được bỏ qua để học sinh không bị gián đoạn."""
+    """Ghi nhật ký tương tác (sheet đầu tiên). Lỗi kết nối được bỏ qua để học sinh không bị gián đoạn."""
     try:
-        if "GCP_CREDS" not in st.secrets or "SHEET_URL" not in st.secrets:
+        if not _sheets_san_sang():
             return
-        mui_gio_vn = datetime.timezone(datetime.timedelta(hours=7))
-        thoi_gian = datetime.datetime.now(mui_gio_vn).strftime("%d/%m/%Y %H:%M:%S")
-        dong = [thoi_gian, ho_ten, lop, hoat_dong, ket_qua, chi_tiet]
-        try:
-            _lay_worksheet().append_row(dong)
-        except Exception:
-            _lay_worksheet.clear()          # làm mới kết nối một lần rồi thử lại
-            _lay_worksheet().append_row(dong)
+        dong = [_gio_viet_nam(), ho_ten, lop, hoat_dong, ket_qua, chi_tiet]
+        _chay_co_thu_lai(lambda: _mo_bang_tinh().sheet1.append_row(dong))
     except Exception as loi:
         print(f"[Sheets] Không ghi được nhật ký: {loi}")
 
+def chuan_hoa_khoa(ho_ten, lop):
+    """Khóa nhận diện học sinh: không phân biệt hoa/thường, bỏ khoảng trắng thừa ("10a1" = "10A1")."""
+    def sach(s):
+        return " ".join(unicodedata.normalize("NFC", str(s)).casefold().split())
+    return f"{sach(ho_ten)}|{sach(lop)}"
+
+def da_vuot_qua_khoi_dong(ho_ten, lop):
+    """True nếu em (đúng họ tên + lớp) đã từng vượt qua Trạm Khởi Động. Lỗi kết nối -> False (em làm bài như bình thường)."""
+    if not _sheets_san_sang():
+        return False
+    try:
+        khoa = chuan_hoa_khoa(ho_ten, lop)
+        cac_khoa = _chay_co_thu_lai(lambda: _lay_sheet_tien_trinh().col_values(1))
+        return khoa in cac_khoa
+    except Exception as loi:
+        print(f"[Sheets] Không đọc được tiến trình: {loi}")
+        return False
+
+def luu_da_vuot_qua(ho_ten, lop, so_lan_lam_lai):
+    """Lưu lại rằng em đã vượt qua Trạm Khởi Động (mỗi em chỉ một dòng)."""
+    if not _sheets_san_sang():
+        return
+    try:
+        if da_vuot_qua_khoi_dong(ho_ten, lop):
+            return
+        dong = [
+            chuan_hoa_khoa(ho_ten, lop), ho_ten, lop,
+            "Đã vượt qua Trạm Khởi Động", _gio_viet_nam(), so_lan_lam_lai,
+        ]
+        _chay_co_thu_lai(lambda: _lay_sheet_tien_trinh().append_row(dong))
+    except Exception as loi:
+        print(f"[Sheets] Không lưu được tiến trình: {loi}")
 
 @st.cache_data
 def load_pretest_data():
@@ -177,7 +222,6 @@ def load_pretest_data():
     except Exception:
         return pd.DataFrame()
 
-
 @st.cache_data
 def load_phenomena_data():
     try:
@@ -185,12 +229,10 @@ def load_phenomena_data():
     except Exception:
         return pd.DataFrame()
 
-
 def gia_tri(dong, cot):
     """Lấy giá trị ô Excel dạng chuỗi sạch ('' nếu trống)."""
     v = str(dong.get(cot, "")).strip()
     return "" if v.lower() in ("nan", "none") else v
-
 
 # ==========================================
 # 3. TRẠNG THÁI PHIÊN
@@ -201,7 +243,9 @@ DEFAULTS = {
     "student_class": "",
     "pretest_completed": False,
     "pretest_step": 1,
-    "pretest_answers": {},          # {số_câu: lựa chọn của HS}
+    "pretest_answers": {},          # {số_câu: lựa chọn của HS} (giữ lại các câu đã đúng khi làm lại)
+    "pretest_queue": [],            # các câu cần làm ở lượt hiện tại ([] = làm tất cả)
+    "pretest_attempt": 1,           # 1 = lần đầu; từ 2 trở đi là lượt làm lại các câu sai
     "wrong_answers": [],
     "lib_system_instruction": "",
     "socratic_system_instruction": "",
@@ -209,15 +253,16 @@ DEFAULTS = {
     "persona": None,                # "ban_chat" hoặc "doi_truong"
     "hien_tuong_dang_hoc": "",
     "show_welcome": False,
+    "welcome_type": "moi",          # "moi" (vừa vượt qua) hoặc "quay_lai" (đã vượt qua từ trước)
 }
 for khoa, mac_dinh in DEFAULTS.items():
     if khoa not in st.session_state:
         st.session_state[khoa] = copy.deepcopy(mac_dinh)
 
-
 # ==========================================
 # 4. LỆNH HỆ THỐNG (SYSTEM PROMPT) CỦA 3 NHÂN CÁCH AI
 # ==========================================
+
 def lenh_socratic(ten, so_cau_sai, danh_sach_loi):
     mau = textwrap.dedent(
         """\
@@ -278,13 +323,11 @@ def lenh_socratic(ten, so_cau_sai, danh_sach_loi):
     )
     return mau.format(ten=ten, so_cau_sai=so_cau_sai, danh_sach_loi=danh_sach_loi)
 
-
 def lenh_ban_chat(ten, hien_tuong):
     mau = textwrap.dedent(
         """\
         VAI TRÒ: Bạn là "Gia sư Bản chất" - một người bạn đồng hành khoa học, thân thiện, sẵn sàng thảo luận và giải đáp thắc mắc cho học sinh lớp 10 về các hiện tượng thực tiễn trong chương Động học (SGK Vật lí 10, GDPT 2018). Bạn xưng "Cô", gọi học sinh là "em".
         Học sinh {ten} vừa đọc xong phần giải mã về hiện tượng: '{hien_tuong}'. (bao gồm giải thích khoa học, công thức, điều kiện áp dụng, ví dụ định lượng và tình huống tương tự).
-
         Nhiệm vụ của bạn KHÔNG PHẢI là giảng lại lí thuyết hay đọc lại nội dung có sẵn đó.
 
         KỶ LUẬT CỐT LÕI
@@ -300,7 +343,6 @@ def lenh_ban_chat(ten, hien_tuong):
         """
     )
     return mau.format(ten=ten, hien_tuong=hien_tuong)
-
 
 def lenh_doi_truong():
     return textwrap.dedent(
@@ -322,10 +364,10 @@ def lenh_doi_truong():
         """
     )
 
-
 # ==========================================
 # 5. HÀM TIỆN ÍCH GỌI GEMINI
 # ==========================================
+
 def chuyen_lich_su(tin_nhan):
     """Đổi lịch sử chat của app sang định dạng Gemini (luôn bắt đầu bằng lượt của học sinh)."""
     lich_su = [
@@ -336,12 +378,10 @@ def chuyen_lich_su(tin_nhan):
         lich_su.insert(0, {"role": "user", "parts": ["(Học sinh vừa vào phòng học.)"]})
     return lich_su
 
-
 def goi_gemini(lenh_he_thong, lich_su, tin_nhan_moi):
     mo_hinh = genai.GenerativeModel(model_name=MODEL_NAME, system_instruction=lenh_he_thong)
     phien = mo_hinh.start_chat(history=lich_su)
     return phien.send_message(tin_nhan_moi).text
-
 
 def bat_dau_tro_chuyen(persona, hien_tuong):
     """Khởi động cuộc trò chuyện với Gia sư Bản chất hoặc Đội trưởng Khám phá."""
@@ -355,13 +395,11 @@ def bat_dau_tro_chuyen(persona, hien_tuong):
         lenh = lenh_doi_truong()
         loi_chao_hs = f"Đội trưởng ơi, em đã sẵn sàng! Mình cùng đi săn hiện tượng tương tự **{hien_tuong}** nhé!"
         nhan_log = "Nha_kham_pha"
-
     st.session_state.lib_system_instruction = lenh
     st.session_state.chat_history = [{"role": "user", "content": loi_chao_hs}]
     st.session_state.persona = persona
     st.session_state.hien_tuong_dang_hoc = hien_tuong
     ghi_du_lieu_vao_sheets(ten, lop, "Thư viện", nhan_log, hien_tuong)
-
     with st.spinner(f"{PERSONAS[persona]['ten']} đang chuẩn bị…"):
         try:
             tra_loi = goi_gemini(
@@ -373,7 +411,6 @@ def bat_dau_tro_chuyen(persona, hien_tuong):
     st.session_state.view = "chat"
     st.rerun()
 
-
 def hien_thi_lich_su(persona):
     avatar_ai = PERSONAS[persona]["avatar"]
     for tin in st.session_state.chat_history:
@@ -384,7 +421,6 @@ def hien_thi_lich_su(persona):
             with st.chat_message("assistant", avatar=avatar_ai):
                 st.markdown(tin["content"])
 
-
 def xu_ly_o_nhap(persona):
     thong_tin = PERSONAS[persona]
     cau_nhap = st.chat_input(thong_tin["o_nhap"])
@@ -393,11 +429,9 @@ def xu_ly_o_nhap(persona):
     st.session_state.chat_history.append({"role": "user", "content": cau_nhap})
     with st.chat_message("user", avatar="🎒"):
         st.markdown(cau_nhap)
-
     ghi_du_lieu_vao_sheets(
         st.session_state.student_name, st.session_state.student_class, "Chat AI", "Hỏi/Đáp", cau_nhap
     )
-
     with st.chat_message("assistant", avatar=thong_tin["avatar"]):
         cho = st.empty()
         cho.markdown(f"{thong_tin['cho']} ⏳")
@@ -413,10 +447,10 @@ def xu_ly_o_nhap(persona):
         except Exception:
             cho.error("Kết nối đang gặp sự cố. Em gửi lại câu vừa rồi nhé!")
 
-
 # ==========================================
 # 6. MÀN HÌNH ĐĂNG NHẬP
 # ==========================================
+
 def man_hinh_dang_nhap():
     st.markdown("<div class='hero-title'>PHY-LIFE 10</div>", unsafe_allow_html=True)
     st.markdown(
@@ -427,7 +461,10 @@ def man_hinh_dang_nhap():
         st.markdown("### Vào học cùng PHY-LIFE 10")
         ten = st.text_input("Họ và tên của em", placeholder="Ví dụ: Nguyễn Văn A")
         lop = st.text_input("Lớp", placeholder="Ví dụ: 10A1")
-        st.caption("Thông tin này giúp thầy cô theo dõi quá trình học của em.")
+        st.caption(
+            "Thông tin này giúp thầy cô theo dõi quá trình học của em. "
+            "Lần sau em nhập đúng họ tên và lớp như hôm nay, PHY-LIFE sẽ nhớ tiến trình của em."
+        )
         if st.button("Bắt đầu học thôi", use_container_width=True):
             ten, lop = ten.strip(), lop.strip()
             if ten and lop:
@@ -435,14 +472,24 @@ def man_hinh_dang_nhap():
                 st.session_state.student_class = lop
                 st.session_state.logged_in = True
                 ghi_du_lieu_vao_sheets(ten, lop, "Đăng nhập", "Thành công", "")
+                # Em đã vượt qua Trạm Khởi Động ở lần học trước -> vào thẳng thư viện hiện tượng
+                with st.spinner("Đang kiểm tra tiến trình học của em…"):
+                    da_vuot = da_vuot_qua_khoi_dong(ten, lop)
+                if da_vuot:
+                    st.session_state.pretest_completed = True
+                    st.session_state.wrong_answers = []
+                    st.session_state.welcome_type = "quay_lai"
+                    ghi_du_lieu_vao_sheets(
+                        ten, lop, "Điều hướng", "Bỏ qua Pre-test", "Đã vượt qua Trạm Khởi Động từ trước"
+                    )
                 st.rerun()
             else:
                 st.error("Em nhớ nhập đầy đủ họ tên và lớp nhé!")
 
-
 # ==========================================
 # 7. TRẠM KHỞI ĐỘNG (PRE-TEST)
 # ==========================================
+
 def hien_thi_media(nguon):
     nguon = str(nguon).strip()
     if not nguon or nguon.lower() == "nan":
@@ -461,7 +508,6 @@ def hien_thi_media(nguon):
         except Exception as loi:
             st.warning(f"Không tải được hình ảnh: {nguon}. Lỗi: {loi}")
 
-
 def tinh_cau_sai(df, dap_an_cua_hs):
     """Tính danh sách câu sai từ toàn bộ đáp án đã chọn (tránh cộng trùng khi HS quay lại câu trước)."""
     ds_sai = []
@@ -472,10 +518,36 @@ def tinh_cau_sai(df, dap_an_cua_hs):
         dap_an_dung = str(dong.get("Đáp án đúng", "")).strip()
         if not da_chon.startswith(dap_an_dung):
             ds_sai.append(
-                {"cau_hoi": str(dong.get("Câu hỏi", "Lỗi: Thiếu câu hỏi")), "lua_chon_sai": da_chon}
+                {
+                    "so_cau": vi_tri,
+                    "cau_hoi": str(dong.get("Câu hỏi", "Lỗi: Thiếu câu hỏi")),
+                    "lua_chon_sai": da_chon,
+                }
             )
     return ds_sai
 
+def ket_thuc_luot_lam(df):
+    """Chấm điểm sau khi em nộp bài (lần đầu hoặc lượt làm lại), ghi nhật ký và lưu tiến trình nếu đã vượt qua."""
+    ss = st.session_state
+    tong = len(df)
+    ss.wrong_answers = tinh_cau_sai(df, ss.pretest_answers)
+    so_sai = len(ss.wrong_answers)
+    lan = ss.pretest_attempt
+    chi_tiet = f"Số câu sai: {so_sai}"
+    if lan > 1:
+        chi_tiet += f" | Lần làm lại thứ {lan - 1}"
+    ghi_du_lieu_vao_sheets(
+        ss.student_name,
+        ss.student_class,
+        "Hoàn thành Pre-test" if lan == 1 else "Làm lại câu sai",
+        f"{tong - so_sai}/{tong}",
+        chi_tiet,
+    )
+    if so_sai == 0:
+        luu_da_vuot_qua(ss.student_name, ss.student_class, lan - 1)
+    if "chat_history" in ss:
+        del ss["chat_history"]          # để Gia sư Socratic nạp lại danh sách câu sai mới
+    ss.pretest_completed = True
 
 def man_hinh_pretest():
     df = load_pretest_data()
@@ -483,12 +555,20 @@ def man_hinh_pretest():
         st.error("Bài khởi động đang được cập nhật, em báo thầy cô giúp nhé!")
         print("[Pre-test] Không đọc được sheet 'Pre-test' trong file Excel.")
         return
-
     tong = len(df)
-    buoc = st.session_state.pretest_step
-    st.progress((buoc - 1) / tong, text=f"Nhiệm vụ {buoc}/{tong}")
-
-    if buoc == 1:
+    lan_lam = st.session_state.pretest_attempt
+    dang_lam_lai = lan_lam > 1
+    # Lượt đầu: làm tất cả; lượt làm lại: chỉ các câu còn sai
+    hang_doi = [n for n in st.session_state.pretest_queue if 1 <= n <= tong] or list(range(1, tong + 1))
+    tong_buoc = len(hang_doi)
+    buoc = min(st.session_state.pretest_step, tong_buoc)
+    so_cau = hang_doi[buoc - 1]
+    if dang_lam_lai:
+        nhan_tien_do = f"Làm lại nhiệm vụ {so_cau} ({buoc}/{tong_buoc})"
+    else:
+        nhan_tien_do = f"Nhiệm vụ {buoc}/{tong_buoc}"
+    st.progress((buoc - 1) / tong_buoc, text=nhan_tien_do)
+    if buoc == 1 and not dang_lam_lai:
         st.markdown(
             """
             <div class='note-box'>
@@ -499,103 +579,122 @@ def man_hinh_pretest():
             """,
             unsafe_allow_html=True,
         )
-
-    cau = df.iloc[buoc - 1]
+    elif buoc == 1 and dang_lam_lai:
+        st.markdown(
+            f"""
+            <div class='note-box'>
+                <h4>Thử lại nào, em làm được! 💪</h4>
+                <p>Em chỉ cần làm lại {tong_buoc} nhiệm vụ chưa đúng. Những nhiệm vụ em đã làm đúng được giữ nguyên.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    cau = df.iloc[so_cau - 1]
     cau_hoi_text = str(cau.get("Câu hỏi", "Lỗi: Thiếu câu hỏi"))
     cac_lua_chon = [o.strip() for o in str(cau.get("Các lựa chọn", "")).split("|")]
-    da_chon_truoc = st.session_state.pretest_answers.get(buoc)
+    da_chon_truoc = st.session_state.pretest_answers.get(so_cau)
     chi_so = cac_lua_chon.index(da_chon_truoc) if da_chon_truoc in cac_lua_chon else None
-
     with the_card():
-        st.markdown(f"##### Nhiệm vụ {buoc}/{tong}")
+        st.markdown(f"##### {nhan_tien_do}")
         hien_thi_media(cau.get("Video/Ảnh", ""))
         st.markdown(f"**{cau_hoi_text}**")
         tra_loi = st.radio(
-            cau_hoi_text, cac_lua_chon, index=chi_so, key=f"q_{buoc}", label_visibility="collapsed"
+            cau_hoi_text,
+            cac_lua_chon,
+            index=chi_so,
+            key=f"q_{lan_lam}_{so_cau}",
+            label_visibility="collapsed",
         )
-
     cot_truoc, cot_sau = st.columns(2)
     with cot_truoc:
         if buoc > 1 and st.button("← Câu trước", use_container_width=True):
             if tra_loi:
-                st.session_state.pretest_answers[buoc] = tra_loi
+                st.session_state.pretest_answers[so_cau] = tra_loi
             st.session_state.pretest_step -= 1
             st.rerun()
     with cot_sau:
-        nhan = "Nộp bài khởi động" if buoc == tong else "Câu tiếp theo →"
+        if buoc == tong_buoc:
+            nhan = "Nộp các câu làm lại" if dang_lam_lai else "Nộp bài khởi động"
+        else:
+            nhan = "Câu tiếp theo →"
         if st.button(nhan, use_container_width=True):
             if not tra_loi:
                 st.toast("Em chọn một đáp án rồi mình đi tiếp nhé!", icon="👉")
             else:
-                st.session_state.pretest_answers[buoc] = tra_loi
-                if buoc == tong:
-                    st.session_state.wrong_answers = tinh_cau_sai(df, st.session_state.pretest_answers)
-                    st.session_state.pretest_completed = True
-                    so_sai = len(st.session_state.wrong_answers)
-                    ghi_du_lieu_vao_sheets(
-                        st.session_state.student_name,
-                        st.session_state.student_class,
-                        "Hoàn thành Pre-test",
-                        f"{tong - so_sai}/{tong}",
-                        f"Số câu sai: {so_sai}",
-                    )
+                st.session_state.pretest_answers[so_cau] = tra_loi
+                if buoc == tong_buoc:
+                    ket_thuc_luot_lam(df)
                 else:
                     st.session_state.pretest_step += 1
                 st.rerun()
 
-
 # ==========================================
 # 8. PHÒNG ÔN TẬP SOCRATIC (HS còn câu sai)
 # ==========================================
+
+def bat_dau_lam_lai_cau_sai():
+    """Chuẩn bị lượt làm lại: chỉ đưa ra các câu còn sai, giữ nguyên đáp án của các câu đã đúng."""
+    ss = st.session_state
+    cau_can_lam = [loi["so_cau"] for loi in ss.wrong_answers]
+    for n in cau_can_lam:
+        ss.pretest_answers.pop(n, None)       # xóa đáp án sai cũ để em chọn lại từ đầu
+    ss.pretest_queue = cau_can_lam
+    ss.pretest_step = 1
+    ss.pretest_attempt += 1
+    ss.pretest_completed = False
+    ss.wrong_answers = []
+    ss.view = "library"
+    ss.persona = None
+    if "chat_history" in ss:
+        del ss["chat_history"]
+    ghi_du_lieu_vao_sheets(
+        ss.student_name, ss.student_class,
+        "Điều hướng", "Làm lại Pre-test", "Chỉ làm lại các câu: " + ", ".join(str(n) for n in cau_can_lam),
+    )
+
 def phan_dau_phong_on_tap():
     so_cau_sai = len(st.session_state.wrong_answers)
+    tong = max(len(load_pretest_data()), so_cau_sai)
     with the_card():
         st.markdown("### 🎓 Phòng ôn tập cùng Gia sư Socratic")
         st.caption(
-            "Nơi em thoải mái nghĩ và thử sai. Khi thấy mình đã hiểu, "
-            "bấm “Làm lại trạm khởi động” để xem em tiến bộ thế nào."
+            f"Em đã làm đúng {tong - so_cau_sai}/{tong} nhiệm vụ. Em trao đổi cùng Cô về những câu chưa đúng. "
+            "Khi thấy mình đã hiểu, bấm nút bên dưới: em chỉ làm lại những câu này, "
+            "các câu đã đúng được giữ nguyên."
         )
         with st.expander(f"Các câu cần ôn lại ({so_cau_sai})"):
-            for i, loi in enumerate(st.session_state.wrong_answers, start=1):
-                st.markdown(f"**Câu {i}:** {loi['cau_hoi']}")
+            for loi in st.session_state.wrong_answers:
+                st.markdown(f"**Nhiệm vụ {loi['so_cau']}:** {loi['cau_hoi']}")
                 st.caption(f"Em đã chọn: {loi['lua_chon_sai']}. Mình cùng xem lại nhé!")
-        if st.button("Làm lại trạm khởi động", use_container_width=True):
-            st.session_state.pretest_completed = False
-            st.session_state.pretest_step = 1
-            st.session_state.pretest_answers = {}
-            st.session_state.wrong_answers = []
-            st.session_state.view = "library"
-            st.session_state.persona = None
-            if "chat_history" in st.session_state:
-                del st.session_state.chat_history
-            ghi_du_lieu_vao_sheets(
-                st.session_state.student_name, st.session_state.student_class,
-                "Điều hướng", "Làm lại Pre-test", "",
-            )
+        if st.button(f"Làm lại {so_cau_sai} câu chưa đúng", use_container_width=True):
+            bat_dau_lam_lai_cau_sai()
             st.rerun()
-
 
 # ==========================================
 # 9. THƯ VIỆN HIỆN TƯỢNG (HS đạt Pre-test)
 # ==========================================
+
 def man_hinh_thu_vien():
     if st.session_state.show_welcome:
-        st.success(
-            f"Chúc mừng {st.session_state.student_name}! Em đã vượt qua Trạm Khởi Động xuất sắc. "
-            "Em chọn một hiện tượng bên dưới để tìm hiểu nhé. Đọc xong, cô trò mình sẽ cùng thảo luận "
-            "và nhận nhiệm vụ đi săn những hiện tượng vật lí mới ngoài đời thực!"
-        )
+        if st.session_state.welcome_type == "quay_lai":
+            st.success(
+                f"Chào mừng {st.session_state.student_name} quay trở lại! Tiến trình của em đã được lưu: "
+                "em đã vượt qua Trạm Khởi Động nên có thể vào khám phá thư viện và săn hiện tượng ngay thôi."
+            )
+        else:
+            st.success(
+                f"Chúc mừng {st.session_state.student_name}! Em đã vượt qua Trạm Khởi Động xuất sắc. "
+                "Em chọn một hiện tượng bên dưới để tìm hiểu nhé. Đọc xong, cô trò mình sẽ cùng thảo luận "
+                "và nhận nhiệm vụ đi săn những hiện tượng vật lí mới ngoài đời thực!"
+            )
         st.session_state.show_welcome = False
-
     with the_card():
         st.markdown("### 🌟 Thư viện hiện tượng")
         st.caption("Chọn một hiện tượng quanh em, đọc phần giải mã rồi trò chuyện cùng AI.")
-
     df = load_phenomena_data()
     if df.empty or "Tên tình huống" not in df.columns:
         st.info("Thư viện hiện tượng đang được cập nhật, em quay lại sau nhé!")
         return
-
     hien_tuong = st.selectbox(
         "Chọn một tình huống em muốn khám phá:",
         df["Tên tình huống"].tolist(),
@@ -604,9 +703,7 @@ def man_hinh_thu_vien():
     if not hien_tuong:
         return
     ct = df[df["Tên tình huống"] == hien_tuong].iloc[0]
-
     tab_quan_sat, tab_giai_ma = st.tabs(["👀 Quan sát", "💡 Giải mã bản chất"])
-
     with tab_quan_sat:
         cot_anh, cot_tin = st.columns([1, 2])
         with cot_anh:
@@ -626,7 +723,6 @@ def man_hinh_thu_vien():
             cau_hoi = gia_tri(ct, "Câu hỏi gợi mở")
             if cau_hoi:
                 st.warning(f"**Vấn đề đặt ra:** {cau_hoi}")
-
     with tab_giai_ma:
         giai_thich = gia_tri(ct, "Giải thích khoa học")
         if giai_thich:
@@ -649,13 +745,11 @@ def man_hinh_thu_vien():
         thuc_hanh = gia_tri(ct, "Hoạt động thực hành")
         if thuc_hanh:
             st.success(f"**Hoạt động thực hành**\n\n{thuc_hanh}")
-
     st.markdown("")
     if st.button("🔬 Trò chuyện cùng Gia sư Bản chất", use_container_width=True, key="btn_ban_chat"):
         bat_dau_tro_chuyen("ban_chat", hien_tuong)
     if st.button("🧭 Cùng Đội trưởng Khám phá đi săn hiện tượng", use_container_width=True, key="btn_kham_pha"):
         bat_dau_tro_chuyen("doi_truong", hien_tuong)
-
 
 def phan_dau_phong_chat(persona):
     thong_tin = PERSONAS[persona]
@@ -670,69 +764,78 @@ def phan_dau_phong_chat(persona):
             st.session_state.chat_history = []
             st.rerun()
 
-
 # ==========================================
 # 10. ĐIỀU PHỐI CÁC MÀN HÌNH
 # ==========================================
-if not st.session_state.logged_in:
-    man_hinh_dang_nhap()
 
-elif not st.session_state.pretest_completed:
-    man_hinh_pretest()
+def khoi_tao_hoi_thoai(so_cau_sai):
+    """Chạy một lần sau khi em xong Pre-test: nạp câu sai vào "trí nhớ" của Gia sư Socratic."""
+    ss = st.session_state
+    ss.chat_history = []
+    danh_sach_loi = ""
+    if so_cau_sai > 0:
+        danh_sach_loi = "DANH SÁCH CÁC CÂU HỌC SINH ĐANG LÀM SAI:\n"
+        if ss.pretest_attempt > 1:
+            danh_sach_loi += (
+                "(Em đã ôn cùng Cô và làm lại một lần nhưng vẫn còn sai các câu dưới đây; "
+                "các câu khác em đã làm đúng. Hãy thử một cách tiếp cận khác lần trước.)\n"
+            )
+        for loi in ss.wrong_answers:
+            danh_sach_loi += f"- Nhiệm vụ {loi['so_cau']}: {loi['cau_hoi']} | Đáp án HS chọn sai: {loi['lua_chon_sai']}\n"
+    ss.socratic_system_instruction = lenh_socratic(ss.student_name, so_cau_sai, danh_sach_loi)
+    if so_cau_sai == 0:
+        ss.show_welcome = True
+        return
+    ten = ss.student_name
+    so_dau = ss.wrong_answers[0]["so_cau"]
+    if ss.pretest_attempt > 1:
+        y_dong_vien = "Động viên em vì đã kiên trì làm lại, và nhắc em rằng các câu đã làm đúng được giữ nguyên."
+    else:
+        y_dong_vien = "Động viên em ấy vì đã hoàn thành bài Khởi động."
+    yeu_cau_mo_dau = f"""
+    Nhiệm vụ của bạn:
+    Hãy viết một câu chào đầu tiên gửi đến {ten}.
+    1. {y_dong_vien}
+    2. Bắt đầu ngay vào việc hướng dẫn Nhiệm vụ {so_dau} (câu đầu tiên trong danh sách sai). Nhắc lại ngắn gọn nội dung nhiệm vụ đó.
+    3. BẮT BUỘC: Lấy ngay 1 ví dụ thực tiễn liên quan đến nhiệm vụ đó, và đặt 1 câu hỏi gợi mở đầu tiên dựa trên ví dụ đó.
+    """
+    with st.spinner("Cô đang chuẩn bị hành trang khám phá cùng em…"):
+        try:
+            loi_chao = goi_gemini(ss.socratic_system_instruction, [], yeu_cau_mo_dau)
+        except Exception:
+            loi_chao = (
+                f"Chào {ten}, em đã hoàn thành bài khởi động rất cố gắng! "
+                f"Mình có {so_cau_sai} câu cần làm rõ. "
+                f"Em nhắn “Cô giúp em nhiệm vụ {so_dau}” để mình bắt đầu nhé!"
+            )
+    ss.chat_history.append({"role": "model", "content": loi_chao})
 
-else:
+def main():
+    if not st.session_state.logged_in:
+        man_hinh_dang_nhap()
+        return
+    if not st.session_state.pretest_completed:
+        man_hinh_pretest()
+        return
     if "GEMINI_API_KEY" not in st.secrets:
         st.error("Chưa cấu hình GEMINI_API_KEY trong Streamlit Secrets. Thầy cô kiểm tra lại cài đặt trên Streamlit Cloud.")
+        return
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    so_cau_sai = len(st.session_state.wrong_answers)
+    if "chat_history" not in st.session_state:
+        khoi_tao_hoi_thoai(so_cau_sai)
+    # Chọn màn hình theo kết quả Pre-test
+    persona_hien_tai = None
+    if so_cau_sai > 0:
+        phan_dau_phong_on_tap()
+        persona_hien_tai = "socratic"
+    elif st.session_state.view == "chat" and st.session_state.persona in PERSONAS:
+        phan_dau_phong_chat(st.session_state.persona)
+        persona_hien_tai = st.session_state.persona
     else:
-        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        so_cau_sai = len(st.session_state.wrong_answers)
-
-        # Khởi tạo một lần: nạp câu sai vào "trí nhớ" của Gia sư Socratic
-        if "chat_history" not in st.session_state:
-            st.session_state.chat_history = []
-            danh_sach_loi = ""
-            if so_cau_sai > 0:
-                danh_sach_loi = "DANH SÁCH CÁC CÂU HỌC SINH ĐANG LÀM SAI:\n"
-                for i, loi in enumerate(st.session_state.wrong_answers, start=1):
-                    danh_sach_loi += f"- Câu {i}: {loi['cau_hoi']} | Đáp án HS chọn sai: {loi['lua_chon_sai']}\n"
-            st.session_state.socratic_system_instruction = lenh_socratic(
-                st.session_state.student_name, so_cau_sai, danh_sach_loi
-            )
-
-            if so_cau_sai == 0:
-                st.session_state.show_welcome = True
-            else:
-                ten = st.session_state.student_name
-                yeu_cau_mo_dau = f"""
-                Nhiệm vụ của bạn:
-                Hãy viết một câu chào đầu tiên gửi đến {ten}.
-                1. Động viên em ấy vì đã hoàn thành bài Khởi động.
-                2. Bắt đầu ngay vào việc hướng dẫn Câu 1 (trong danh sách sai). Nhắc lại ngắn gọn nội dung Câu 1.
-                3. BẮT BUỘC: Lấy ngay 1 ví dụ thực tiễn liên quan đến Câu 1, và đặt 1 câu hỏi gợi mở đầu tiên dựa trên ví dụ đó.
-                """
-                with st.spinner("Cô đang chuẩn bị hành trang khám phá cùng em…"):
-                    try:
-                        loi_chao = goi_gemini(st.session_state.socratic_system_instruction, [], yeu_cau_mo_dau)
-                    except Exception:
-                        loi_chao = (
-                            f"Chào {ten}, em đã hoàn thành bài khởi động rất cố gắng! "
-                            f"Mình có {so_cau_sai} câu cần làm rõ. "
-                            "Em nhắn “Cô giúp em câu 1” để mình bắt đầu nhé!"
-                        )
-                st.session_state.chat_history.append({"role": "model", "content": loi_chao})
-
-        # Chọn màn hình theo kết quả Pre-test
-        persona_hien_tai = None
-        if so_cau_sai > 0:
-            phan_dau_phong_on_tap()
-            persona_hien_tai = "socratic"
-        elif st.session_state.view == "chat" and st.session_state.persona in PERSONAS:
-            phan_dau_phong_chat(st.session_state.persona)
-            persona_hien_tai = st.session_state.persona
-        else:
-            man_hinh_thu_vien()
-
-        # Khung chat (chỉ hiện khi đang trò chuyện với một nhân cách AI)
-        if persona_hien_tai:
-            hien_thi_lich_su(persona_hien_tai)
-            xu_ly_o_nhap(persona_hien_tai)
+        man_hinh_thu_vien()
+    # Khung chat (chỉ hiện khi đang trò chuyện với một nhân cách AI)
+    if persona_hien_tai:
+        hien_thi_lich_su(persona_hien_tai)
+        xu_ly_o_nhap(persona_hien_tai)
+main()
