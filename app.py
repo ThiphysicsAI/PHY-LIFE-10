@@ -11,10 +11,13 @@ Yêu cầu (requirements.txt):
 Secrets cần có trên Streamlit Cloud: GEMINI_API_KEY, GCP_CREDS (chuỗi JSON), SHEET_URL.
 Lưu ý: app tự tạo thêm sheet "Tien_trinh" trong cùng file Google Sheets để nhớ những em đã vượt qua
 Trạm Khởi Động (tài khoản dịch vụ GCP_CREDS cần quyền Editor như khi ghi nhật ký).
+Nếu sheet này không tạo được, app vẫn nhận ra em đã vượt qua nhờ sheet nhật ký (sheet đầu tiên).
+Thầy cô thêm ?debug=1 vào địa chỉ web để mở bảng chẩn đoán kết nối ở trang đăng nhập.
 """
 import copy
 import datetime
 import json
+import os
 import textwrap
 import unicodedata
 import google.generativeai as genai
@@ -188,32 +191,101 @@ def chuan_hoa_khoa(ho_ten, lop):
         return " ".join(unicodedata.normalize("NFC", str(s)).casefold().split())
     return f"{sach(ho_ten)}|{sach(lop)}"
 
+@st.cache_resource(show_spinner=False)
+def _bo_nho_chung():
+    """Bộ nhớ dùng chung của máy chủ: các em đã vượt qua (tra cứu tức thì) và vài dòng chẩn đoán lỗi gần nhất."""
+    return {"da_vuot": set(), "loi": []}
+
+def ghi_chan_doan(thong_bao):
+    """Lỗi kết nối Sheets không làm gián đoạn học sinh nhưng được ghi lại để thầy cô xem (?debug=1)."""
+    print(f"[Sheets] {thong_bao}")
+    nho = _bo_nho_chung()["loi"]
+    nho.append(f"{_gio_viet_nam()} - {thong_bao}")
+    del nho[:-15]
+
+def _la_dong_vuot_qua(hoat_dong, chi_tiet):
+    """Dòng nhật ký cho biết em đã đúng hết Pre-test (cả lần đầu lẫn lượt làm lại, cả các lần học trước khi có sheet Tien_trinh)."""
+    return hoat_dong in ("Hoàn thành Pre-test", "Làm lại câu sai") and chi_tiet.startswith("Số câu sai: 0")
+
+@st.cache_data(ttl=60, show_spinner=False)
+def _quet_nhat_ky_da_vuot():
+    """Quét sheet nhật ký, trả về tập khóa của các em đã từng vượt qua (dùng chung cho mọi phiên, làm mới sau 60 giây)."""
+    hang = _chay_co_thu_lai(lambda: _mo_bang_tinh().sheet1.get_all_values())
+    da_vuot = set()
+    for r in hang:
+        if len(r) >= 6 and _la_dong_vuot_qua(str(r[3]).strip(), str(r[5]).strip()):
+            da_vuot.add(chuan_hoa_khoa(r[1], r[2]))
+    return da_vuot
+
 def da_vuot_qua_khoi_dong(ho_ten, lop):
-    """True nếu em (đúng họ tên + lớp) đã từng vượt qua Trạm Khởi Động. Lỗi kết nối -> False (em làm bài như bình thường)."""
+    """True nếu em (đúng họ tên + lớp) đã từng vượt qua Trạm Khởi Động.
+    Tra cứu lần lượt: bộ nhớ máy chủ -> sheet Tien_trinh -> sheet nhật ký. Lỗi kết nối -> False (em làm bài như bình thường)."""
+    khoa = chuan_hoa_khoa(ho_ten, lop)
+    bo_nho = _bo_nho_chung()["da_vuot"]
+    if khoa in bo_nho:
+        return True
     if not _sheets_san_sang():
         return False
     try:
-        khoa = chuan_hoa_khoa(ho_ten, lop)
-        cac_khoa = _chay_co_thu_lai(lambda: _lay_sheet_tien_trinh().col_values(1))
-        return khoa in cac_khoa
+        if khoa in _chay_co_thu_lai(lambda: _lay_sheet_tien_trinh().col_values(1)):
+            bo_nho.add(khoa)
+            return True
     except Exception as loi:
-        print(f"[Sheets] Không đọc được tiến trình: {loi}")
-        return False
+        ghi_chan_doan(f"Không đọc được sheet {TEN_SHEET_TIEN_TRINH}: {loi}")
+    try:
+        if khoa in _quet_nhat_ky_da_vuot():
+            bo_nho.add(khoa)
+            return True
+    except Exception as loi:
+        ghi_chan_doan(f"Không đọc được sheet nhật ký: {loi}")
+    return False
 
 def luu_da_vuot_qua(ho_ten, lop, so_lan_lam_lai):
-    """Lưu lại rằng em đã vượt qua Trạm Khởi Động (mỗi em chỉ một dòng)."""
+    """Lưu lại rằng em đã vượt qua Trạm Khởi Động: nhớ ngay trong bộ nhớ máy chủ và ghi vào sheet Tien_trinh.
+    (Dòng nhật ký "Hoàn thành Pre-test"/"Làm lại câu sai" với 0 câu sai đã được ghi trước đó và cũng được dùng để nhận diện.)"""
+    khoa = chuan_hoa_khoa(ho_ten, lop)
+    _bo_nho_chung()["da_vuot"].add(khoa)
+    _quet_nhat_ky_da_vuot.clear()
     if not _sheets_san_sang():
         return
+    dong = [khoa, ho_ten, lop, "Đã vượt qua Trạm Khởi Động", _gio_viet_nam(), so_lan_lam_lai]
     try:
-        if da_vuot_qua_khoi_dong(ho_ten, lop):
-            return
-        dong = [
-            chuan_hoa_khoa(ho_ten, lop), ho_ten, lop,
-            "Đã vượt qua Trạm Khởi Động", _gio_viet_nam(), so_lan_lam_lai,
-        ]
         _chay_co_thu_lai(lambda: _lay_sheet_tien_trinh().append_row(dong))
     except Exception as loi:
-        print(f"[Sheets] Không lưu được tiến trình: {loi}")
+        ghi_chan_doan(f"Không lưu được vào sheet {TEN_SHEET_TIEN_TRINH}: {loi}")
+
+def chan_doan_ket_noi():
+    """Kiểm tra từng bước kết nối Google Sheets, trả về các dòng kết quả (không chứa thông tin học sinh)."""
+    if not _sheets_san_sang():
+        return ["❌ Chưa cấu hình GCP_CREDS / SHEET_URL trong Secrets."]
+    ket_qua = []
+    try:
+        n = len(_chay_co_thu_lai(lambda: _mo_bang_tinh().sheet1.col_values(1)))
+        ket_qua.append(f"✅ Đọc được sheet nhật ký (sheet đầu tiên): {n} dòng.")
+    except Exception as loi:
+        ket_qua.append(f"❌ Không đọc được sheet nhật ký: {loi}")
+    try:
+        n = len(_chay_co_thu_lai(lambda: _lay_sheet_tien_trinh().col_values(1))) - 1
+        ket_qua.append(f"✅ Sheet {TEN_SHEET_TIEN_TRINH} sẵn sàng: đã lưu {max(n, 0)} em.")
+    except Exception as loi:
+        ket_qua.append(f"❌ Không mở/tạo được sheet {TEN_SHEET_TIEN_TRINH}: {loi}")
+        ket_qua.append("   (App vẫn nhận ra các em đã vượt qua nhờ sheet nhật ký.)")
+    ket_qua.append(f"Bộ nhớ máy chủ: {len(_bo_nho_chung()['da_vuot'])} em đã vượt qua kể từ lần khởi động này.")
+    return ket_qua
+
+def hien_thi_chan_doan():
+    """Bảng chẩn đoán dành cho thầy cô: chỉ hiện khi địa chỉ web có ?debug=1."""
+    if st.query_params.get("debug") != "1":
+        return
+    with st.expander("🛠 Chẩn đoán lưu tiến trình (dành cho thầy cô)"):
+        if st.button("Kiểm tra kết nối Google Sheets", key="btn_chan_doan"):
+            st.code("\n".join(chan_doan_ket_noi()))
+        loi_gan_day = _bo_nho_chung()["loi"]
+        if loi_gan_day:
+            st.caption("Lỗi gần nhất:")
+            st.code("\n".join(loi_gan_day))
+        else:
+            st.caption("Chưa ghi nhận lỗi nào kể từ lần khởi động này.")
 
 @st.cache_data
 def load_pretest_data():
@@ -485,28 +557,77 @@ def man_hinh_dang_nhap():
                 st.rerun()
             else:
                 st.error("Em nhớ nhập đầy đủ họ tên và lớp nhé!")
+    hien_thi_chan_doan()
 
 # ==========================================
 # 7. TRẠM KHỞI ĐỘNG (PRE-TEST)
 # ==========================================
 
+THU_MUC_PHUONG_TIEN = "images"          # thư mục chứa ảnh và video đi kèm (cùng cấp với file app)
+DUOI_ANH = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp")
+DUOI_VIDEO = {".mp4": "video/mp4", ".m4v": "video/mp4", ".mov": "video/quicktime",
+              ".webm": "video/webm", ".avi": "video/x-msvideo", ".mkv": "video/x-matroska"}
+
+def phan_loai_phuong_tien(nguon):
+    """Cho biết một ô "Tên file ảnh" / "Video/Ảnh" là video, ảnh, hay trống: trả về "video", "anh" hoặc ""."""
+    n = str(nguon).strip()
+    if not n or n.lower() in ("nan", "none"):
+        return ""
+    thap = n.lower().split("?")[0]
+    if thap.startswith("http") and any(k in thap for k in ("youtube.com", "youtu.be", "vimeo.com")):
+        return "video"
+    if thap.endswith(tuple(DUOI_VIDEO)):
+        return "video"
+    if thap.endswith(DUOI_ANH):
+        return "anh"
+    return "video" if thap.startswith("http") else "anh"
+
+def tim_duong_dan_phuong_tien(nguon):
+    """Trả về đường dẫn tới file trong thư mục images (không phân biệt hoa/thường, vì máy chủ Linux có phân biệt), hoặc None."""
+    n = str(nguon).strip()
+    if n.lower().startswith("http"):
+        return n
+    thang = os.path.join(THU_MUC_PHUONG_TIEN, n)
+    if os.path.isfile(thang):
+        return thang
+    try:
+        for ten in os.listdir(THU_MUC_PHUONG_TIEN):
+            if ten.lower() == n.lower():
+                return os.path.join(THU_MUC_PHUONG_TIEN, ten)
+    except OSError:
+        pass
+    return None
+
+def hien_thi_phuong_tien(nguon):
+    """Hiển thị ảnh hoặc video (file trong images/ hoặc đường dẫn web/YouTube). Không bao giờ làm sập trang."""
+    loai = phan_loai_phuong_tien(nguon)
+    if not loai:
+        return
+    ten_loai = "video" if loai == "video" else "ảnh"
+    duong_dan = tim_duong_dan_phuong_tien(nguon)
+    if duong_dan is None:
+        print(f"[Media] Không tìm thấy {nguon} trong thư mục {THU_MUC_PHUONG_TIEN}/")
+        st.caption(f"(Chưa có {ten_loai})")
+        return
+    try:
+        if loai == "video":
+            duoi = os.path.splitext(duong_dan.lower().split("?")[0])[1]
+            if duong_dan.lower().startswith("http") or duoi not in DUOI_VIDEO:
+                st.video(duong_dan)
+            else:
+                st.video(duong_dan, format=DUOI_VIDEO[duoi])
+        else:
+            st.image(duong_dan, use_container_width=True)
+    except Exception as loi:
+        print(f"[Media] Không hiển thị được {nguon}: {loi}")
+        st.caption(f"(Chưa tải được {ten_loai})")
+
 def hien_thi_media(nguon):
-    nguon = str(nguon).strip()
-    if not nguon or nguon.lower() == "nan":
+    """Phần quan sát (video/ảnh) của câu hỏi khởi động."""
+    if not phan_loai_phuong_tien(nguon):
         return
     st.info("Em quan sát tình huống dưới đây:")
-    if nguon.startswith("http"):
-        st.video(nguon)
-    elif nguon.lower().endswith((".mp4", ".mov", ".avi")):
-        try:
-            st.video(f"images/{nguon}")
-        except Exception as loi:
-            st.warning(f"Không tải được video: {nguon}. Lỗi: {loi}")
-    else:
-        try:
-            st.image(f"images/{nguon}", use_container_width=True)
-        except Exception as loi:
-            st.warning(f"Không tải được hình ảnh: {nguon}. Lỗi: {loi}")
+    hien_thi_phuong_tien(nguon)
 
 def tinh_cau_sai(df, dap_an_cua_hs):
     """Tính danh sách câu sai từ toàn bộ đáp án đã chọn (tránh cộng trùng khi HS quay lại câu trước)."""
@@ -705,14 +826,14 @@ def man_hinh_thu_vien():
     ct = df[df["Tên tình huống"] == hien_tuong].iloc[0]
     tab_quan_sat, tab_giai_ma = st.tabs(["👀 Quan sát", "💡 Giải mã bản chất"])
     with tab_quan_sat:
-        cot_anh, cot_tin = st.columns([1, 2])
-        with cot_anh:
-            anh = gia_tri(ct, "Tên file ảnh")
-            if anh:
-                try:
-                    st.image(f"images/{anh}", use_container_width=True)
-                except Exception:
-                    st.caption("(Chưa có ảnh)")
+        anh = gia_tri(ct, "Tên file ảnh")          # ô này chứa tên file ảnh (.jpg/.png) hoặc video (.mp4) hoặc đường dẫn web
+        if phan_loai_phuong_tien(anh) == "video":
+            hien_thi_phuong_tien(anh)              # video chiếm trọn bề ngang cho dễ xem
+            cot_tin = st.container()
+        else:
+            cot_anh, cot_tin = st.columns([1, 2])
+            with cot_anh:
+                hien_thi_phuong_tien(anh)
         with cot_tin:
             bai_hoc = gia_tri(ct, "Bài học liên quan")
             if bai_hoc:
