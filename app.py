@@ -530,11 +530,10 @@ def man_hinh_dang_nhap():
         unsafe_allow_html=True,
     )
     with the_card():
-        st.markdown("### Vào học cùng PHY-LIFE 10")
+        st.markdown("### Học cùng PHY-LIFE 10")
         ten = st.text_input("Họ và tên của em", placeholder="Ví dụ: Nguyễn Văn A")
         lop = st.text_input("Lớp", placeholder="Ví dụ: 10A1")
         st.caption(
-            "Thông tin này giúp thầy cô theo dõi quá trình học của em. "
             "Lần sau em nhập đúng họ tên và lớp như hôm nay, PHY-LIFE sẽ nhớ tiến trình của em."
         )
         if st.button("Bắt đầu học thôi", use_container_width=True):
